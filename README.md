@@ -20,7 +20,7 @@ Abre http://localhost:4200. (Antes disso precisas de configurar o Supabase — v
 1. Em https://supabase.com cria um projeto novo (ex.: `myfinances`).
 2. **SQL Editor → New query**: cola o conteúdo de `supabase/schema.sql` e executa. Cria as tabelas, as políticas de segurança (cada utilizador só vê os seus dados), a vista de saldos e as funções auxiliares.
    - Se já tinhas corrido uma versão anterior do `schema.sql`, corre também `supabase/migrations/001_subcategorias_perfil.sql`.
-   - Para importar o histórico do Organizze: `supabase/migrations/002_importacao_organizze.sql` (ver secção "Importação" abaixo).
+   - Para importar o histórico do Organizze: os ficheiros de `supabase/migrations/importacao_organizze/`, por ordem (ver secção "Importação" abaixo).
 3. **Project Settings → API**: copia o `Project URL` e a `anon public` key para
    `src/environments/environment.ts` **e** `src/environments/environment.prod.ts`.
    (A chave `anon` é pública por desenho — a segurança está nas políticas RLS da base de dados.)
@@ -80,7 +80,7 @@ src/app/features/categories    categorias
 
 ## Importação do Organizze
 
-`supabase/migrations/002_importacao_organizze.sql` foi gerado a partir do export `movimentacoes_*.xls` (uma folha por conta) e:
+Os ficheiros em `supabase/migrations/importacao_organizze/` (01 a 10, para correr por essa ordem — o SQL Editor não aceita um ficheiro único tão grande) foram gerados a partir do export `movimentacoes_*.xls` (uma folha por conta) e:
 
 - cria as 6 contas com os nomes das folhas e as categorias/sub-categorias com a mesma hierarquia do Organizze;
 - junta cada par de linhas "Transferências" (saída numa conta + entrada noutra, mesma data e valor, com tolerância de 3 dias) numa única transferência;
