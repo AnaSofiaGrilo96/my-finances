@@ -1,0 +1,60 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      primary: mat.$green-palette,
+      tertiary: mat.$azure-palette,
+    ),
+    typography: Roboto,
+    density: -1,
+  ));
+}
+
+html.dark { color-scheme: dark; }
+
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: var(--mat-sys-surface-container-low, #f4f6f4);
+  color: var(--mat-sys-on-surface);
+  -webkit-tap-highlight-color: transparent;
+}
+
+// ---------- Utilitários partilhados ----------
+.page { padding: 16px; max-width: 1200px; margin: 0 auto; padding-bottom: 96px; }
+@media (min-width: 700px) { .page { padding: 20px 24px 40px; } }
+.page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.page-header h1 { font-size: 22px; font-weight: 500; margin: 0; flex: 1; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.spacer { flex: 1; }
+.card { min-width: 0; background: var(--mat-sys-surface); border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.card h2 { font-size: 17px; font-weight: 500; margin: 0 0 12px; }
+.muted { color: var(--mat-sys-on-surface-variant); }
+.income { color: #1eb980; }
+.expense { color: #e5484d; }
+.transfer { color: var(--mat-sys-on-surface-variant); }
+.empty { text-align: center; color: var(--mat-sys-on-surface-variant); padding: 32px 16px; }
+.empty mat-icon { font-size: 44px; width: 44px; height: 44px; opacity: .5; }
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+.grid-2 > * { min-width: 0; }
+
+// Lista de linhas (categorias, contas, lançamentos)
+.rows { display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--mat-sys-outline-variant); min-height: 44px; }
+.row:last-child { border-bottom: none; }
+.row .main { flex: 1; min-width: 0; }
+.row .title { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .sub { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .amount { font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.row.clickable { cursor: pointer; border-radius: 10px; }
+.row.clickable:hover { background: var(--mat-sys-surface-container); }
+
+// FAB no telemóvel fica acima da barra inferior
+.fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; }
+@media (max-width: 899px) { .fab { bottom: calc(76px + env(safe-area-inset-bottom)) !important; } }
+
+.mat-mdc-dialog-content { max-height: 75vh; }
+.mat-mdc-snack-bar-container { margin-bottom: 80px !important; }
