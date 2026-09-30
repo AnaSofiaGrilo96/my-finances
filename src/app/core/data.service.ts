@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Account, Budget, Category, Transaction } from './models';
+import { Account, Category, CategoryGroup, Settings, Transaction } from './models';
 
 type NewTransaction = Omit<Transaction, 'id'>;
 
@@ -14,7 +14,7 @@ export class DataService {
 
   readonly accounts = signal<Account[]>([]);
   readonly categories = signal<Category[]>([]);
-  readonly budgets = signal<Budget[]>([]);
+  readonly settings = signal<Settings>({ display_name: null, currency: 'EUR', locale: 'pt-PT' });
   readonly balances = signal<Record<string, number>>({});
   readonly loaded = signal(false);
 
@@ -24,6 +24,46 @@ export class DataService {
   readonly incomeCategories = computed(() => this.activeCategories().filter((c) => c.kind === 'income'));
   readonly accountMap = computed(() => new Map(this.accounts().map((a) => [a.id, a])));
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c])));
+
+  /** Categorias organizadas em grupos (mãe + filhas), por tipo. Inclui arquivadas. */
+  readonly categoryGroups = computed<CategoryGroup[]>(() => {
+    const all = [...this.categories()].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'pt'));
+    const roots = all.filter((c) => !c.parent_id || !this.categoryMap().has(c.parent_id));
+    return roots.map((parent) => ({ parent, children: all.filter((c) => c.parent_id === parent.id) }));
+  });
+  readonly activeCategoryGroups = computed(() =>
+    this.categoryGroups()
+      .map((g) => ({ parent: g.parent, children: g.children.filter((c) => !c.archived) }))
+      .filter((g) => !g.parent.archived || g.children.length),
+  );
+  expenseGroups = computed(() => this.activeCategoryGroups().filter((g) => g.parent.kind === 'expense'));
+  incomeGroups = computed(() => this.activeCategoryGroups().filter((g) => g.parent.kind === 'income'));
+
+  /** Categoria de topo de uma categoria (ela própria se não for sub-categoria). */
+  rootOf(id: string | null | undefined): Category | undefined {
+    if (!id) return undefined;
+    const c = this.categoryMap().get(id);
+    if (!c) return undefined;
+    const p = c.parent_id ? this.categoryMap().get(c.parent_id) : undefined;
+    return p ?? c;
+  }
+
+  /** "Mãe > Filha" ou só o nome. */
+  categoryLabel(id: string | null | undefined): string {
+    const c = id ? this.categoryMap().get(id) : undefined;
+    if (!c) return '';
+    const p = c.parent_id ? this.categoryMap().get(c.parent_id) : undefined;
+    return p ? `${p.name} › ${c.name}` : c.name;
+  }
+
+  /** Ids de uma categoria e das suas filhas (para filtros). */
+  categoryFamily(id: string): Set<string> {
+    return new Set([id, ...this.categories().filter((c) => c.parent_id === id).map((c) => c.id)]);
+  }
+
+  displayName(): string {
+    return this.settings().display_name?.trim() ?? '';
+  }
   readonly totalBalance = computed(() =>
     this.activeAccounts().reduce((s, a) => s + (this.balances()[a.id] ?? a.initial_balance), 0),
   );
@@ -41,17 +81,17 @@ export class DataService {
   }
 
   async reloadAll(): Promise<void> {
-    const [acc, cat, bud] = await Promise.all([
+    const [acc, cat, set] = await Promise.all([
       this.sb.from('accounts').select('*').order('sort_order').order('name'),
       this.sb.from('categories').select('*').order('sort_order').order('name'),
-      this.sb.from('budgets').select('*'),
+      this.sb.from('settings').select('*').maybeSingle(),
     ]);
     if (acc.error) throw acc.error;
     if (cat.error) throw cat.error;
-    if (bud.error) throw bud.error;
+    if (set.error) throw set.error;
     this.accounts.set((acc.data ?? []).map(numAccount));
     this.categories.set(cat.data ?? []);
-    this.budgets.set((bud.data ?? []).map((b) => ({ ...b, amount: Number(b.amount) })));
+    if (set.data) this.settings.set(set.data as Settings);
     await this.refreshBalances();
     this.loaded.set(true);
   }
@@ -67,10 +107,15 @@ export class DataService {
   clear() {
     this.accounts.set([]);
     this.categories.set([]);
-    this.budgets.set([]);
     this.balances.set({});
     this.loaded.set(false);
     this.loading = undefined;
+  }
+
+  async saveSettings(patch: Partial<Settings>): Promise<void> {
+    const { data, error } = await this.sb.from('settings').upsert({ ...this.settings(), ...patch }, { onConflict: 'user_id' }).select().single();
+    if (error) throw error;
+    this.settings.set(data as Settings);
   }
 
   async seedDefaultCategories(): Promise<void> {
@@ -126,29 +171,8 @@ export class DataService {
   async deleteCategory(id: string): Promise<void> {
     const { error } = await this.sb.from('categories').delete().eq('id', id);
     if (error) throw error;
-    this.categories.update((l) => l.filter((x) => x.id !== id));
-    this.budgets.update((l) => l.filter((b) => b.category_id !== id));
-  }
-
-  // ---------- Limites ----------
-  async setBudget(categoryId: string, amount: number | null): Promise<void> {
-    if (amount === null || amount <= 0) {
-      const { error } = await this.sb.from('budgets').delete().eq('category_id', categoryId);
-      if (error) throw error;
-      this.budgets.update((l) => l.filter((b) => b.category_id !== categoryId));
-      return;
-    }
-    const { data, error } = await this.sb
-      .from('budgets')
-      .upsert({ category_id: categoryId, amount }, { onConflict: 'user_id,category_id' })
-      .select()
-      .single();
-    if (error) throw error;
-    const saved = { ...data, amount: Number(data.amount) } as Budget;
-    this.budgets.update((l) => {
-      const i = l.findIndex((b) => b.category_id === categoryId);
-      return i >= 0 ? l.map((b, j) => (j === i ? saved : b)) : [...l, saved];
-    });
+    // as filhas passam a categorias de topo (on delete set null na BD)
+    this.categories.update((l) => l.filter((x) => x.id !== id).map((x) => (x.parent_id === id ? { ...x, parent_id: null } : x)));
   }
 
   // ---------- Lançamentos ----------

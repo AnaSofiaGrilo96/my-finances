@@ -53,7 +53,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           <mat-label>Categoria</mat-label>
           <mat-select [ngModel]="categoryId()" (ngModelChange)="categoryId.set($event)">
             <mat-option [value]="null">Todas</mat-option>
-            @for (c of data.categories(); track c.id) { <mat-option [value]="c.id">{{ c.name }}</mat-option> }
+            @for (g of data.categoryGroups(); track g.parent.id) {
+              <mat-option [value]="g.parent.id">{{ g.parent.name }}</mat-option>
+              @for (c of g.children; track c.id) { <mat-option [value]="c.id"><span class="sub-opt">{{ c.name }}</span></mat-option> }
+            }
           </mat-select>
         </mat-form-field>
         <mat-form-field class="f search" subscriptSizing="dynamic">
@@ -123,6 +126,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .rows { padding: 4px 12px; }
     .rep { font-size: 14px; width: 14px; height: 14px; vertical-align: -2px; color: var(--mat-sys-on-surface-variant); }
     .tag { margin-left: 6px; color: var(--mat-sys-primary); }
+    .sub-opt { padding-left: 18px; }
     .paid { color: var(--mat-sys-outline); }
     .paid.is-paid { color: #1eb980; }
   `],
@@ -148,9 +152,10 @@ export class TransactionsPage {
 
   readonly filtered = computed(() => {
     const k = this.kind(), c = this.categoryId(), s = this.search().trim().toLowerCase();
+    const fam = c ? this.data.categoryFamily(c) : null;
     return this.all().filter((t) =>
       (!k || t.kind === k) &&
-      (!c || t.category_id === c) &&
+      (!fam || (t.category_id !== null && fam.has(t.category_id))) &&
       (!s || t.description.toLowerCase().includes(s) || t.tags.some((x) => x.toLowerCase().includes(s)) || (t.notes ?? '').toLowerCase().includes(s)),
     );
   });
@@ -223,7 +228,7 @@ export class TransactionsPage {
   nameOf(t: Transaction) { return t.kind === 'transfer' ? 'Transferência' : (this.cat(t)?.name ?? (t.kind === 'income' ? 'Receita' : 'Despesa')); }
   subOf(t: Transaction) {
     if (t.kind === 'transfer') return `${this.acc(t.account_id)?.name ?? '?'} → ${this.acc(t.to_account_id)?.name ?? '?'}`;
-    const parts = [this.cat(t)?.name, this.acc(t.account_id)?.name].filter(Boolean);
+    const parts = [this.data.categoryLabel(t.category_id), this.acc(t.account_id)?.name].filter(Boolean);
     return parts.join(' · ');
   }
   signedAmount(t: Transaction) {

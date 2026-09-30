@@ -11,7 +11,7 @@ import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
-import { DonutChart, DonutSlice, ProgressRing } from '../../shared/charts';
+import { DonutChart, DonutSlice } from '../../shared/charts';
 import { UiService } from '../../shared/ui.service';
 import { TransactionDialog } from '../transactions/transaction.dialog';
 
@@ -19,7 +19,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart, ProgressRing],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart],
   template: `
     <div class="page">
       <div class="card hero">
@@ -65,26 +65,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             }
           </div>
 
-          <div class="card">
-            <h2>Limites de gastos</h2>
-            @if (limits().length) {
-              <div class="rows">
-                @for (l of limits(); track l.category.id) {
-                  <div class="row">
-                    <app-progress-ring [value]="l.ratio" [size]="44" [stroke]="5" />
-                    <div class="main">
-                      <div class="title">{{ l.category.name }}</div>
-                      <div class="sub">Meta: {{ l.budget | money }} · Gasto: {{ l.spent | money }}</div>
-                    </div>
-                    <div class="amount" [class.expense]="l.ratio >= 1">{{ (l.ratio * 100).toFixed(0) }}%</div>
-                  </div>
-                }
-              </div>
-              <div class="link-row"><a matButton routerLink="/limites">Gerir limites</a></div>
-            } @else {
-              <p class="empty">Ainda não definiste limites. <a routerLink="/limites">Definir agora</a></p>
-            }
-          </div>
         </div>
 
         <div class="col">
@@ -172,7 +152,7 @@ export class DashboardPage {
 
   readonly byCategory = computed(() => {
     const m = new Map<string, number>();
-    for (const t of this.txs()) if (t.kind === 'expense') m.set(t.category_id ?? '', (m.get(t.category_id ?? '') ?? 0) + t.amount);
+    for (const t of this.txs()) if (t.kind === 'expense') { const id = this.data.rootOf(t.category_id)?.id ?? ''; m.set(id, (m.get(id) ?? 0) + t.amount); }
     return m;
   });
 
@@ -185,17 +165,6 @@ export class DashboardPage {
       .sort((a, b) => b.value - a.value),
   );
   readonly topCategories = computed(() => this.slices().slice(0, 5));
-
-  readonly limits = computed(() =>
-    this.data.budgets()
-      .map((b) => {
-        const category = this.data.categoryMap().get(b.category_id);
-        const spent = this.byCategory().get(b.category_id) ?? 0;
-        return category ? { category, budget: b.amount, spent, ratio: b.amount ? spent / b.amount : 0 } : null;
-      })
-      .filter((x): x is NonNullable<typeof x> => !!x)
-      .sort((a, b) => b.ratio - a.ratio),
-  );
 
   constructor() {
     effect(() => {
@@ -218,7 +187,10 @@ export class DashboardPage {
   }
 
   greeting() { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'; }
-  firstName() { return this.auth.displayName().split(' ')[0] || 'Olá'; }
+  firstName() {
+    const name = this.data.displayName() || this.auth.displayName();
+    return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || 'Olá';
+  }
   balance(id: string) { return this.data.balances()[id] ?? 0; }
   pct(v: number) { const t = this.totals().expense; return t ? (100 * v / t).toFixed(2).replace('.', ',') + '%' : ''; }
   fmtDay(iso: string) { return DAY_FMT.format(fromIso(iso)); }

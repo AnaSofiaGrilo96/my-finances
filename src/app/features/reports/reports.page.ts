@@ -75,7 +75,19 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
+                      @if (s.children.length) {
+                        <button matIconButton class="exp" (click)="toggle(s.id, $event)" [attr.aria-label]="expanded().has(s.id) ? 'Esconder' : 'Ver sub-categorias'"><mat-icon>{{ expanded().has(s.id) ? 'expand_less' : 'expand_more' }}</mat-icon></button>
+                      } @else { <span class="exp-gap"></span> }
                     </a>
+                    @if (expanded().has(s.id)) {
+                      @for (c of s.children; track c.id) {
+                        <a class="row clickable child" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                          <div class="main"><div class="title">{{ c.label }}</div></div>
+                          <div class="amount">{{ c.value | money:'plain' }}</div>
+                          <span class="pct">{{ pct(c.value, s.value) }}</span>
+                        </a>
+                      }
+                    }
                   } @empty { <p class="empty">Sem despesas no período.</p> }
                   @if (expenseSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().expense | money:'plain' }}</div></div> }
                 </div>
@@ -91,7 +103,19 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
+                      @if (s.children.length) {
+                        <button matIconButton class="exp" (click)="toggle(s.id, $event)" [attr.aria-label]="expanded().has(s.id) ? 'Esconder' : 'Ver sub-categorias'"><mat-icon>{{ expanded().has(s.id) ? 'expand_less' : 'expand_more' }}</mat-icon></button>
+                      } @else { <span class="exp-gap"></span> }
                     </a>
+                    @if (expanded().has(s.id)) {
+                      @for (c of s.children; track c.id) {
+                        <a class="row clickable child" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                          <div class="main"><div class="title">{{ c.label }}</div></div>
+                          <div class="amount">{{ c.value | money:'plain' }}</div>
+                          <span class="pct">{{ pct(c.value, s.value) }}</span>
+                        </a>
+                      }
+                    }
                   } @empty { <p class="empty">Sem receitas no período.</p> }
                   @if (incomeSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().income | money:'plain' }}</div></div> }
                 </div>
@@ -182,10 +206,15 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .f { width: 200px; }
     .yearnav { display: inline-flex; align-items: center; gap: 4px; } .yearnav b { font-size: 17px; font-weight: 500; min-width: 60px; text-align: center; }
     .tabbody { margin-top: 16px; }
-    .cat-layout { display: flex; gap: 16px; align-items: flex-start; }
-    .cat-layout .list { flex: 1; min-width: 0; }
-    @media (max-width: 600px) { .cat-layout { flex-direction: column-reverse; align-items: center; } .cat-layout .list { width: 100%; } }
+    .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
+    .cat-layout .list { width: 100%; min-width: 0; }
+    .cat-layout .donut { align-self: center; }
+    @media (min-width: 1100px) { .cat-layout { flex-direction: row; align-items: flex-start; } .cat-layout .list { flex: 1; } }
     a.row { text-decoration: none; color: inherit; }
+    .row.child { padding-left: 46px; min-height: 34px; background: var(--mat-sys-surface-container-low); }
+    .row.child .title { font-size: 14px; }
+    .row.child .pct { font-size: 12px; color: var(--mat-sys-on-surface-variant); min-width: 52px; text-align: right; }
+    .exp-gap { width: 40px; }
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }
     .small { font-size: 13px; }
     .table-wrap { overflow-x: auto; margin-top: 12px; }
@@ -232,14 +261,32 @@ export class ReportsPage {
     return { income, expense };
   });
 
+  /** Totais por categoria principal; cada fatia traz o detalhe das sub-categorias. */
   private slicesFor(kind: 'expense' | 'income') {
     const acc = this.accountId();
-    const m = new Map<string, number>();
-    for (const t of this.txs()) if (t.kind === kind && (!acc || t.account_id === acc)) m.set(t.category_id ?? '', (m.get(t.category_id ?? '') ?? 0) + t.amount);
-    return [...m.entries()].map(([id, value]) => {
+    const m = new Map<string, { value: number; children: Map<string, number> }>();
+    for (const t of this.txs()) {
+      if (t.kind !== kind || (acc && t.account_id !== acc)) continue;
+      const root = this.data.rootOf(t.category_id);
+      const rid = root?.id ?? '';
+      const e = m.get(rid) ?? m.set(rid, { value: 0, children: new Map() }).get(rid)!;
+      e.value += t.amount;
+      const leaf = t.category_id && t.category_id !== rid ? t.category_id : '';
+      e.children.set(leaf, (e.children.get(leaf) ?? 0) + t.amount);
+    }
+    return [...m.entries()].map(([id, e]) => {
       const c = this.data.categoryMap().get(id);
-      return { id: id || 'none', label: c?.name ?? 'Sem categoria', value, color: c?.color ?? '#90a4ae', icon: c?.icon ?? 'label' } as DonutSlice & { icon: string };
+      const children = [...e.children.entries()]
+        .map(([cid, value]) => ({ id: cid, label: cid ? (this.data.categoryMap().get(cid)?.name ?? '?') : (e.children.size > 1 ? 'Sem sub-categoria' : ''), value }))
+        .filter((x) => x.label)
+        .sort((a, b) => b.value - a.value);
+      return { id: id || 'none', label: c?.name ?? 'Sem categoria', value: e.value, color: c?.color ?? '#90a4ae', icon: c?.icon ?? 'label', children: children.length > 1 || (children.length === 1 && children[0].id) ? children : [] };
     }).sort((a, b) => b.value - a.value);
+  }
+  readonly expanded = signal<Set<string>>(new Set());
+  toggle(id: string, ev: Event) {
+    ev.preventDefault(); ev.stopPropagation();
+    this.expanded.update((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
   readonly expenseSlices = computed(() => this.slicesFor('expense'));
   readonly incomeSlices = computed(() => this.slicesFor('income'));

@@ -19,8 +19,21 @@ export interface Category {
   kind: CategoryKind;
   color: string;
   icon: string;
+  parent_id: string | null; // sub-categoria de…
   archived: boolean;
   sort_order: number;
+}
+
+/** Categoria-mãe com as suas sub-categorias (para listas e selects agrupados). */
+export interface CategoryGroup {
+  parent: Category;
+  children: Category[];
+}
+
+export interface Settings {
+  display_name: string | null;
+  currency: string;
+  locale: string;
 }
 
 export interface Transaction {
@@ -36,12 +49,6 @@ export interface Transaction {
   notes: string | null;
   tags: string[];
   recurrence_id: string | null;
-}
-
-export interface Budget {
-  id: string;
-  category_id: string;
-  amount: number;
 }
 
 export const ACCOUNT_TYPES: { id: AccountType; label: string; icon: string }[] = [
