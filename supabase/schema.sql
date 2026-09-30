@@ -28,6 +28,7 @@ create table if not exists public.categories (
   kind       text not null check (kind in ('expense','income')),
   color      text not null default '#7986cb',
   icon       text not null default 'label',
+  parent_id  uuid references public.categories(id) on delete set null,  -- sub-categoria de…
   archived   boolean not null default false,
   sort_order int not null default 0,
   created_at timestamptz not null default now()
@@ -60,34 +61,24 @@ create index if not exists transactions_user_date_idx on public.transactions (us
 create index if not exists transactions_account_idx   on public.transactions (account_id);
 create index if not exists transactions_category_idx  on public.transactions (category_id);
 
--- ---------- Limites de gastos (orçamento mensal por categoria) ----------
-create table if not exists public.budgets (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  category_id uuid not null references public.categories(id) on delete cascade,
-  amount      numeric(14,2) not null check (amount >= 0),
-  created_at  timestamptz not null default now(),
-  unique (user_id, category_id)
-);
-
 -- ---------- Definições do utilizador ----------
 create table if not exists public.settings (
-  user_id  uuid primary key default auth.uid() references auth.users(id) on delete cascade,
-  currency text not null default 'EUR',
-  locale   text not null default 'pt-PT'
+  user_id      uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  display_name text,
+  currency     text not null default 'EUR',
+  locale       text not null default 'pt-PT'
 );
 
 -- ---------- RLS ----------
 alter table public.accounts     enable row level security;
 alter table public.categories   enable row level security;
 alter table public.transactions enable row level security;
-alter table public.budgets      enable row level security;
 alter table public.settings     enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['accounts','categories','transactions','budgets','settings'] loop
+  foreach t in array array['accounts','categories','transactions','settings'] loop
     execute format('drop policy if exists "%1$s_owner" on public.%1$s', t);
     execute format(
       'create policy "%1$s_owner" on public.%1$s for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);

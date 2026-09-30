@@ -1,6 +1,6 @@
 # MyFinances
 
-Gestão de finanças pessoais — contas, categorias, lançamentos (despesas, receitas e transferências), limites de gastos e relatórios. Funciona no browser e como app no telemóvel (PWA).
+Gestão de finanças pessoais — contas, categorias e sub-categorias, lançamentos (despesas, receitas e transferências) e relatórios. Funciona no browser e como app no telemóvel (PWA).
 
 Stack: **Angular 21 + Angular Material**, **Supabase** (Postgres + Auth com Google), **GitHub Pages**.
 
@@ -19,6 +19,8 @@ Abre http://localhost:4200. (Antes disso precisas de configurar o Supabase — v
 
 1. Em https://supabase.com cria um projeto novo (ex.: `myfinances`).
 2. **SQL Editor → New query**: cola o conteúdo de `supabase/schema.sql` e executa. Cria as tabelas, as políticas de segurança (cada utilizador só vê os seus dados), a vista de saldos e as funções auxiliares.
+   - Se já tinhas corrido uma versão anterior do `schema.sql`, corre também `supabase/migrations/001_subcategorias_perfil.sql`.
+   - Para importar o histórico do Organizze: `supabase/migrations/002_importacao_organizze.sql` (ver secção "Importação" abaixo).
 3. **Project Settings → API**: copia o `Project URL` e a `anon public` key para
    `src/environments/environment.ts` **e** `src/environments/environment.prod.ts`.
    (A chave `anon` é pública por desenho — a segurança está nas políticas RLS da base de dados.)
@@ -62,8 +64,7 @@ src/app/shared/                gráficos SVG (donut, entradas x saídas, anel), 
 src/app/layout/shell.ts        layout: menu lateral (desktop) / barra inferior + FAB (mobile)
 src/app/features/dashboard     visão geral
 src/app/features/transactions  lançamentos (lista mensal, filtros, diálogo de criação/edição)
-src/app/features/reports       relatórios: categorias, entradas x saídas, contas, tags (+ exportar CSV)
-src/app/features/budgets       limites de gastos mensais por categoria
+src/app/features/reports       relatórios: categorias (com detalhe por sub-categoria), entradas x saídas, contas, tags (+ exportar CSV)
 src/app/features/accounts      contas
 src/app/features/categories    categorias
 ```
@@ -74,8 +75,19 @@ src/app/features/categories    categorias
 - **Pago / por pagar**: lançamentos futuros ou por confirmar podem ficar "por pagar"; os saldos das contas só consideram os pagos. Nos relatórios podes escolher se os não pagos entram.
 - **Repetir mensalmente** cria N lançamentos (um por mês) ligados por `recurrence_id`; ao editar um, dá para apagar "este e seguintes".
 - **Saldo inicial** de cada conta é o saldo antes do primeiro lançamento registado.
+- **Sub-categorias**: uma categoria pode pertencer a uma categoria principal (ex.: Transporte › Portagens). Os relatórios e a visão geral agrupam pela principal, com detalhe por sub-categoria; ao filtrar lançamentos por uma principal incluem-se as filhas.
+- **O meu nome** (menu do utilizador): nome usado na saudação; útil quando o login é por email.
+
+## Importação do Organizze
+
+`supabase/migrations/002_importacao_organizze.sql` foi gerado a partir do export `movimentacoes_*.xls` (uma folha por conta) e:
+
+- cria as 6 contas com os nomes das folhas e as categorias/sub-categorias com a mesma hierarquia do Organizze;
+- junta cada par de linhas "Transferências" (saída numa conta + entrada noutra, mesma data e valor, com tolerância de 3 dias) numa única transferência;
+- mantém o estado pago / não pago e as "Informações adicionais" como notas.
+
+**Apaga primeiro todos os dados existentes do utilizador** — é para correr uma vez, num projeto acabado de criar. Os saldos resultantes foram verificados contra os do Organizze conta a conta.
 
 ## Próximos passos previstos
 
-- Importação dos dados do Organizze (CSV exportado) — o esquema já está preparado para isso.
-- Sub-categorias, anexos, pesquisa global.
+- Anexos, pesquisa global, gráficos de evolução anual.

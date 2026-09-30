@@ -17,6 +17,7 @@ import { ThemeService } from '../core/theme.service';
 import { DataService } from '../core/data.service';
 import { UiService } from '../shared/ui.service';
 import { TransactionDialog } from '../features/transactions/transaction.dialog';
+import { ProfileDialog } from '../features/auth/profile.dialog';
 
 @Component({
   selector: 'app-shell',
@@ -58,11 +59,10 @@ import { TransactionDialog } from '../features/transactions/transaction.dialog';
           </button>
           <mat-menu #userMenu="matMenu">
             <div class="user-info">
-              <div class="name">{{ auth.displayName() }}</div>
+              <div class="name">{{ data.displayName() || auth.displayName() }}</div>
               <div class="muted">{{ auth.user()?.email }}</div>
             </div>
-            <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
-            <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
+            <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
             <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
           </mat-menu>
         </mat-toolbar>
@@ -124,8 +124,8 @@ export class Shell {
     { path: '/', icon: 'dashboard', label: 'Visão geral', short: 'Início' },
     { path: '/lancamentos', icon: 'receipt_long', label: 'Lançamentos', short: 'Lançam.' },
     { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
-    { path: '/limites', icon: 'speed', label: 'Limites de gastos', short: 'Limites' },
     { path: '/contas', icon: 'account_balance', label: 'Contas', short: 'Contas' },
+    { path: '/categorias', icon: 'category', label: 'Categorias', short: 'Categorias' },
   ];
 
   constructor() {
@@ -134,6 +134,10 @@ export class Shell {
 
   newTransaction() {
     this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', autoFocus: 'first-tabbable' });
+  }
+
+  editProfile() {
+    this.dialog.open(ProfileDialog, { width: '400px', maxWidth: '96vw' });
   }
 
   async logout() {

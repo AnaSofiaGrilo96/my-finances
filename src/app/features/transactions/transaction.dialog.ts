@@ -77,10 +77,15 @@ export interface TransactionDialogData {
         } @else {
           <mat-form-field>
             <mat-label>Categoria</mat-label>
-            <mat-select [(ngModel)]="categoryId" name="category">
+            <mat-select [(ngModel)]="categoryId" name="category" panelClass="cat-panel">
               <mat-option [value]="null"><em>Sem categoria</em></mat-option>
-              @for (c of categories(); track c.id) {
-                <mat-option [value]="c.id"><span class="opt"><app-icon-badge [icon]="c.icon" [color]="c.color" [size]="22" />{{ c.name }}</span></mat-option>
+              @for (g of groups(); track g.parent.id) {
+                @if (!g.parent.archived) {
+                  <mat-option [value]="g.parent.id"><span class="opt"><app-icon-badge [icon]="g.parent.icon" [color]="g.parent.color" [size]="22" />{{ g.parent.name }}</span></mat-option>
+                }
+                @for (c of g.children; track c.id) {
+                  <mat-option [value]="c.id" class="sub"><span class="opt sub"><app-icon-badge [icon]="c.icon" [color]="c.color" [size]="18" />{{ c.name }}</span></mat-option>
+                }
               }
             </mat-select>
           </mat-form-field>
@@ -133,6 +138,7 @@ export interface TransactionDialogData {
     .amount.expense input { color: #e5484d; } .amount.income input { color: #1eb980; }
     .toggles { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin: 4px 0 16px; }
     .opt { display: inline-flex; align-items: center; gap: 8px; }
+    .opt.sub { padding-left: 22px; font-size: 14px; }
     .small { max-width: 260px; }
     mat-dialog-actions { padding: 8px 24px 16px; }
   `],
@@ -160,7 +166,7 @@ export class TransactionDialog {
   repeat = false;
   repeatTimes = 12;
 
-  readonly categories = computed(() => (this.kind() === 'income' ? this.data.incomeCategories() : this.data.expenseCategories()));
+  readonly groups = computed(() => (this.kind() === 'income' ? this.data.incomeGroups() : this.data.expenseGroups()));
 
   setKind(k: TransactionKind) {
     this.kind.set(k);
