@@ -74,3 +74,11 @@ export function addMonthsIso(iso: string, n: number): string {
   d.setDate(Math.min(day, last));
   return toIso(d);
 }
+
+/** Mesmo mês de `iso`, com o dia `day` (limitado ao último dia do mês). */
+export function withDay(iso: string, day: number): string {
+  const d = fromIso(iso);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, last));
+  return toIso(d);
+}

@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Account, Category, CategoryGroup, Settings, Transaction } from './models';
+import { Account, Category, CategoryGroup, Recurrence, Settings, Transaction } from './models';
+import { addMonthsIso, todayIso, withDay } from './dates';
 
 type NewTransaction = Omit<Transaction, 'id'>;
 
@@ -14,6 +15,7 @@ export class DataService {
 
   readonly accounts = signal<Account[]>([]);
   readonly categories = signal<Category[]>([]);
+  readonly recurrences = signal<Recurrence[]>([]);
   readonly settings = signal<Settings>({ display_name: null, currency: 'EUR', locale: 'pt-PT' });
   readonly balances = signal<Record<string, number>>({});
   readonly loaded = signal(false);
@@ -81,17 +83,21 @@ export class DataService {
   }
 
   async reloadAll(): Promise<void> {
-    const [acc, cat, set] = await Promise.all([
+    const [acc, cat, set, rec] = await Promise.all([
       this.sb.from('accounts').select('*').order('sort_order').order('name'),
       this.sb.from('categories').select('*').order('sort_order').order('name'),
       this.sb.from('settings').select('*').maybeSingle(),
+      this.sb.from('recurrences').select('*').order('description'),
     ]);
     if (acc.error) throw acc.error;
     if (cat.error) throw cat.error;
     if (set.error) throw set.error;
+    if (rec.error) throw rec.error;
     this.accounts.set((acc.data ?? []).map(numAccount));
     this.categories.set(cat.data ?? []);
     if (set.data) this.settings.set(set.data as Settings);
+    this.recurrences.set((rec.data ?? []).map(numRec));
+    await this.generateRecurrences(addMonthsIso(todayIso(), 12));
     await this.refreshBalances();
     this.loaded.set(true);
   }
@@ -107,6 +113,7 @@ export class DataService {
   clear() {
     this.accounts.set([]);
     this.categories.set([]);
+    this.recurrences.set([]);
     this.balances.set({});
     this.loaded.set(false);
     this.loading = undefined;
@@ -173,6 +180,121 @@ export class DataService {
     if (error) throw error;
     // as filhas passam a categorias de topo (on delete set null na BD)
     this.categories.update((l) => l.filter((x) => x.id !== id).map((x) => (x.parent_id === id ? { ...x, parent_id: null } : x)));
+  }
+
+  // ---------- Recorrências ----------
+  private generatedUntil = '';
+
+  /** Garante que todas as recorrências ativas têm ocorrências criadas até `until` (YYYY-MM-DD). */
+  async generateRecurrences(until: string): Promise<void> {
+    if (until <= this.generatedUntil) return;
+    this.generatedUntil = until;
+    let inserted = 0;
+    for (const r of this.recurrences()) {
+      if (!r.active) continue;
+      const rows: Omit<Transaction, 'id'>[] = [];
+      let n = r.generated;
+      for (;;) {
+        const date = addMonthsIso(r.start_date, n);
+        if (date > until || (r.end_date && date > r.end_date)) break;
+        rows.push({ date, kind: r.kind, amount: r.amount, description: r.description, account_id: r.account_id, to_account_id: r.to_account_id,
+          category_id: r.category_id, paid: false, notes: r.notes, tags: r.tags, recurrence_id: r.id });
+        n++;
+      }
+      if (!rows.length) continue;
+      const { error } = await this.sb.from('transactions').insert(rows);
+      if (error) throw error;
+      const { error: e2 } = await this.sb.from('recurrences').update({ generated: n }).eq('id', r.id);
+      if (e2) throw e2;
+      this.recurrences.update((l) => l.map((x) => (x.id === r.id ? { ...x, generated: n } : x)));
+      inserted += rows.length;
+    }
+    if (inserted) this.version.update((v) => v + 1);
+  }
+
+  /** Cria uma recorrência e a sua 1.ª ocorrência (com o estado pago indicado). As seguintes são geradas a seguir. */
+  async createRecurrence(rule: Omit<Recurrence, 'id' | 'generated' | 'active'>, firstPaid: boolean): Promise<Recurrence> {
+    const { data, error } = await this.sb.from('recurrences').insert({ ...rule, generated: 0, active: true }).select().single();
+    if (error) throw error;
+    const rec = numRec(data);
+    const first: Omit<Transaction, 'id'> = { date: rec.start_date, kind: rec.kind, amount: rec.amount, description: rec.description, account_id: rec.account_id,
+      to_account_id: rec.to_account_id, category_id: rec.category_id, paid: firstPaid, notes: rec.notes, tags: rec.tags, recurrence_id: rec.id };
+    const ins = await this.sb.from('transactions').insert(first);
+    if (ins.error) throw ins.error;
+    const upd = await this.sb.from('recurrences').update({ generated: 1 }).eq('id', rec.id).select().single();
+    if (upd.error) throw upd.error;
+    this.recurrences.update((l) => [...l, numRec(upd.data)]);
+    this.generatedUntil = '';
+    await this.generateRecurrences(addMonthsIso(todayIso(), 12));
+    await this.afterTxChange();
+    return numRec(upd.data);
+  }
+
+  /** Atualiza a regra e todas as ocorrências NÃO pagas a partir de `fromDate` (inclusive). */
+  async updateRecurrence(id: string, patch: Partial<Recurrence>, fromDate: string): Promise<void> {
+    const { data, error } = await this.sb.from('recurrences').update(patch).eq('id', id).select().single();
+    if (error) throw error;
+    const rec = numRec(data);
+    this.recurrences.update((l) => l.map((x) => (x.id === id ? rec : x)));
+    const txPatch = { kind: rec.kind, amount: rec.amount, description: rec.description, account_id: rec.account_id, to_account_id: rec.to_account_id,
+      category_id: rec.category_id, notes: rec.notes, tags: rec.tags };
+    const { error: e2 } = await this.sb.from('transactions').update(txPatch).eq('recurrence_id', id).eq('paid', false).gte('date', fromDate);
+    if (e2) throw e2;
+    await this.afterTxChange();
+  }
+
+  /** Termina a recorrência a partir de uma data: apaga as ocorrências não pagas desde aí e fecha a regra. */
+  async endRecurrence(id: string, fromDate: string): Promise<void> {
+    const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', id).eq('paid', false).gte('date', fromDate);
+    if (error) throw error;
+    const { data, error: e2 } = await this.sb.from('recurrences').update({ active: false, end_date: fromDate }).eq('id', id).select().single();
+    if (e2) throw e2;
+    this.recurrences.update((l) => l.map((x) => (x.id === id ? numRec(data) : x)));
+    await this.afterTxChange();
+  }
+
+  /** Apaga a regra e todas as ocorrências não pagas (as pagas ficam no histórico). */
+  async deleteRecurrence(id: string): Promise<void> {
+    const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', id).eq('paid', false);
+    if (error) throw error;
+    const { error: e2 } = await this.sb.from('recurrences').delete().eq('id', id);
+    if (e2) throw e2;
+    this.recurrences.update((l) => l.filter((x) => x.id !== id));
+    await this.afterTxChange();
+  }
+
+  /** Pausar apaga as ocorrências futuras não pagas; retomar recomeça a partir do próximo mês (mesmo dia). */
+  async setRecurrenceActive(id: string, active: boolean): Promise<void> {
+    const rec = this.recurrences().find((x) => x.id === id);
+    if (!rec) return;
+    let patch: Partial<Recurrence> = { active };
+    if (!active) {
+      const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', id).eq('paid', false).gt('date', todayIso());
+      if (error) throw error;
+    } else {
+      const next = addMonthsIso(withDay(todayIso(), Number(rec.start_date.slice(8))), 1);
+      patch = { active, start_date: next, generated: 0, end_date: null };
+    }
+    const { data, error } = await this.sb.from('recurrences').update(patch).eq('id', id).select().single();
+    if (error) throw error;
+    this.recurrences.update((l) => l.map((x) => (x.id === id ? numRec(data) : x)));
+    this.generatedUntil = '';
+    await this.generateRecurrences(addMonthsIso(todayIso(), 12));
+    await this.afterTxChange();
+  }
+
+  /** Séries antigas (sem regra em `recurrences`): apaga as ocorrências não pagas a partir de uma data. */
+  async deleteOccurrencesFrom(recurrenceId: string, fromDate: string): Promise<void> {
+    const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', recurrenceId).eq('paid', false).gte('date', fromDate);
+    if (error) throw error;
+    await this.afterTxChange();
+  }
+
+  /** Lançamentos por pagar até `until` (inclui atrasados). */
+  async listDue(until: string): Promise<Transaction[]> {
+    const { data, error } = await this.sb.from('transactions').select('*').eq('paid', false).lte('date', until).order('date');
+    if (error) throw error;
+    return (data ?? []).map(numTx);
   }
 
   // ---------- Lançamentos ----------
@@ -251,11 +373,6 @@ export class DataService {
     await this.afterTxChange();
   }
 
-  async deleteRecurrence(recurrenceId: string, fromDate: string): Promise<void> {
-    const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', recurrenceId).gte('date', fromDate);
-    if (error) throw error;
-    await this.afterTxChange();
-  }
 
   private async afterTxChange() {
     await this.refreshBalances();
@@ -265,6 +382,10 @@ export class DataService {
 
 function numAccount(a: Account): Account {
   return { ...a, initial_balance: Number(a.initial_balance) };
+}
+
+function numRec(r: Recurrence): Recurrence {
+  return { ...r, amount: Number(r.amount), tags: r.tags ?? [] };
 }
 
 function numTx(t: Transaction): Transaction {

@@ -51,6 +51,23 @@ export interface Transaction {
   recurrence_id: string | null;
 }
 
+/** Regra de recorrência mensal. As ocorrências são lançamentos com recurrence_id = id. */
+export interface Recurrence {
+  id: string;
+  kind: TransactionKind;
+  amount: number;
+  description: string;
+  account_id: string;
+  to_account_id: string | null;
+  category_id: string | null;
+  tags: string[];
+  notes: string | null;
+  start_date: string;
+  end_date: string | null;
+  generated: number;
+  active: boolean;
+}
+
 export const ACCOUNT_TYPES: { id: AccountType; label: string; icon: string }[] = [
   { id: 'checking', label: 'Conta à ordem', icon: 'account_balance_wallet' },
   { id: 'savings', label: 'Poupança', icon: 'savings' },

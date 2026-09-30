@@ -142,7 +142,7 @@ export class TransactionsPage {
   readonly accountId = signal<string | null>(this.route.snapshot.queryParamMap.get('conta'));
   readonly kind = signal<TransactionKind | null>((this.route.snapshot.queryParamMap.get('tipo') as TransactionKind) || null);
   readonly categoryId = signal<string | null>(this.route.snapshot.queryParamMap.get('categoria'));
-  readonly search = signal('');
+  readonly search = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   readonly loading = signal(false);
 
   private readonly all = signal<Transaction[]>([]);
@@ -199,6 +199,7 @@ export class TransactionsPage {
     this.loading.set(true);
     try {
       const { start, end } = monthRange(month);
+      await this.data.generateRecurrences(end);
       const [list, opening] = await Promise.all([
         this.data.listTransactions(start, end, acc),
         this.data.openingBalance(start, acc, true),

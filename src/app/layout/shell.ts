@@ -28,7 +28,7 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
         <mat-sidenav mode="side" opened class="sidenav">
           <div class="brand"><mat-icon>account_balance_wallet</mat-icon><span>MyFinances</span></div>
           <mat-nav-list>
-            @for (item of navItems; track item.path) {
+            @for (item of sideItems; track item.path) {
               <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
                 <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
                 <span matListItemTitle>{{ item.label }}</span>
@@ -62,6 +62,7 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
               <div class="name">{{ data.displayName() || auth.displayName() }}</div>
               <div class="muted">{{ auth.user()?.email }}</div>
             </div>
+            <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
             <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
             <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
           </mat-menu>
@@ -127,6 +128,8 @@ export class Shell {
     { path: '/contas', icon: 'account_balance', label: 'Contas', short: 'Contas' },
     { path: '/categorias', icon: 'category', label: 'Categorias', short: 'Categorias' },
   ];
+
+  readonly sideItems = [...this.navItems.slice(0, 3), { path: '/recorrencias', icon: 'repeat', label: 'Recorrências', short: 'Recorr.' }, ...this.navItems.slice(3)];
 
   constructor() {
     this.data.ensureLoaded().catch((e) => { this.loadError.set(true); this.ui.error(e); });

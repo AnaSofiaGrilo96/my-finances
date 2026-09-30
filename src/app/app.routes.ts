@@ -16,6 +16,7 @@ export const routes: Routes = [
       { path: 'lancamentos', loadComponent: () => import('./features/transactions/transactions.page').then((m) => m.TransactionsPage) },
       { path: 'relatorios', loadComponent: () => import('./features/reports/reports.page').then((m) => m.ReportsPage) },
       { path: 'contas', loadComponent: () => import('./features/accounts/accounts.page').then((m) => m.AccountsPage) },
+      { path: 'recorrencias', loadComponent: () => import('./features/recurrences/recurrences.page').then((m) => m.RecurrencesPage) },
       { path: 'categorias', loadComponent: () => import('./features/categories/categories.page').then((m) => m.CategoriesPage) },
     ],
   },

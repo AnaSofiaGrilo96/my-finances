@@ -8,7 +8,7 @@ import { DataService } from '../../core/data.service';
 import { AuthService } from '../../core/auth.service';
 import { Transaction } from '../../core/models';
 import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
-import { MoneyPipe } from '../../shared/money.pipe';
+import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
 import { DonutChart, DonutSlice } from '../../shared/charts';
@@ -22,6 +22,33 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
   imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart],
   template: `
     <div class="page">
+      @if (due().length) {
+        <div class="card due" [class.open]="dueOpen()">
+          <button type="button" class="due-head" (click)="dueOpen.set(!dueOpen())">
+            <span class="due-icon"><mat-icon>notifications_active</mat-icon></span>
+            <span class="due-text">
+              <b>{{ dueTitle() }}</b>
+              <span class="muted">{{ dueSubtitle() }}</span>
+            </span>
+            <mat-icon>{{ dueOpen() ? 'expand_less' : 'chevron_right' }}</mat-icon>
+          </button>
+          @if (dueOpen()) {
+            <div class="rows">
+              @for (t of due(); track t.id) {
+                <div class="row clickable" (click)="edit(t)">
+                  <app-icon-badge [icon]="t.kind === 'income' ? 'call_received' : 'call_made'" [color]="t.kind === 'income' ? '#1eb980' : '#e5484d'" [size]="34" />
+                  <div class="main">
+                    <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
+                    <div class="sub">{{ dueLabel(t.date) }} · {{ accName(t) }}</div>
+                  </div>
+                  <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
+                  <button matIconButton (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Marcar como recebido' : 'Marcar como pago'"><mat-icon>check_circle</mat-icon></button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
       <div class="card hero">
         <div>
           <div class="muted">{{ greeting() }},</div>
@@ -90,6 +117,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
           <div class="card">
             <h2>Próximos movimentos por pagar</h2>
+            <p class="muted small">Depois de amanhã, nos próximos 30 dias.</p>
             @if (pending().length) {
               <div class="rows">
                 @for (t of pending(); track t.id) {
@@ -113,6 +141,14 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     </div>
   `,
   styles: [`
+    .due { padding: 6px 8px; margin-bottom: 16px; border-left: 4px solid #f5b301; }
+    .due-head { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 8px; border-radius: 10px; }
+    .due-head:hover { background: var(--mat-sys-surface-container); }
+    .due-icon { width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, #f5b301 22%, transparent); color: #b17f00; display: grid; place-items: center; flex-shrink: 0; }
+    .due-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .due-text b { font-size: 15px; }
+    .due-text .muted { font-size: 13px; }
+    .due .rows { padding: 4px 8px 6px; }
     .hero { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
     .hero h1 { margin: 0 0 12px; font-size: 22px; font-weight: 500; }
     .kpis { display: flex; gap: 24px; flex-wrap: wrap; }
@@ -131,6 +167,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .total b { font-size: 26px; }
     .amount.acc { color: var(--mat-sys-primary); }
     .empty a { color: var(--mat-sys-primary); }
+    .small { font-size: 12.5px; margin: -6px 0 8px; }
   `],
 })
 export class DashboardPage {
@@ -143,6 +180,28 @@ export class DashboardPage {
   readonly today = todayIso();
   private readonly txs = signal<Transaction[]>([]);
   readonly pending = signal<Transaction[]>([]);
+  readonly due = signal<Transaction[]>([]);
+  readonly dueOpen = signal(false);
+  readonly tomorrow = addDays(this.today, 1);
+
+  readonly dueTitle = computed(() => {
+    const list = this.due();
+    const pay = list.filter((t) => t.kind !== 'income').length, recv = list.filter((t) => t.kind === 'income').length;
+    const parts = [];
+    if (pay) parts.push(`${pay} conta${pay > 1 ? 's' : ''} a pagar`);
+    if (recv) parts.push(`${recv} conta${recv > 1 ? 's' : ''} a receber`);
+    return `Tens ${parts.join(' e ')}`;
+  });
+  readonly dueSubtitle = computed(() => {
+    const list = this.due();
+    const pay = list.filter((t) => t.kind !== 'income').reduce((s, t) => s + t.amount, 0);
+    const recv = list.filter((t) => t.kind === 'income').reduce((s, t) => s + t.amount, 0);
+    const overdue = list.filter((t) => t.date < this.today).length;
+    const parts = [];
+    if (pay) parts.push(`a pagar ${formatMoney(pay)}`);
+    if (recv) parts.push(`a receber ${formatMoney(recv)}`);
+    return `Hoje e amanhã: ${parts.join(' · ')}${overdue ? ` · ${overdue} em atraso` : ''}`;
+  });
 
   readonly totals = computed(() => {
     let income = 0, expense = 0;
@@ -177,12 +236,15 @@ export class DashboardPage {
   private async load(month: string) {
     try {
       const { start, end } = monthRange(month);
+      await this.data.generateRecurrences(end);
       const [txs, pending] = await Promise.all([
         this.data.listTransactions(start, end),
         this.data.listPending('1900-01-01', addDays(this.today, 30)),
       ]);
       this.txs.set(txs);
-      this.pending.set(pending.filter((t) => t.kind !== 'transfer').slice(0, 8));
+      const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
+      this.due.set(nonTransfer.filter((t) => t.date <= this.tomorrow));
+      this.pending.set(nonTransfer.filter((t) => t.date > this.tomorrow).slice(0, 8));
     } catch (e) { this.ui.error(e); }
   }
 
@@ -194,6 +256,8 @@ export class DashboardPage {
   balance(id: string) { return this.data.balances()[id] ?? 0; }
   pct(v: number) { const t = this.totals().expense; return t ? (100 * v / t).toFixed(2).replace('.', ',') + '%' : ''; }
   fmtDay(iso: string) { return DAY_FMT.format(fromIso(iso)); }
+  dueLabel(iso: string) { return iso === this.today ? 'Hoje' : iso === this.tomorrow ? 'Amanhã' : `${this.fmtDay(iso)} · em atraso`; }
+  accName(t: Transaction) { return this.data.accountMap().get(t.account_id)?.name ?? ''; }
 
   add(kind: 'expense' | 'income' | 'transfer') { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { kind } }); }
   edit(t: Transaction) { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { transaction: t } }); }
