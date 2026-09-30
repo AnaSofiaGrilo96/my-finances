@@ -61,6 +61,28 @@ create index if not exists transactions_user_date_idx on public.transactions (us
 create index if not exists transactions_account_idx   on public.transactions (account_id);
 create index if not exists transactions_category_idx  on public.transactions (category_id);
 
+-- ---------- Recorrências mensais ----------
+-- Cada regra gera automaticamente os lançamentos futuros (como "não pagos") até 12 meses à frente.
+create table if not exists public.recurrences (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  kind          text not null check (kind in ('expense','income','transfer')),
+  amount        numeric(14,2) not null check (amount >= 0),
+  description   text not null default '',
+  account_id    uuid not null references public.accounts(id) on delete cascade,
+  to_account_id uuid references public.accounts(id) on delete cascade,
+  category_id   uuid references public.categories(id) on delete set null,
+  tags          text[] not null default '{}',
+  notes         text,
+  start_date    date not null,                 -- data da 1.ª ocorrência (define o dia do mês)
+  end_date      date,                          -- null = sem fim
+  generated     int  not null default 0,       -- n.º de ocorrências já criadas (a próxima é start_date + generated meses)
+  active        boolean not null default true,
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists transactions_recurrence_idx on public.transactions (recurrence_id, date);
+
 -- ---------- Definições do utilizador ----------
 create table if not exists public.settings (
   user_id      uuid primary key default auth.uid() references auth.users(id) on delete cascade,
@@ -73,12 +95,13 @@ create table if not exists public.settings (
 alter table public.accounts     enable row level security;
 alter table public.categories   enable row level security;
 alter table public.transactions enable row level security;
+alter table public.recurrences  enable row level security;
 alter table public.settings     enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['accounts','categories','transactions','settings'] loop
+  foreach t in array array['accounts','categories','transactions','recurrences','settings'] loop
     execute format('drop policy if exists "%1$s_owner" on public.%1$s', t);
     execute format(
       'create policy "%1$s_owner" on public.%1$s for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid())', t);

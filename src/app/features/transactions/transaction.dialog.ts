@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DataService } from '../../core/data.service';
 import { Transaction, TransactionKind } from '../../core/models';
-import { addMonthsIso, fromIso, todayIso, toIso } from '../../core/dates';
+import { addDays, addMonthsIso, fromIso, todayIso, toIso } from '../../core/dates';
 import { UiService } from '../../shared/ui.service';
 import { IconBadge } from '../../shared/icon-badge';
 
@@ -21,6 +21,7 @@ export interface TransactionDialogData {
   kind?: TransactionKind;
   date?: string;
   accountId?: string;
+  repeat?: 'none' | 'monthly' | 'times';
 }
 
 @Component({
@@ -93,17 +94,36 @@ export interface TransactionDialogData {
 
         <div class="toggles">
           <mat-slide-toggle [(ngModel)]="paid" name="paid">{{ kind() === 'income' ? 'Recebido' : 'Pago' }}</mat-slide-toggle>
-          @if (!isEdit) {
-            <mat-checkbox [(ngModel)]="repeat" name="repeat">Repetir mensalmente</mat-checkbox>
-          }
         </div>
 
-        @if (repeat && !isEdit) {
-          <mat-form-field class="small">
-            <mat-label>Número de meses</mat-label>
-            <input matInput type="number" min="2" max="120" [(ngModel)]="repeatTimes" name="repeatTimes" />
-            <mat-hint>Cria {{ repeatTimes }} lançamentos, um por mês, a partir da data escolhida.</mat-hint>
-          </mat-form-field>
+        @if (!isEdit) {
+          <div class="repeat-row">
+            <mat-form-field class="small" subscriptSizing="dynamic">
+              <mat-label>Repetir</mat-label>
+              <mat-select [(ngModel)]="repeat" name="repeat">
+                <mat-option value="none">Não repetir</mat-option>
+                <mat-option value="monthly">Todos os meses (fixo)</mat-option>
+                <mat-option value="times">Durante alguns meses</mat-option>
+              </mat-select>
+            </mat-form-field>
+            @if (repeat === 'times') {
+              <mat-form-field class="small" subscriptSizing="dynamic">
+                <mat-label>Número de meses</mat-label>
+                <input matInput type="number" min="2" max="120" [(ngModel)]="repeatTimes" name="repeatTimes" />
+              </mat-form-field>
+            }
+          </div>
+          @if (repeat !== 'none') {
+            <p class="hint">Os meses seguintes aparecem em Lançamentos como <b>não pagos</b>, no dia {{ dateValue.getDate() }} de cada mês, para ajudar a planear. Marcas cada um como pago quando acontecer.</p>
+          }
+        } @else if (tx?.recurrence_id && recurrence()) {
+          <div class="rec-box">
+            <mat-icon>repeat</mat-icon>
+            <div>
+              <div>Faz parte de uma recorrência mensal{{ recurrence()!.active ? '' : ' (terminada)' }}.</div>
+              <mat-checkbox [(ngModel)]="applyToFollowing" name="applyToFollowing">Aplicar as alterações também aos meses seguintes por pagar</mat-checkbox>
+            </div>
+          </div>
         }
 
         <mat-form-field>
@@ -121,7 +141,7 @@ export interface TransactionDialogData {
       @if (isEdit) {
         <button matIconButton color="warn" (click)="remove()" matTooltip="Apagar" aria-label="Apagar" [disabled]="busy()"><mat-icon>delete</mat-icon></button>
         @if (tx?.recurrence_id) {
-          <button matButton (click)="removeSeries()" [disabled]="busy()">Apagar este e seguintes</button>
+          <button matButton (click)="removeSeries()" [disabled]="busy()">Terminar a partir daqui</button>
         }
       }
       <span class="spacer"></span>
@@ -140,6 +160,10 @@ export interface TransactionDialogData {
     .opt { display: inline-flex; align-items: center; gap: 8px; }
     .opt.sub { padding-left: 22px; font-size: 14px; }
     .small { max-width: 260px; }
+    .repeat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .hint { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); margin: 0 0 14px; }
+    .rec-box { display: flex; gap: 10px; align-items: flex-start; background: var(--mat-sys-surface-container); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 13.5px; }
+    .rec-box mat-icon { color: var(--mat-sys-primary); margin-top: 2px; }
     mat-dialog-actions { padding: 8px 24px 16px; }
   `],
 })
@@ -163,8 +187,10 @@ export class TransactionDialog {
   paid = this.tx?.paid ?? true;
   notes = this.tx?.notes ?? '';
   tagsText = (this.tx?.tags ?? []).join(', ');
-  repeat = false;
+  repeat: 'none' | 'monthly' | 'times' = this.input.repeat ?? 'none';
   repeatTimes = 12;
+  applyToFollowing = false;
+  readonly recurrence = computed(() => this.data.recurrences().find((r) => r.id === this.tx?.recurrence_id) ?? null);
 
   readonly groups = computed(() => (this.kind() === 'income' ? this.data.incomeGroups() : this.data.expenseGroups()));
 
@@ -202,14 +228,20 @@ export class TransactionDialog {
       const date = toIso(this.dateValue);
       if (this.isEdit) {
         await this.data.saveTransaction({ id: this.tx!.id, ...this.payload(date) });
-      } else if (this.repeat && this.repeatTimes > 1) {
-        const rid = crypto.randomUUID();
-        const rows = Array.from({ length: Math.min(120, this.repeatTimes) }, (_, i) => ({
-          ...this.payload(addMonthsIso(date, i)),
-          paid: i === 0 ? this.paid : false,
-          recurrence_id: rid,
-        }));
-        await this.data.insertTransactions(rows);
+        if (this.applyToFollowing && this.tx!.recurrence_id && this.recurrence()) {
+          const p = this.payload(date);
+          await this.data.updateRecurrence(this.tx!.recurrence_id, {
+            kind: p.kind, amount: p.amount, description: p.description, account_id: p.account_id, to_account_id: p.to_account_id,
+            category_id: p.category_id, notes: p.notes, tags: p.tags,
+          }, addDays(date, 1));
+        }
+      } else if (this.repeat !== 'none') {
+        const p = this.payload(date);
+        const months = this.repeat === 'times' ? Math.max(2, Math.min(120, Number(this.repeatTimes) || 2)) : null;
+        await this.data.createRecurrence({
+          kind: p.kind, amount: p.amount, description: p.description, account_id: p.account_id, to_account_id: p.to_account_id,
+          category_id: p.category_id, tags: p.tags, notes: p.notes, start_date: date, end_date: months ? addMonthsIso(date, months - 1) : null,
+        }, this.paid);
       } else {
         await this.data.saveTransaction(this.payload(date));
       }
@@ -231,10 +263,12 @@ export class TransactionDialog {
   }
 
   async removeSeries() {
-    if (!(await this.ui.confirm('Apagar repetições', 'Apaga este lançamento e todos os seguintes da mesma série.', 'Apagar'))) return;
+    if (!(await this.ui.confirm('Terminar recorrência', 'Apaga este lançamento e os seguintes por pagar, e termina a recorrência. Os já pagos ficam no histórico.', 'Terminar'))) return;
     this.busy.set(true);
     try {
-      await this.data.deleteRecurrence(this.tx!.recurrence_id!, this.tx!.date);
+      if (!this.tx!.paid) await this.data.deleteTransaction(this.tx!.id);
+      if (this.recurrence()) await this.data.endRecurrence(this.tx!.recurrence_id!, this.tx!.date);
+      else await this.data.deleteOccurrencesFrom(this.tx!.recurrence_id!, this.tx!.date);
       this.ref.close(true);
     } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
