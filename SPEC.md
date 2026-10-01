@@ -83,7 +83,7 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 - `seed_default_categories()`: categorias sugeridas para um utilizador novo (não usada na conta da Ana, que tem as do Organizze).
 
 ### Migrações
-`supabase/migrations/` numeradas: `001_subcategorias_perfil.sql`, `003_recorrencias.sql`, `004_frequencias_parcelas.sql`. O `schema.sql` reflete sempre o estado final (para projetos novos). **Qualquer alteração ao esquema cria uma migração nova numerada e atualiza o `schema.sql`.** A pasta `importacao_organizze/` contém a importação única do histórico (ver §6) — não voltar a correr.
+`supabase/migrations/` numeradas: `001_subcategorias_perfil.sql`, `003_recorrencias.sql`, `004_frequencias_parcelas.sql`, `005_recorrencias_iniciais.sql` (dados: as 24 regras fixas da Ana a partir de out/2026; liga movimentos de outubro já existentes em vez de duplicar; idempotente). O `schema.sql` reflete sempre o estado final (para projetos novos). **Qualquer alteração ao esquema cria uma migração nova numerada e atualiza o `schema.sql`.** A pasta `importacao_organizze/` contém a importação única do histórico (ver §6) — não voltar a correr.
 
 ---
 
@@ -160,7 +160,7 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 ## 8. Roadmap / ideias discutidas (só fazer quando pedido)
 
 - Backup e restauro completos (ver §7).
-- Criar por SQL a lista de recorrências fixas que a Ana vai fornecer.
+- Importar os movimentos registados no Organizze depois de 30/09/2026 **sem duplicar** os que já existem na app (a Ana vai fornecer o export quando a app estiver estável).
 - Melhorias visuais (a Ana vai enviar prints).
 - Anexos a movimentos, pesquisa global fora do mês, gráficos de evolução anual.
 - Área "Importar" na app para CSV (hoje a importação foi feita uma vez por SQL).
@@ -168,6 +168,8 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 ---
 
 ## 9. Como trabalhar neste projeto
+
+- **Nunca duplicar movimentos**: qualquer importação ou criação em massa tem de procurar primeiro o que já existe (descrição sem acentos/maiúsculas, conta, tipo, data igual ou próxima) e ligar/ignorar em vez de inserir — ver `005_recorrencias_iniciais.sql` como modelo.
 
 - Alterações entregues na pasta local da Ana e commitadas com mensagens em português; ela faz o push.
 - `npm install` / `npm start` correm no Windows dela; o build de verificação pode ser feito noutro ambiente mas `src/environments/*` dela não devem ser sobrescritos (contêm as chaves do projeto real).
