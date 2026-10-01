@@ -51,7 +51,7 @@ import { UiService } from '../../shared/ui.service';
             <button type="button" class="ic" [class.sel]="i === icon" (click)="icon = i"><mat-icon>{{ i }}</mat-icon></button>
           }
         </div>
-        @if (category) { <mat-slide-toggle [(ngModel)]="archived" name="archived">Arquivada (não aparece ao criar lançamentos)</mat-slide-toggle> }
+        @if (category) { <mat-slide-toggle [(ngModel)]="archived" name="archived">Arquivada (não aparece ao criar movimentos)</mat-slide-toggle> }
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -145,7 +145,7 @@ export class CategoryDialog {
             <button matIconButton (click)="addSub(g.parent)" matTooltip="Nova sub-categoria"><mat-icon>subdirectory_arrow_right</mat-icon></button>
             <button matIconButton [matMenuTriggerFor]="m"><mat-icon>more_vert</mat-icon></button>
             <mat-menu #m="matMenu">
-              <button mat-menu-item [routerLink]="['/lancamentos']" [queryParams]="{ categoria: g.parent.id }"><mat-icon>receipt_long</mat-icon>Ver lançamentos</button>
+              <button mat-menu-item [routerLink]="['/movimentos']" [queryParams]="{ categoria: g.parent.id }"><mat-icon>receipt_long</mat-icon>Ver movimentos</button>
               <button mat-menu-item (click)="edit(g.parent)"><mat-icon>edit</mat-icon>Editar</button>
               <button mat-menu-item (click)="remove(g.parent)"><mat-icon>delete</mat-icon>Apagar</button>
             </mat-menu>
@@ -156,7 +156,7 @@ export class CategoryDialog {
               <div class="main"><div class="title">{{ c.name }} @if (c.archived) { <small>(arquivada)</small> }</div></div>
               <button matIconButton [matMenuTriggerFor]="mc"><mat-icon>more_vert</mat-icon></button>
               <mat-menu #mc="matMenu">
-                <button mat-menu-item [routerLink]="['/lancamentos']" [queryParams]="{ categoria: c.id }"><mat-icon>receipt_long</mat-icon>Ver lançamentos</button>
+                <button mat-menu-item [routerLink]="['/movimentos']" [queryParams]="{ categoria: c.id }"><mat-icon>receipt_long</mat-icon>Ver movimentos</button>
                 <button mat-menu-item (click)="edit(c)"><mat-icon>edit</mat-icon>Editar</button>
                 <button mat-menu-item (click)="remove(c)"><mat-icon>delete</mat-icon>Apagar</button>
               </mat-menu>
@@ -200,8 +200,8 @@ export class CategoriesPage {
   async remove(c: Category) {
     const hasKids = this.data.categories().some((x) => x.parent_id === c.id);
     const msg = hasKids
-      ? `As sub-categorias de "${c.name}" passam a categorias principais e os lançamentos diretos ficam sem categoria. Em alternativa, arquiva-a.`
-      : `Os lançamentos de "${c.name}" ficam sem categoria. Em alternativa, arquiva-a.`;
+      ? `As sub-categorias de "${c.name}" passam a categorias principais e os movimentos diretos ficam sem categoria. Em alternativa, arquiva-a.`
+      : `Os movimentos de "${c.name}" ficam sem categoria. Em alternativa, arquiva-a.`;
     if (!(await this.ui.confirm('Apagar categoria', msg, 'Apagar'))) return;
     try { await this.data.deleteCategory(c.id); this.data.version.update((v) => v + 1); } catch (e) { this.ui.error(e); }
   }

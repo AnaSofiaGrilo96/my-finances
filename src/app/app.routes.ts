@@ -13,7 +13,8 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),
     children: [
       { path: '', pathMatch: 'full', loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
-      { path: 'lancamentos', loadComponent: () => import('./features/transactions/transactions.page').then((m) => m.TransactionsPage) },
+      { path: 'movimentos', loadComponent: () => import('./features/transactions/transactions.page').then((m) => m.TransactionsPage) },
+      { path: 'lancamentos', redirectTo: 'movimentos' },
       { path: 'relatorios', loadComponent: () => import('./features/reports/reports.page').then((m) => m.ReportsPage) },
       { path: 'contas', loadComponent: () => import('./features/accounts/accounts.page').then((m) => m.AccountsPage) },
       { path: 'recorrencias', loadComponent: () => import('./features/recurrences/recurrences.page').then((m) => m.RecurrencesPage) },

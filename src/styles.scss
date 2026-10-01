@@ -29,7 +29,8 @@ body {
 .page-header h1 { font-size: 22px; font-weight: 500; margin: 0; flex: 1; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .spacer { flex: 1; }
-.card { min-width: 0; background: var(--mat-sys-surface); border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.card { min-width: 0; background: var(--mat-sys-surface-container-lowest); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; padding: 16px; }
+html.dark .card { background: var(--mat-sys-surface-container); border-color: color-mix(in srgb, var(--mat-sys-outline-variant) 40%, transparent); }
 .card h2 { font-size: 17px; font-weight: 500; margin: 0 0 12px; }
 .muted { color: var(--mat-sys-on-surface-variant); }
 .income { color: #1eb980; }
@@ -50,7 +51,7 @@ body {
 .row .sub { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .amount { font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .row.clickable { cursor: pointer; border-radius: 10px; }
-.row.clickable:hover { background: var(--mat-sys-surface-container); }
+.row.clickable:hover { background: var(--mat-sys-surface-container-high); }
 
 // FAB no telemóvel fica acima da barra inferior
 .fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; }

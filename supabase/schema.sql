@@ -50,6 +50,7 @@ create table if not exists public.transactions (
   notes         text,
   tags          text[] not null default '{}',
   recurrence_id uuid,                       -- agrupa lançamentos gerados por uma recorrência
+  installment_no int,                       -- n.º da parcela (recorrências parceladas)
   created_at    timestamptz not null default now(),
   constraint transfer_needs_destination check (
     (kind = 'transfer' and to_account_id is not null and to_account_id <> account_id)
@@ -74,9 +75,12 @@ create table if not exists public.recurrences (
   category_id   uuid references public.categories(id) on delete set null,
   tags          text[] not null default '{}',
   notes         text,
-  start_date    date not null,                 -- data da 1.ª ocorrência (define o dia do mês)
+  frequency     text not null default 'monthly' check (frequency in ('daily','weekly','biweekly','monthly','yearly')),
+  installments  int,                           -- parcelado: n.º de parcelas (null = fixo)
+  total_amount  numeric(14,2),                 -- parcelado: valor total (amount é o valor de cada parcela)
+  start_date    date not null,                 -- data da 1.ª ocorrência
   end_date      date,                          -- null = sem fim
-  generated     int  not null default 0,       -- n.º de ocorrências já criadas (a próxima é start_date + generated meses)
+  generated     int  not null default 0,       -- n.º de ocorrências já criadas
   active        boolean not null default true,
   created_at    timestamptz not null default now()
 );
