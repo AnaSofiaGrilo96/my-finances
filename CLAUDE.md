@@ -6,7 +6,7 @@ Resumo de 10 segundos: app de finanças pessoais de uma só pessoa (Ana), Angula
 
 Regras rápidas:
 - Sinal dos movimentos: usar sempre `signFor()` em `src/app/core/models.ts`.
-- Saldos das contas só contam lançamentos pagos; transferências são uma única linha (origem → destino).
+- Saldos das contas só contam movimentos pagos; transferências são uma única linha (origem → destino).
 - Alterações ao esquema: nova migração numerada em `supabase/migrations/` + atualizar `supabase/schema.sql`.
 - Nunca sobrescrever `src/environments/*` da Ana (têm as chaves do projeto real); nunca commitar a chave `service_role`.
 - Verificar com `ng build --configuration production` antes de entregar.

@@ -10,6 +10,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
+import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
 import { Account, Transaction, signFor } from '../../core/models';
 import { currentMonth, eachDay, fromIso, monthRange, shiftMonth, shortMonthLabel, toIso } from '../../core/dates';
@@ -27,7 +28,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
 @Component({
   selector: 'app-reports-page',
-  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatFormFieldModule, MatSelectModule, MatButtonToggleModule, MatCheckboxModule, MatProgressBarModule, MatTableModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
+  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatFormFieldModule, MatSelectModule, MatButtonToggleModule, MatCheckboxModule, MatProgressBarModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
     <div class="page">
       <div class="page-header">
@@ -45,20 +46,25 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           <mat-button-toggle value="year">Ano</mat-button-toggle>
           <mat-button-toggle value="12m">12 meses</mat-button-toggle>
         </mat-button-toggle-group>
+        <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
+          <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
+        </button>
       </div>
 
-      <div class="toolbar">
-        <mat-form-field class="f" subscriptSizing="dynamic">
-          <mat-label>Conta</mat-label>
-          <mat-select [ngModel]="accountId()" (ngModelChange)="accountId.set($event)">
-            <mat-option [value]="null">Todas as contas</mat-option>
-            @for (a of data.accounts(); track a.id) { <mat-option [value]="a.id">{{ a.name }}</mat-option> }
-          </mat-select>
-        </mat-form-field>
-        <mat-checkbox [ngModel]="includeUnpaid()" (ngModelChange)="includeUnpaid.set($event)">Considerar movimentos não pagos</mat-checkbox>
-        <span class="spacer"></span>
-        <button matButton (click)="exportCsv()"><mat-icon>download</mat-icon>Exportar CSV</button>
-      </div>
+      @if (filtersOpen()) {
+        <div class="card toolbar filters">
+          <mat-form-field class="f" subscriptSizing="dynamic">
+            <mat-label>Conta</mat-label>
+            <mat-select [ngModel]="accountId()" (ngModelChange)="accountId.set($event)">
+              <mat-option [value]="null">Todas as contas</mat-option>
+              @for (a of data.accounts(); track a.id) { <mat-option [value]="a.id">{{ a.name }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox [ngModel]="includeUnpaid()" (ngModelChange)="includeUnpaid.set($event)">Considerar movimentos não pagos</mat-checkbox>
+          <span class="spacer"></span>
+          <button matButton (click)="exportCsv()"><mat-icon>download</mat-icon>Exportar CSV</button>
+        </div>
+      }
 
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
@@ -71,7 +77,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of expenseSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
+                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
@@ -81,7 +87,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                     </a>
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
                           <div class="main"><div class="title">{{ c.label }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
                           <span class="pct">{{ pct(c.value, s.value) }}</span>
@@ -99,7 +105,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of incomeSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
+                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
@@ -109,7 +115,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                     </a>
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/lancamentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
                           <div class="main"><div class="title">{{ c.label }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
                           <span class="pct">{{ pct(c.value, s.value) }}</span>
@@ -182,28 +188,13 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           </div>
         </mat-tab>
 
-        <!-- ---------------- Tags ---------------- -->
-        <mat-tab label="Tags">
-          <div class="card tabbody">
-            @if (tagRows().length) {
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Tag</th><th>Lançamentos</th><th>Entradas</th><th>Saídas</th></tr></thead>
-                  <tbody>
-                    @for (r of tagRows(); track r.tag) {
-                      <tr><td class="lbl">#{{ r.tag }}</td><td>{{ r.count }}</td><td class="income">{{ r.income | money:'plain' }}</td><td class="expense">-{{ r.expense | money:'plain' }}</td></tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else { <p class="empty">Sem tags no período. Podes adicionar tags a qualquer lançamento (ex.: #férias).</p> }
-          </div>
-        </mat-tab>
       </mat-tab-group>
     </div>
   `,
   styles: [`
     .f { width: 200px; }
+    .filters { padding: 12px; margin-bottom: 4px; }
+    .page-header button.on { background: var(--mat-sys-secondary-container); }
     .yearnav { display: inline-flex; align-items: center; gap: 4px; } .yearnav b { font-size: 17px; font-weight: 500; min-width: 60px; text-align: center; }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
@@ -240,6 +231,8 @@ export class ReportsPage {
   readonly accountId = signal<string | null>(null);
   readonly includeUnpaid = signal(true);
   readonly loading = signal(false);
+  readonly filtersOpen = signal(false);
+  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1));
 
   private readonly raw = signal<Transaction[]>([]);
   readonly opening = signal(0);
@@ -326,18 +319,6 @@ export class ReportsPage {
     }),
   );
 
-  readonly tagRows = computed(() => {
-    const acc = this.accountId();
-    const m = new Map<string, { tag: string; count: number; income: number; expense: number }>();
-    for (const t of this.txs()) for (const tag of t.tags) {
-      const r = m.get(tag) ?? m.set(tag, { tag, count: 0, income: 0, expense: 0 }).get(tag)!;
-      r.count++;
-      const s = signFor(t, acc);
-      if (s > 0) r.income += t.amount; else if (s < 0) r.expense += t.amount;
-    }
-    return [...m.values()].sort((a, b) => b.expense + b.income - (a.expense + a.income));
-  });
-
   constructor() {
     effect(() => {
       const { start, end } = this.range();
@@ -369,12 +350,12 @@ export class ReportsPage {
   exportCsv() {
     const acc = this.data.accountMap(), cat = this.data.categoryMap();
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta', 'Conta destino', 'Valor', 'Pago', 'Tags', 'Notas'].join(';')];
+    const lines = [['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta', 'Conta destino', 'Valor', 'Pago', 'Notas'].join(';')];
     for (const t of this.txs()) {
       lines.push([
         t.date, t.kind === 'expense' ? 'Despesa' : t.kind === 'income' ? 'Receita' : 'Transferência', t.description,
         cat.get(t.category_id ?? '')?.name ?? '', acc.get(t.account_id)?.name ?? '', acc.get(t.to_account_id ?? '')?.name ?? '',
-        formatMoney(t.kind === 'expense' ? -t.amount : t.amount, false), t.paid ? 'Sim' : 'Não', t.tags.join(', '), t.notes ?? '',
+        formatMoney(t.kind === 'expense' ? -t.amount : t.amount, false), t.paid ? 'Sim' : 'Não', t.notes ?? '',
       ].map(esc).join(';'));
     }
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });

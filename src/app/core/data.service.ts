@@ -1,13 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Account, Category, CategoryGroup, Recurrence, Settings, Transaction } from './models';
-import { addMonthsIso, todayIso, withDay } from './dates';
+import { Account, Category, CategoryGroup, Recurrence, Settings, Transaction, splitInstallments } from './models';
+import { addMonthsIso, occurrenceDate, todayIso } from './dates';
 
 type NewTransaction = Omit<Transaction, 'id'>;
 
 /**
  * Store central da aplicação. Contas, categorias, limites e saldos ficam em memória
- * (sinais) e são carregados uma vez; os lançamentos são carregados por intervalo de datas.
+ * (sinais) e são carregados uma vez; os movimentos são carregados por intervalo de datas.
  */
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -70,7 +70,7 @@ export class DataService {
     this.activeAccounts().reduce((s, a) => s + (this.balances()[a.id] ?? a.initial_balance), 0),
   );
 
-  /** Incrementa sempre que os lançamentos mudam; as páginas usam-no para recarregar. */
+  /** Incrementa sempre que os movimentos mudam; as páginas usam-no para recarregar. */
   readonly version = signal(0);
 
   private loading?: Promise<void>;
@@ -162,6 +162,19 @@ export class DataService {
     });
   }
 
+  /** Acerta o saldo atual de uma conta criando um movimento "Ajuste de saldo" (categoria Outros) com a diferença. */
+  async adjustBalance(accountId: string, newBalance: number): Promise<number> {
+    const current = this.balances()[accountId] ?? this.accountMap().get(accountId)?.initial_balance ?? 0;
+    const diff = Math.round((newBalance - current) * 100) / 100;
+    if (diff === 0) return 0;
+    const kind = diff > 0 ? 'income' : 'expense';
+    const cat = this.categories().find((c) => c.kind === kind && c.name.toLowerCase() === 'outros' && !c.archived)
+      ?? this.categories().find((c) => c.kind === kind && c.name.toLowerCase().startsWith('outr') && !c.archived);
+    await this.saveTransaction({ date: todayIso(), kind, amount: Math.abs(diff), description: 'Ajuste de saldo', account_id: accountId, to_account_id: null,
+      category_id: cat?.id ?? null, paid: true, notes: null, tags: [], recurrence_id: null, installment_no: null });
+    return diff;
+  }
+
   // ---------- Categorias ----------
   async saveCategory(c: Partial<Category> & { name: string; kind: Category['kind'] }): Promise<Category> {
     const q = c.id
@@ -185,6 +198,12 @@ export class DataService {
   // ---------- Recorrências ----------
   private generatedUntil = '';
 
+  /** Horizonte de geração: 12 meses para mensal/anual, 3 meses para as frequências curtas. */
+  private horizonFor(r: Recurrence, until: string): string {
+    const short = addMonthsIso(todayIso(), 3);
+    return r.frequency === 'monthly' || r.frequency === 'yearly' ? until : (until < short ? until : short);
+  }
+
   /** Garante que todas as recorrências ativas têm ocorrências criadas até `until` (YYYY-MM-DD). */
   async generateRecurrences(until: string): Promise<void> {
     if (until <= this.generatedUntil) return;
@@ -193,12 +212,15 @@ export class DataService {
     for (const r of this.recurrences()) {
       if (!r.active) continue;
       const rows: Omit<Transaction, 'id'>[] = [];
+      const limit = this.horizonFor(r, until);
+      const parts = r.installments && r.total_amount != null ? splitInstallments(r.total_amount, r.installments) : null;
       let n = r.generated;
       for (;;) {
-        const date = addMonthsIso(r.start_date, n);
-        if (date > until || (r.end_date && date > r.end_date)) break;
-        rows.push({ date, kind: r.kind, amount: r.amount, description: r.description, account_id: r.account_id, to_account_id: r.to_account_id,
-          category_id: r.category_id, paid: false, notes: r.notes, tags: r.tags, recurrence_id: r.id });
+        if (r.installments && n >= r.installments) break;
+        const date = occurrenceDate(r.start_date, r.frequency, n);
+        if (date > limit || (r.end_date && date > r.end_date)) break;
+        rows.push({ date, kind: r.kind, amount: parts ? parts[n] : r.amount, description: r.description, account_id: r.account_id, to_account_id: r.to_account_id,
+          category_id: r.category_id, paid: false, notes: r.notes, tags: r.tags, recurrence_id: r.id, installment_no: r.installments ? n + 1 : null });
         n++;
       }
       if (!rows.length) continue;
@@ -217,8 +239,10 @@ export class DataService {
     const { data, error } = await this.sb.from('recurrences').insert({ ...rule, generated: 0, active: true }).select().single();
     if (error) throw error;
     const rec = numRec(data);
-    const first: Omit<Transaction, 'id'> = { date: rec.start_date, kind: rec.kind, amount: rec.amount, description: rec.description, account_id: rec.account_id,
-      to_account_id: rec.to_account_id, category_id: rec.category_id, paid: firstPaid, notes: rec.notes, tags: rec.tags, recurrence_id: rec.id };
+    const firstAmount = rec.installments && rec.total_amount != null ? splitInstallments(rec.total_amount, rec.installments)[0] : rec.amount;
+    const first: Omit<Transaction, 'id'> = { date: rec.start_date, kind: rec.kind, amount: firstAmount, description: rec.description, account_id: rec.account_id,
+      to_account_id: rec.to_account_id, category_id: rec.category_id, paid: firstPaid, notes: rec.notes, tags: rec.tags, recurrence_id: rec.id,
+      installment_no: rec.installments ? 1 : null };
     const ins = await this.sb.from('transactions').insert(first);
     if (ins.error) throw ins.error;
     const upd = await this.sb.from('recurrences').update({ generated: 1 }).eq('id', rec.id).select().single();
@@ -236,8 +260,9 @@ export class DataService {
     if (error) throw error;
     const rec = numRec(data);
     this.recurrences.update((l) => l.map((x) => (x.id === id ? rec : x)));
-    const txPatch = { kind: rec.kind, amount: rec.amount, description: rec.description, account_id: rec.account_id, to_account_id: rec.to_account_id,
+    const txPatch: Record<string, unknown> = { kind: rec.kind, description: rec.description, account_id: rec.account_id, to_account_id: rec.to_account_id,
       category_id: rec.category_id, notes: rec.notes, tags: rec.tags };
+    if (!rec.installments) txPatch['amount'] = rec.amount;
     const { error: e2 } = await this.sb.from('transactions').update(txPatch).eq('recurrence_id', id).eq('paid', false).gte('date', fromDate);
     if (e2) throw e2;
     await this.afterTxChange();
@@ -272,8 +297,10 @@ export class DataService {
       const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', id).eq('paid', false).gt('date', todayIso());
       if (error) throw error;
     } else {
-      const next = addMonthsIso(withDay(todayIso(), Number(rec.start_date.slice(8))), 1);
-      patch = { active, start_date: next, generated: 0, end_date: null };
+      // retomar: próxima ocorrência depois de hoje, mantendo o ritmo original
+      let n = 0, next = rec.start_date;
+      while (next <= todayIso() && n < 5000) { n++; next = occurrenceDate(rec.start_date, rec.frequency, n); }
+      patch = rec.installments ? { active } : { active, start_date: next, generated: 0, end_date: null };
     }
     const { data, error } = await this.sb.from('recurrences').update(patch).eq('id', id).select().single();
     if (error) throw error;
@@ -290,14 +317,14 @@ export class DataService {
     await this.afterTxChange();
   }
 
-  /** Lançamentos por pagar até `until` (inclui atrasados). */
+  /** Movimentos por pagar até `until` (inclui atrasados). */
   async listDue(until: string): Promise<Transaction[]> {
     const { data, error } = await this.sb.from('transactions').select('*').eq('paid', false).lte('date', until).order('date');
     if (error) throw error;
     return (data ?? []).map(numTx);
   }
 
-  // ---------- Lançamentos ----------
+  // ---------- Movimentos ----------
   async listTransactions(start: string, end: string, accountId?: string | null): Promise<Transaction[]> {
     let q = this.sb.from('transactions').select('*').gte('date', start).lte('date', end);
     if (accountId) q = q.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
@@ -306,7 +333,7 @@ export class DataService {
     return (data ?? []).map(numTx);
   }
 
-  /** Lançamentos por pagar entre hoje e daqui a N dias (contas a pagar / a receber). */
+  /** Movimentos por pagar entre hoje e daqui a N dias (contas a pagar / a receber). */
   async listPending(fromIso: string, toIso: string): Promise<Transaction[]> {
     const { data, error } = await this.sb
       .from('transactions')
@@ -385,9 +412,9 @@ function numAccount(a: Account): Account {
 }
 
 function numRec(r: Recurrence): Recurrence {
-  return { ...r, amount: Number(r.amount), tags: r.tags ?? [] };
+  return { ...r, amount: Number(r.amount), total_amount: r.total_amount == null ? null : Number(r.total_amount), tags: r.tags ?? [], frequency: r.frequency ?? 'monthly' };
 }
 
 function numTx(t: Transaction): Transaction {
-  return { ...t, amount: Number(t.amount), tags: t.tags ?? [] };
+  return { ...t, amount: Number(t.amount), tags: t.tags ?? [], installment_no: t.installment_no ?? null };
 }

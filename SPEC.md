@@ -2,7 +2,7 @@
 
 Documento de referência para quem pegar neste projeto (pessoa ou assistente de IA). Descreve o propósito, as decisões tomadas e as regras de negócio, para que alterações futuras não se desviem do que a app é. Atualizar este ficheiro sempre que uma decisão aqui descrita mudar.
 
-Última revisão: 2026-10-01.
+Última revisão: 2026-10-01 (v2: movimentos, frequências/parcelado, início mobile reduzido).
 
 ---
 
@@ -13,8 +13,8 @@ App de **finanças pessoais de uma só pessoa** (a Ana), criada para substituir 
 Prioridades, por ordem:
 
 1. **Fiabilidade dos números** — saldos e totais têm de bater certo ao cêntimo. Qualquer alteração à lógica de saldos (`account_balances`, `opening_balance`, `signFor`) tem de ser verificada contra dados reais.
-2. **Rapidez a registar** — um lançamento novo deve demorar segundos, sobretudo no telemóvel.
-3. **Simplicidade** — poucas páginas, sem funcionalidades que não se usam. Foi deliberadamente removida a área de "limites de gastos" porque a Ana raramente a usava. Não acrescentar funcionalidades sem ela as pedir.
+2. **Rapidez a registar** — um movimento novo deve demorar segundos, sobretudo no telemóvel.
+3. **Simplicidade** — poucas páginas, sem funcionalidades que não se usam. Foram deliberadamente removidos: a área de "limites de gastos", as **tags** e os **anexos** (a Ana não os usa). Observações existem mas ficam escondidas atrás de um botão. Não acrescentar funcionalidades sem ela as pedir.
 4. **Longevidade e independência** — tudo em planos gratuitos, código próprio, dados em Postgres normal e exportáveis. Evitar dependências de que seja difícil sair.
 
 O que a app **não** é: não é multi-utilizador (cada utilizador vê só os seus dados, mas não há partilha nem permissões), não tem ligação a bancos, não tem orçamentos/limites, não tem gestão de cartões de crédito como entidade própria (um cartão é uma conta do tipo `credit`).
@@ -32,9 +32,10 @@ O que a app **não** é: não é multi-utilizador (cada utilizador vê só os se
 | Mobile | PWA (manifest + `@angular/service-worker`), navegação por barra inferior + FAB | Sem lojas de apps; instala-se "Adicionar ao ecrã principal" |
 | Gráficos | SVG próprio em `src/app/shared/charts.ts` (donut, barras+saldo, anel) | Sem dependência externa de charts; leve e com o tema Material |
 | Moeda | EUR, formato `€ 1.234,56` (ponto nos milhares, vírgula nos decimais) — `MoneyPipe` | É o formato a que a Ana está habituada (Organizze) |
-| Datas | ISO `YYYY-MM-DD` em todo o lado, sem fusos horários (`src/app/core/dates.ts`) | Evita bugs de timezone em datas de lançamentos |
+| Datas | ISO `YYYY-MM-DD` em todo o lado, sem fusos horários (`src/app/core/dates.ts`) | Evita bugs de timezone em datas de movimentos |
 | Idioma | Interface em **português de Portugal** (tu-cá-tu-lá informal: "Tens 2 contas a pagar") | Utilizadora única, portuguesa |
-| Estado | `DataService` (signals) é a única fonte de verdade no cliente: contas, categorias, recorrências, saldos e `settings` carregam uma vez; lançamentos carregam por intervalo de datas; `version()` incrementa a cada alteração de lançamentos e as páginas recarregam por `effect` | Simples, sem store externo |
+| Vocabulário | "**Movimentos**" (não "movimentos") para despesas/receitas/transferências; rota `/movimentos` (`/lancamentos` redireciona) | Pedido da Ana |
+| Estado | `DataService` (signals) é a única fonte de verdade no cliente: contas, categorias, recorrências, saldos e `settings` carregam uma vez; movimentos carregam por intervalo de datas; `version()` incrementa a cada alteração de movimentos e as páginas recarregam por `effect` | Simples, sem store externo |
 
 Ficheiros `src/environments/environment*.ts` contêm o URL e a **chave anon** do Supabase e vão para o Git de propósito (a chave anon é pública por desenho; a segurança está nas políticas RLS). A chave `service_role` nunca pode aparecer no repositório.
 
@@ -46,31 +47,32 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 
 ### accounts — contas
 `name`, `type` (`checking | savings | cash | investment | credit | other`), `color`, `icon`, `initial_balance`, `archived`, `sort_order`.
-- `initial_balance` é o saldo antes do primeiro lançamento registado. Nas contas importadas do Organizze é 0 (o "Saldo inicial" veio como lançamento).
+- `initial_balance` é o saldo antes do primeiro movimento registado. Nas contas importadas do Organizze é 0 (o "Saldo inicial" veio como movimento).
 - Contas arquivadas não entram no saldo geral nem nos selects, mas o histórico fica.
-- Uma conta com lançamentos não pode ser apagada (FK `on delete restrict`) — arquiva-se.
+- Uma conta com movimentos não pode ser apagada (FK `on delete restrict`) — arquiva-se.
 
 ### categories — categorias e sub-categorias
 `name`, `kind` (`expense | income`), `color`, `icon`, `parent_id` (null = categoria principal), `archived`, `sort_order`.
 - **Um nível apenas**: uma sub-categoria não pode ter filhas. A UI impede transformar em sub-categoria uma categoria que já tem filhas.
 - Pode existir o mesmo nome em `expense` e `income` (ex.: "Investimentos", "Outros").
-- Relatórios e visão geral agregam pela **categoria principal** (`DataService.rootOf`), com detalhe por sub-categoria expansível. Filtrar lançamentos por uma principal inclui as filhas (`categoryFamily`).
-- Apagar uma categoria: lançamentos ficam sem categoria (`on delete set null`); filhas passam a principais.
+- Relatórios e visão geral agregam pela **categoria principal** (`DataService.rootOf`), com detalhe por sub-categoria expansível. Filtrar movimentos por uma principal inclui as filhas (`categoryFamily`).
+- Apagar uma categoria: movimentos ficam sem categoria (`on delete set null`); filhas passam a principais.
 
-### transactions — lançamentos
-`date`, `kind` (`expense | income | transfer`), `amount` (sempre ≥ 0; o sinal vem do `kind`), `description`, `account_id`, `to_account_id` (só em transferências), `category_id` (null em transferências), `paid`, `notes`, `tags text[]`, `recurrence_id`.
+### transactions — movimentos (lançamentos)
+`date`, `kind` (`expense | income | transfer`), `amount` (sempre ≥ 0; o sinal vem do `kind`), `description`, `account_id`, `to_account_id` (só em transferências), `category_id` (null em transferências), `paid`, `notes` ("observação"), `tags text[]` (coluna mantida, **sem UI**), `recurrence_id`, `installment_no` (n.º da parcela).
 - **Transferência = uma única linha**: `account_id` é a origem, `to_account_id` o destino. Não é despesa nem receita: nos totais gerais soma zero; no extrato de uma conta conta como saída (origem) ou entrada (destino). Esta lógica está centralizada em `signFor()` (`models.ts`) — usar sempre essa função, nunca reimplementar.
 - `paid = false` significa "planeado / por pagar". Os **saldos das contas só consideram os pagos**. Nos relatórios há a opção "considerar movimentos não pagos" (ligada por defeito). A visão geral mostra os totais do mês incluindo não pagos (é essa a utilidade: planear).
-- `recurrence_id` liga a ocorrência à regra em `recurrences`. Lançamentos antigos criados pela primeira versão do "repetir N meses" têm `recurrence_id` sem regra correspondente — a UI trata esse caso (`deleteOccurrencesFrom`).
+- `recurrence_id` liga a ocorrência à regra em `recurrences`. Movimentos antigos criados pela primeira versão do "repetir N meses" têm `recurrence_id` sem regra correspondente — a UI trata esse caso (`deleteOccurrencesFrom`).
+- **Ajuste de saldo**: em Contas → "Acertar saldo" a Ana escreve o saldo real; a app cria um movimento pago com a data de hoje, descrição "Ajuste de saldo", valor = diferença, na categoria **Outros** (despesa se negativo, receita "Outros" se positivo; `DataService.adjustBalance`). Nunca se altera `initial_balance` para acertar.
 
-### recurrences — regras mensais
-`kind`, `amount`, `description`, `account_id`, `to_account_id`, `category_id`, `tags`, `notes`, `start_date`, `end_date` (null = sem fim), `generated` (n.º de ocorrências já criadas), `active`.
-- Periodicidade: **só mensal**, no dia de `start_date`; a ocorrência n é `start_date + n meses` com o dia limitado ao último dia do mês (`addMonthsIso`), calculada sempre a partir de `start_date` para não haver deriva (31 → 28 → 28…).
-- A app garante ocorrências criadas até **12 meses à frente** (`generateRecurrences`), ao arrancar e quando se navega para um mês mais distante. As ocorrências nascem com `paid = false`; a primeira nasce com o estado escolhido no diálogo.
-- Editar uma ocorrência com "aplicar aos meses seguintes" atualiza a regra e as ocorrências **não pagas** a partir do dia seguinte. As pagas nunca são tocadas.
-- "Terminar a partir daqui": apaga as não pagas desde essa data e fecha a regra (`active=false`, `end_date`).
-- Pausar: apaga as futuras não pagas, mantém a regra. Retomar: recomeça no próximo mês, mesmo dia.
-- Apagar a regra: apaga só as ocorrências não pagas; o histórico pago fica.
+### recurrences — regras de repetição (fixas ou parceladas)
+`kind`, `amount` (valor de cada ocorrência), `description`, `account_id`, `to_account_id`, `category_id`, `tags`, `notes`, `frequency` (`daily | weekly | biweekly | monthly | yearly`), `installments` (null = fixo; n = parcelado em n parcelas), `total_amount` (parcelado: total), `start_date`, `end_date` (null = sem fim), `generated` (n.º de ocorrências já criadas), `active`.
+- Ocorrência n: `occurrenceDate(start_date, frequency, n)` — diária +n dias, semanal +7n, quinzenal +14n, mensal +n meses (dia limitado ao fim do mês, calculado sempre a partir de `start_date` para não derivar), anual +12n meses.
+- **Fixo**: `amount` repete-se; opcionalmente "terminar após N vezes" (`end_date` = data da N-ésima). **Parcelado**: o utilizador indica o **valor total** e o n.º de parcelas; a app mostra a pré-visualização "12× € 50,00 todos os meses, de … a …"; as parcelas são `splitInstallments(total, n)` (cêntimos certos, a última acerta o resto) e cada movimento leva `installment_no` (mostrado como "3/12").
+- Horizonte de geração (`generateRecurrences`): 12 meses à frente para mensal/anual, 3 meses para diária/semanal/quinzenal; alarga-se ao navegar para meses mais distantes. Ocorrências nascem `paid=false`; a primeira com o estado escolhido no diálogo.
+- Editar uma ocorrência com "aplicar às seguintes" atualiza a regra e as ocorrências **não pagas** a partir do dia seguinte (nas parceladas o valor por parcela não é alterado por esta via). As pagas nunca são tocadas.
+- "Terminar a partir daqui": apaga as não pagas desde essa data e fecha a regra. Pausar: apaga as futuras não pagas, mantém a regra. Retomar: recomeça na próxima ocorrência depois de hoje, mantendo o ritmo. Apagar a regra: apaga só as não pagas.
+- Página Recorrências mostra o total fixo mensal **equivalente** (semanal ×52/12, quinzenal ×26/12, diária ×365/12, anual ÷12).
 
 ### settings — definições do utilizador
 `display_name` (usado na saudação; necessário porque no login por email não há nome), `currency`, `locale`.
@@ -81,7 +83,7 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 - `seed_default_categories()`: categorias sugeridas para um utilizador novo (não usada na conta da Ana, que tem as do Organizze).
 
 ### Migrações
-`supabase/migrations/` numeradas: `001_subcategorias_perfil.sql`, `003_recorrencias.sql`. O `schema.sql` reflete sempre o estado final (para projetos novos). **Qualquer alteração ao esquema cria uma migração nova numerada e atualiza o `schema.sql`.** A pasta `importacao_organizze/` contém a importação única do histórico (ver §6) — não voltar a correr.
+`supabase/migrations/` numeradas: `001_subcategorias_perfil.sql`, `003_recorrencias.sql`, `004_frequencias_parcelas.sql`. O `schema.sql` reflete sempre o estado final (para projetos novos). **Qualquer alteração ao esquema cria uma migração nova numerada e atualiza o `schema.sql`.** A pasta `importacao_organizze/` contém a importação única do histórico (ver §6) — não voltar a correr.
 
 ---
 
@@ -104,24 +106,25 @@ src/app/features/
 ### Páginas e o que mostram
 
 **Visão geral (`/`)**
-1. Cartão de aviso (só se houver algo): "Tens N contas a pagar e N a receber · hoje e amanhã: a pagar X · a receber Y · N em atraso". Expande para a lista com botão de marcar como pago. Inclui atrasados (data < hoje) — ficam lá até serem pagos. Transferências não entram.
-2. Saudação com o primeiro nome (`settings.display_name`, senão nome do Google, senão parte do email), receita/despesa/resultado do mês, navegador de mês, botões Despesa / Entrada / Transferência.
-3. Maiores gastos do mês (top 5 por categoria principal + donut) · Saldo geral e lista de contas · Próximos movimentos por pagar (depois de amanhã, até 30 dias).
+- **Telemóvel (< 900px) mostra APENAS**: saudação ("Boa tarde," + primeiro nome), cartão de aviso (ou "Nada a pagar ou receber hoje e amanhã"), saldo geral + lista de contas, botão "Gerir contas". Nada mais — decisão explícita da Ana.
+- **Computador** mostra além disso: receita/despesa/resultado do mês com navegador de mês e botões Despesa / Entrada / Transferência; Maiores gastos do mês (top 5 por categoria principal + donut); Próximos movimentos por pagar (depois de amanhã, até 30 dias).
+- Cartão de aviso: "Tens N contas a pagar e N a receber · hoje e amanhã: a pagar X · a receber Y · N em atraso"; expande para a lista com botão de marcar como pago. Inclui atrasados (data < hoje) até serem pagos. Transferências não entram.
 
-**Lançamentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); resumo Entradas/Saídas/Resultado; lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
+**Movimentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); resumo Entradas/Saídas/Resultado; lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
 
-**Diálogo de lançamento** — tipo (Despesa/Receita/Transferência), valor, descrição, data, conta (+ conta destino), categoria agrupada, pago, **Repetir** (Não / Todos os meses / Durante N meses), tags, notas. Em edição de uma ocorrência: checkbox "aplicar aos meses seguintes" e botão "Terminar a partir daqui".
+**Diálogo de movimento** — tipo (Despesa/Receita/Transferência), valor (ou "Valor total" no parcelado), descrição, data, conta (+ conta destino), categoria agrupada, pago, botão "Observação" que revela o campo de notas, **Repetir**: Não / Fixo (frequência + "terminar após N vezes" opcional) / Parcelado (frequência + n.º de parcelas + pré-visualização). Sem tags nem anexos. Em edição de uma ocorrência: checkbox "aplicar às seguintes por pagar" e botão "Terminar a partir daqui".
 
-**Relatórios (`/relatorios`)** — período Mês / Ano / 12 meses; filtro por conta; "considerar não pagos"; separadores: Categorias (despesas e receitas por principal, expansível, donut), Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`), Contas (movimento por conta no período + saldo atual), Tags. Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
+**Relatórios (`/relatorios`)** — período Mês / Ano / 12 meses sempre visível; **filtros escondidos** atrás do botão de filtro: conta, "considerar não pagos", Exportar CSV. Separadores: Categorias (despesas e receitas por principal, expansível, donut), Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`), Contas (movimento por conta no período + saldo atual). Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
 
-**Recorrências (`/recorrencias`)**, **Contas (`/contas`)**, **Categorias (`/categorias`)** — gestão.
+**Recorrências (`/recorrencias`)**, **Contas (`/contas`, inclui "Acertar saldo")**, **Categorias (`/categorias`)** — gestão.
 
 ### Convenções de UI
 - Material 3 com paleta verde (`styles.scss`), modo escuro por botão no topo (guardado em `localStorage`).
+- **Cada área é um cartão** (`.card`): fundo ligeiramente diferente do da página (`surface-container-lowest` em claro, `surface-container` em escuro), borda subtil, cantos arredondados (18px). Novas secções devem usar `.card`.
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
 - Ícones Material Icons (fonte Google); categorias e contas têm cor + ícone, mostrados por `app-icon-badge`.
 - Diálogos com `width: 520px`, `maxWidth: 96vw`. Confirmar sempre antes de apagar (`UiService.confirm`).
-- Layout mobile-first: FAB "+" e barra inferior com 5 entradas (Início, Lançamentos, Relatórios, Contas, Categorias); Recorrências e "O meu nome" ficam no menu do utilizador. No desktop o menu lateral tem também Recorrências.
+- Layout mobile-first: FAB "+" e barra inferior com 5 entradas (Início, Movimentos, Relatórios, Contas, Categorias); Recorrências e "O meu nome" ficam no menu do utilizador. No desktop o menu lateral tem também Recorrências.
 
 ---
 
@@ -140,7 +143,7 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 - 6 contas: MOEY!, MOEY - Poupanças, Crédito Agricola, Numerário, Trading 212 - Juros, Trading 212 - Investimentos (`initial_balance = 0`).
 - 57 categorias com a hierarquia exata do Organizze (18 principais de despesa, 4 de receita; "Educação" arquivada).
 - Linhas "Transferências" emparelhadas entre contas por valor igual e sinal oposto na mesma data (tolerância de 3 dias) → 959 transferências únicas. Duas sem par (−20 € em 06/06/2019 e −200 € em 19/06/2019, MOEY!) ficaram como despesa em "Outros" com nota.
-- Resultado: 7.084 lançamentos; saldos por conta iguais aos do Organizze ao cêntimo.
+- Resultado: 7.084 movimentos; saldos por conta iguais aos do Organizze ao cêntimo.
 - IDs das contas e categorias importadas são UUID v5 determinísticos (gerados por `uuid5(namespace, 'acc:<nome>')` etc.) — útil para scripts futuros.
 
 ---
@@ -157,7 +160,8 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 
 - Backup e restauro completos (ver §7).
 - Criar por SQL a lista de recorrências fixas que a Ana vai fornecer.
-- Anexos a lançamentos, pesquisa global fora do mês, gráficos de evolução anual.
+- Melhorias visuais (a Ana vai enviar prints).
+- Anexos a movimentos, pesquisa global fora do mês, gráficos de evolução anual.
 - Área "Importar" na app para CSV (hoje a importação foi feita uma vez por SQL).
 
 ---

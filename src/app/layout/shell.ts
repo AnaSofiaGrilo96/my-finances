@@ -36,7 +36,7 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
             }
           </mat-nav-list>
           <div class="side-actions">
-            <button matButton="filled" (click)="newTransaction()"><mat-icon>add</mat-icon>Novo lançamento</button>
+            <button matButton="filled" (click)="newTransaction()"><mat-icon>add</mat-icon>Novo movimento</button>
           </div>
         </mat-sidenav>
       }
@@ -84,7 +84,7 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
           </a>
         }
       </nav>
-      <button matFab class="fab" (click)="newTransaction()" aria-label="Novo lançamento"><mat-icon>add</mat-icon></button>
+      <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
     }
   `,
   styles: [`
@@ -123,7 +123,7 @@ export class Shell {
 
   readonly navItems = [
     { path: '/', icon: 'dashboard', label: 'Visão geral', short: 'Início' },
-    { path: '/lancamentos', icon: 'receipt_long', label: 'Lançamentos', short: 'Lançam.' },
+    { path: '/movimentos', icon: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
     { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
     { path: '/contas', icon: 'account_balance', label: 'Contas', short: 'Contas' },
     { path: '/categorias', icon: 'category', label: 'Categorias', short: 'Categorias' },

@@ -35,7 +35,7 @@ import { UiService } from '../../shared/ui.service';
           <mat-label>Saldo inicial</mat-label>
           <span matTextPrefix>€&nbsp;</span>
           <input matInput type="number" step="0.01" inputmode="decimal" [(ngModel)]="initialBalance" name="initial" />
-          <mat-hint>Saldo que a conta tinha antes do primeiro lançamento registado.</mat-hint>
+          <mat-hint>Saldo que a conta tinha antes do primeiro movimento registado.</mat-hint>
         </mat-form-field>
         <div class="label">Cor</div>
         <div class="swatches">
@@ -90,6 +90,45 @@ export class AccountDialog {
 }
 
 @Component({
+  selector: 'app-adjust-balance-dialog',
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MoneyPipe],
+  template: `
+    <h2 mat-dialog-title>Acertar saldo — {{ account.name }}</h2>
+    <mat-dialog-content>
+      <p class="muted">Saldo atual na app: <b>{{ current | money }}</b></p>
+      <mat-form-field class="full">
+        <mat-label>Saldo real</mat-label>
+        <span matTextPrefix>€&nbsp;</span>
+        <input matInput type="number" step="0.01" inputmode="decimal" [(ngModel)]="value" name="value" autofocus (keyup.enter)="save()" />
+      </mat-form-field>
+      @if (diff() !== 0) {
+        <p class="hint">Vai ser criado um movimento <b>"Ajuste de saldo"</b> de <b [class.income]="diff() > 0" [class.expense]="diff() < 0">{{ diff() | money:'signed' }}</b> na categoria Outros, com a data de hoje.</p>
+      } @else { <p class="hint muted">Sem diferença — nada a criar.</p> }
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button matButton mat-dialog-close>Cancelar</button>
+      <button matButton="filled" (click)="save()" [disabled]="busy() || diff() === 0">Acertar</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`.full { width: 100%; } .hint { font-size: 13px; margin: 0; } p.muted { margin-top: 0; }`],
+})
+export class AdjustBalanceDialog {
+  private readonly data = inject(DataService);
+  private readonly ui = inject(UiService);
+  private readonly ref = inject(MatDialogRef<AdjustBalanceDialog>);
+  readonly account = inject<Account>(MAT_DIALOG_DATA);
+  readonly current = this.data.balances()[this.account.id] ?? this.account.initial_balance;
+  readonly busy = signal(false);
+  value: number = this.current;
+  diff() { return Math.round((Number(this.value) - this.current) * 100) / 100; }
+  async save() {
+    this.busy.set(true);
+    try { await this.data.adjustBalance(this.account.id, Number(this.value)); this.ui.toast('Saldo acertado.'); this.ref.close(true); }
+    catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
+  }
+}
+
+@Component({
   selector: 'app-accounts-page',
   imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, RouterLink, MoneyPipe, IconBadge],
   template: `
@@ -99,6 +138,7 @@ export class AccountDialog {
         <button matButton="filled" (click)="add()"><mat-icon>add</mat-icon>Nova conta</button>
       </div>
 
+      <p class="muted intro">Para acertar o saldo de uma conta com o valor real usa <mat-icon class="inl">balance</mat-icon> — a app cria automaticamente um movimento "Ajuste de saldo" com a diferença.</p>
       <div class="card total">
         <span class="muted">Saldo geral</span>
         <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
@@ -117,9 +157,11 @@ export class AccountDialog {
               <div class="sub">{{ typeLabel(a) }}</div>
             </div>
             <div class="amount" [class.expense]="balance(a) < 0">{{ balance(a) | money }}</div>
+            <button matIconButton (click)="adjust(a)" matTooltip="Acertar saldo"><mat-icon>balance</mat-icon></button>
             <button matIconButton [matMenuTriggerFor]="m"><mat-icon>more_vert</mat-icon></button>
             <mat-menu #m="matMenu">
-              <button mat-menu-item [routerLink]="['/lancamentos']" [queryParams]="{ conta: a.id }"><mat-icon>receipt_long</mat-icon>Ver lançamentos</button>
+              <button mat-menu-item [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }"><mat-icon>receipt_long</mat-icon>Ver movimentos</button>
+              <button mat-menu-item (click)="adjust(a)"><mat-icon>balance</mat-icon>Acertar saldo</button>
               <button mat-menu-item (click)="edit(a)"><mat-icon>edit</mat-icon>Editar</button>
               <button mat-menu-item (click)="move(a, -1)" [disabled]="$first"><mat-icon>arrow_upward</mat-icon>Subir</button>
               <button mat-menu-item (click)="move(a, 1)" [disabled]="$last"><mat-icon>arrow_downward</mat-icon>Descer</button>
@@ -144,6 +186,7 @@ export class AccountDialog {
     </div>
   `,
   styles: [`
+    .intro { margin: -4px 0 14px; font-size: 13px; } .inl { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; }
     .total { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
     .total b { font-size: 24px; }
     .rows { padding: 4px 12px; }
@@ -163,6 +206,7 @@ export class AccountsPage {
 
   add() { this.dialog.open(AccountDialog, { width: '440px', maxWidth: '96vw' }); }
   edit(a: Account) { this.dialog.open(AccountDialog, { width: '440px', maxWidth: '96vw', data: a }); }
+  adjust(a: Account) { this.dialog.open(AdjustBalanceDialog, { width: '400px', maxWidth: '96vw', data: a }); }
 
   async move(a: Account, dir: number) {
     const ids = this.active().map((x) => x.id);
@@ -173,8 +217,8 @@ export class AccountsPage {
   }
 
   async remove(a: Account) {
-    if (!(await this.ui.confirm('Apagar conta', `Só é possível apagar "${a.name}" se não tiver lançamentos. Em alternativa, arquiva-a.`, 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar conta', `Só é possível apagar "${a.name}" se não tiver movimentos. Em alternativa, arquiva-a.`, 'Apagar'))) return;
     try { await this.data.deleteAccount(a.id); this.ui.toast('Conta apagada.'); }
-    catch (e) { this.ui.error({ message: 'A conta tem lançamentos associados. Arquiva-a em vez de apagar.' }); console.error(e); }
+    catch (e) { this.ui.error({ message: 'A conta tem movimentos associados. Arquiva-a em vez de apagar.' }); console.error(e); }
   }
 }

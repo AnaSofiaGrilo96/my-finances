@@ -82,3 +82,14 @@ export function withDay(iso: string, day: number): string {
   d.setDate(Math.min(day, last));
   return toIso(d);
 }
+
+/** Data da ocorrência n (0 = primeira) de uma recorrência. */
+export function occurrenceDate(start: string, frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly', n: number): string {
+  switch (frequency) {
+    case 'daily': return addDays(start, n);
+    case 'weekly': return addDays(start, 7 * n);
+    case 'biweekly': return addDays(start, 14 * n);
+    case 'monthly': return addMonthsIso(start, n);
+    case 'yearly': return addMonthsIso(start, 12 * n);
+  }
+}

@@ -19,7 +19,7 @@ Abre http://localhost:4200. (Antes disso precisas de configurar o Supabase — v
 
 1. Em https://supabase.com cria um projeto novo (ex.: `myfinances`).
 2. **SQL Editor → New query**: cola o conteúdo de `supabase/schema.sql` e executa. Cria as tabelas, as políticas de segurança (cada utilizador só vê os seus dados), a vista de saldos e as funções auxiliares.
-   - Se já tinhas corrido uma versão anterior do `schema.sql`, corre também `supabase/migrations/001_subcategorias_perfil.sql`.
+   - Se já tinhas corrido uma versão anterior do `schema.sql`, corre também as migrações em `supabase/migrations/` por ordem (001, 003…).
    - Para importar o histórico do Organizze: os ficheiros de `supabase/migrations/importacao_organizze/`, por ordem (ver secção "Importação" abaixo).
 3. **Project Settings → API**: copia o `Project URL` e a `anon public` key para
    `src/environments/environment.ts` **e** `src/environments/environment.prod.ts`.
@@ -66,6 +66,7 @@ src/app/features/dashboard     visão geral
 src/app/features/transactions  lançamentos (lista mensal, filtros, diálogo de criação/edição)
 src/app/features/reports       relatórios: categorias (com detalhe por sub-categoria), entradas x saídas, contas, tags (+ exportar CSV)
 src/app/features/accounts      contas
+src/app/features/recurrences   recorrências mensais (regras)
 src/app/features/categories    categorias
 ```
 
@@ -73,7 +74,8 @@ src/app/features/categories    categorias
 
 - **Transferência** é um único lançamento (`kind = 'transfer'`) com conta de origem e destino; não conta como despesa nem receita nos totais gerais.
 - **Pago / por pagar**: lançamentos futuros ou por confirmar podem ficar "por pagar"; os saldos das contas só consideram os pagos. Nos relatórios podes escolher se os não pagos entram.
-- **Repetir mensalmente** cria N lançamentos (um por mês) ligados por `recurrence_id`; ao editar um, dá para apagar "este e seguintes".
+- **Recorrências**: ao criar um lançamento podes escolher "Repetir: todos os meses" (ou durante N meses). Fica guardada uma regra em `recurrences` e a app gera automaticamente as ocorrências dos 12 meses seguintes como não pagas (`recurrence_id` liga-as à regra). Ao editar uma ocorrência dá para aplicar as alterações aos meses seguintes ou terminar a recorrência a partir daí; em Recorrências (menu do utilizador) vês todas as regras, o total fixo mensal, e podes pausar/retomar/apagar.
+- **Aviso no topo da visão geral**: lista o que há para pagar/receber hoje e amanhã (e atrasados), com botão para marcar como pago.
 - **Saldo inicial** de cada conta é o saldo antes do primeiro lançamento registado.
 - **Sub-categorias**: uma categoria pode pertencer a uma categoria principal (ex.: Transporte › Portagens). Os relatórios e a visão geral agrupam pela principal, com detalhe por sub-categoria; ao filtrar lançamentos por uma principal incluem-se as filhas.
 - **O meu nome** (menu do utilizador): nome usado na saudação; útil quando o login é por email.

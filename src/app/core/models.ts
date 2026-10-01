@@ -49,9 +49,19 @@ export interface Transaction {
   notes: string | null;
   tags: string[];
   recurrence_id: string | null;
+  installment_no: number | null;
 }
 
-/** Regra de recorrência mensal. As ocorrências são lançamentos com recurrence_id = id. */
+export type Frequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+export const FREQUENCIES: { id: Frequency; label: string; each: string }[] = [
+  { id: 'daily', label: 'Diária', each: 'todos os dias' },
+  { id: 'weekly', label: 'Semanal', each: 'todas as semanas' },
+  { id: 'biweekly', label: 'Quinzenal', each: 'de 15 em 15 dias' },
+  { id: 'monthly', label: 'Mensal', each: 'todos os meses' },
+  { id: 'yearly', label: 'Anual', each: 'todos os anos' },
+];
+
+/** Regra de recorrência (fixa ou parcelada). As ocorrências são movimentos com recurrence_id = id. */
 export interface Recurrence {
   id: string;
   kind: TransactionKind;
@@ -62,10 +72,21 @@ export interface Recurrence {
   category_id: string | null;
   tags: string[];
   notes: string | null;
+  frequency: Frequency;
+  installments: number | null; // parcelado: n.º de parcelas; null = fixo
+  total_amount: number | null; // parcelado: valor total
   start_date: string;
   end_date: string | null;
   generated: number;
   active: boolean;
+}
+
+/** Divide um total em n parcelas de cêntimos certos; a última acerta o resto. */
+export function splitInstallments(total: number, n: number): number[] {
+  const cents = Math.round(total * 100);
+  const base = Math.floor(cents / n);
+  const rest = cents - base * n;
+  return Array.from({ length: n }, (_, i) => (base + (i === n - 1 ? rest : 0)) / 100);
 }
 
 export const ACCOUNT_TYPES: { id: AccountType; label: string; icon: string }[] = [
