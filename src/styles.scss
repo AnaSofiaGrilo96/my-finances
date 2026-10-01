@@ -53,9 +53,14 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 .row.clickable { cursor: pointer; border-radius: 10px; }
 .row.clickable:hover { background: var(--mat-sys-surface-container-high); }
 
+// Barra de totais fixa no fundo (acima da barra de navegação no telemóvel)
+.sticky-bottom { position: sticky; bottom: 0; z-index: 5; margin: 12px -4px 0; }
+@media (max-width: 899px) { .sticky-bottom { bottom: calc(64px + env(safe-area-inset-bottom)); } }
+
 // FAB no telemóvel fica acima da barra inferior
-.fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; }
-@media (max-width: 899px) { .fab { bottom: calc(76px + env(safe-area-inset-bottom)) !important; } }
+.fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; width: 64px !important; height: 64px !important; border-radius: 50% !important; box-shadow: 0 6px 18px rgba(0,0,0,.25) !important; }
+.fab mat-icon { font-size: 30px; width: 30px; height: 30px; }
+@media (max-width: 899px) { .fab { bottom: calc(80px + env(safe-area-inset-bottom)) !important; } }
 
 .mat-mdc-dialog-content { max-height: 75vh; }
 .mat-mdc-snack-bar-container { margin-bottom: 80px !important; }

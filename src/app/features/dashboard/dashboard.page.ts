@@ -274,9 +274,10 @@ export class DashboardPage {
   }
 
   greeting() { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'; }
+  /** Nome completo definido em "O meu nome"; senão o nome da conta Google; senão a parte do email. */
   firstName() {
     const name = this.data.displayName() || this.auth.displayName();
-    return name.includes('@') ? name.split('@')[0] : name.split(' ')[0] || 'Olá';
+    return name.includes('@') ? name.split('@')[0] : name || 'Olá';
   }
   balance(id: string) { return this.data.balances()[id] ?? 0; }
   pct(v: number) { const t = this.totals().expense; return t ? (100 * v / t).toFixed(2).replace('.', ',') + '%' : ''; }

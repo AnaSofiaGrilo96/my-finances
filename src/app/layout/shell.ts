@@ -62,6 +62,8 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
               <div class="name">{{ data.displayName() || auth.displayName() }}</div>
               <div class="muted">{{ auth.user()?.email }}</div>
             </div>
+            <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
+            <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
             <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
             <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
             <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
@@ -125,11 +127,9 @@ export class Shell {
     { path: '/', icon: 'dashboard', label: 'Visão geral', short: 'Início' },
     { path: '/movimentos', icon: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
     { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
-    { path: '/contas', icon: 'account_balance', label: 'Contas', short: 'Contas' },
-    { path: '/categorias', icon: 'category', label: 'Categorias', short: 'Categorias' },
   ];
 
-  readonly sideItems = [...this.navItems.slice(0, 3), { path: '/recorrencias', icon: 'repeat', label: 'Recorrências', short: 'Recorr.' }, ...this.navItems.slice(3)];
+  readonly sideItems = this.navItems;
 
   constructor() {
     this.data.ensureLoaded().catch((e) => { this.loadError.set(true); this.ui.error(e); });

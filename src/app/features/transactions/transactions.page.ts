@@ -30,11 +30,12 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     <div class="page">
       <div class="page-header">
         <h1>Movimentos</h1>
-        <app-month-nav [month]="month()" (monthChange)="setMonth($event)" />
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
       </div>
+
+      <app-month-nav class="months" [month]="month()" (monthChange)="setMonth($event)" />
 
       @if (filtersOpen()) {
         <div class="card filters">
@@ -83,12 +84,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         </div>
       }
 
-      <div class="summary card">
-        <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
-        <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
-        <div><span class="muted">Resultado</span><b [class.income]="totals().result >= 0" [class.expense]="totals().result < 0">{{ totals().result | money }}</b></div>
-      </div>
-
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
       @if (!loading() && !groups().length) {
@@ -129,6 +124,12 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           </div>
         </section>
       }
+
+      <div class="summary card sticky-bottom">
+        <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
+        <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
+        <div><span class="muted">Resultado</span><b [class.income]="totals().result >= 0" [class.expense]="totals().result < 0">{{ totals().result | money }}</b></div>
+      </div>
     </div>
   `,
   styles: [`
@@ -137,7 +138,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .filters .f { width: 160px; }
     .filters .search { width: 220px; }
     @media (max-width: 700px) { .filters .f { width: calc(50% - 5px); } .filters .search { width: 100%; } }
-    .summary { display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 12px; margin-bottom: 16px; }
+    :host .page { display: flex; flex-direction: column; min-height: calc(100dvh - 64px); box-sizing: border-box; }
+    :host .page > * { flex-shrink: 0; }
+    .summary { margin-top: auto; }
+    .months { margin: 0 0 14px; }
+    .summary { display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
     .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
     .day { margin-bottom: 14px; }
