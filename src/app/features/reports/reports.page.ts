@@ -13,7 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
 import { Account, Transaction, signFor } from '../../core/models';
-import { currentMonth, eachDay, fromIso, monthRange, shiftMonth, shortMonthLabel, toIso } from '../../core/dates';
+import { currentMonth, eachDay, fromIso, monthLabel, monthRange, shiftMonth, shortMonthLabel, toIso } from '../../core/dates';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
@@ -33,26 +33,25 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     <div class="page">
       <div class="page-header">
         <h1>Relatórios</h1>
-        @if (period() === 'month') { <app-month-nav [month]="month()" (monthChange)="month.set($event)" /> }
-        @else if (period() === 'year') {
-          <div class="yearnav">
-            <button matIconButton (click)="month.set(shift(-12))"><mat-icon>chevron_left</mat-icon></button>
-            <b>{{ month().slice(0, 4) }}</b>
-            <button matIconButton (click)="month.set(shift(12))"><mat-icon>chevron_right</mat-icon></button>
-          </div>
-        }
-        <mat-button-toggle-group [value]="period()" (change)="period.set($event.value)" hideSingleSelectionIndicator>
-          <mat-button-toggle value="month">Mês</mat-button-toggle>
-          <mat-button-toggle value="year">Ano</mat-button-toggle>
-          <mat-button-toggle value="12m">12 meses</mat-button-toggle>
-        </mat-button-toggle-group>
+        @if (period() === '12m') { <span class="muted range">Últimos 12 meses até {{ monthLabel() }}</span> }
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
       </div>
 
+      @if (period() !== 'year') {
+        <app-month-nav class="months" [month]="month()" (monthChange)="month.set($event)" />
+      } @else {
+        <app-month-nav class="months" [month]="month()" mode="year" (monthChange)="month.set($event)" />
+      }
+
       @if (filtersOpen()) {
         <div class="card toolbar filters">
+          <mat-button-toggle-group [value]="period()" (change)="period.set($event.value)" hideSingleSelectionIndicator>
+            <mat-button-toggle value="month">Mês</mat-button-toggle>
+            <mat-button-toggle value="year">Ano</mat-button-toggle>
+            <mat-button-toggle value="12m">12 meses</mat-button-toggle>
+          </mat-button-toggle-group>
           <mat-form-field class="f" subscriptSizing="dynamic">
             <mat-label>Conta</mat-label>
             <mat-select [ngModel]="accountId()" (ngModelChange)="accountId.set($event)">
@@ -195,7 +194,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .f { width: 200px; }
     .filters { padding: 12px; margin-bottom: 4px; }
     .page-header button.on { background: var(--mat-sys-secondary-container); }
-    .yearnav { display: inline-flex; align-items: center; gap: 4px; } .yearnav b { font-size: 17px; font-weight: 500; min-width: 60px; text-align: center; }
+    .months { margin: 0 0 14px; }
+    .range { font-size: 13px; }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
     .cat-layout .list { width: 100%; min-width: 0; }
@@ -232,7 +232,8 @@ export class ReportsPage {
   readonly includeUnpaid = signal(true);
   readonly loading = signal(false);
   readonly filtersOpen = signal(false);
-  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1));
+  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1) + (this.period() !== 'month' ? 1 : 0));
+  monthLabel() { return monthLabel(this.month()); }
 
   private readonly raw = signal<Transaction[]>([]);
   readonly opening = signal(0);

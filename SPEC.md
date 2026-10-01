@@ -106,15 +106,15 @@ src/app/features/
 ### Páginas e o que mostram
 
 **Visão geral (`/`)**
-- **Telemóvel (< 900px) mostra APENAS**: saudação ("Boa tarde," + primeiro nome), cartão de aviso (ou "Nada a pagar ou receber hoje e amanhã"), saldo geral + lista de contas, botão "Gerir contas". Nada mais — decisão explícita da Ana.
+- **Telemóvel (< 900px) mostra APENAS**: saudação ("Boa tarde," + **nome completo** tal como escrito em "O meu nome"; senão o nome da conta Google), cartão de aviso (ou "Nada a pagar ou receber hoje e amanhã"), saldo geral + lista de contas, botão "Gerir contas". Nada mais — decisão explícita da Ana.
 - **Computador** mostra além disso: receita/despesa/resultado do mês com navegador de mês e botões Despesa / Entrada / Transferência; Maiores gastos do mês (top 5 por categoria principal + donut); Próximos movimentos por pagar (depois de amanhã, até 30 dias).
 - Cartão de aviso: "Tens N contas a pagar e N a receber · hoje e amanhã: a pagar X · a receber Y · N em atraso"; expande para a lista com botão de marcar como pago. Inclui atrasados (data < hoje) até serem pagos. Transferências não entram.
 
-**Movimentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); resumo Entradas/Saídas/Resultado; lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
+**Movimentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); **a lista vem primeiro; o resumo Entradas/Saídas/Resultado fica fixo no fundo** (barra sticky acima da navegação); lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
 
 **Diálogo de movimento** — tipo (Despesa/Receita/Transferência), valor (ou "Valor total" no parcelado), descrição, data, conta (+ conta destino), categoria agrupada, pago, botão "Observação" que revela o campo de notas, **Repetir**: Não / Fixo (frequência + "terminar após N vezes" opcional) / Parcelado (frequência + n.º de parcelas + pré-visualização). Sem tags nem anexos. Em edição de uma ocorrência: checkbox "aplicar às seguintes por pagar" e botão "Terminar a partir daqui".
 
-**Relatórios (`/relatorios`)** — período Mês / Ano / 12 meses sempre visível; **filtros escondidos** atrás do botão de filtro: conta, "considerar não pagos", Exportar CSV. Separadores: Categorias (despesas e receitas por principal, expansível, donut), Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`), Contas (movimento por conta no período + saldo atual). Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
+**Relatórios (`/relatorios`)** — seletor de mês em fita sempre visível (ano a ano no modo Ano; no modo 12 meses indica "últimos 12 meses até …"); **filtros escondidos** atrás do botão de filtro: período Mês / Ano / 12 meses (**por defeito Mês**), conta, "considerar não pagos", Exportar CSV. Separadores: Categorias (despesas e receitas por principal, expansível, donut), Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`), Contas (movimento por conta no período + saldo atual). Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
 
 **Recorrências (`/recorrencias`)**, **Contas (`/contas`, inclui "Acertar saldo")**, **Categorias (`/categorias`)** — gestão.
 
@@ -124,7 +124,8 @@ src/app/features/
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
 - Ícones Material Icons (fonte Google); categorias e contas têm cor + ícone, mostrados por `app-icon-badge`.
 - Diálogos com `width: 520px`, `maxWidth: 96vw`. Confirmar sempre antes de apagar (`UiService.confirm`).
-- Layout mobile-first: FAB "+" e barra inferior com 5 entradas (Início, Movimentos, Relatórios, Contas, Categorias); Recorrências e "O meu nome" ficam no menu do utilizador. No desktop o menu lateral tem também Recorrências.
+- Layout mobile-first: FAB "+" **redondo e grande (64px)** em todas as páginas no telemóvel; barra inferior com 3 entradas (Início, Movimentos, Relatórios). **Contas, Categorias, Recorrências e "O meu nome" ficam no menu do ícone de perfil** (canto superior direito), tanto no telemóvel como no computador; o menu lateral do desktop tem só as 3 páginas principais.
+- **Seletor de mês em fita** (`app-month-nav`): ‹ Setembro [Outubro] Novembro › — o mês atual numa pílula ao centro, vizinhos clicáveis; usado em Movimentos e Relatórios (em Relatórios com modo "Ano" navega ano a ano). Clicar na pílula volta ao mês atual.
 
 ---
 
