@@ -17,7 +17,7 @@ import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
 import { UiService } from '../../shared/ui.service';
-import { TransactionDialog } from './transaction.dialog';
+import { openTransactionDialog } from './transaction.dialog';
 
 interface DayGroup { date: string; label: string; items: Transaction[]; balance: number | null; }
 
@@ -250,8 +250,8 @@ export class TransactionsPage {
   setMonth(m: string) { this.month.set(m); }
   clearFilters() { this.accountId.set(null); this.kind.set(null); this.categoryId.set(null); this.paidFilter.set(null); this.search.set(''); }
 
-  add() { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { accountId: this.accountId(), kind: this.kind() ?? 'expense' } }); }
-  edit(t: Transaction) { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { transaction: t } }); }
+  add() { openTransactionDialog(this.dialog, { accountId: this.accountId() ?? undefined, kind: this.kind() ?? 'expense' }); }
+  edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
 
   async togglePaid(t: Transaction, ev: Event) {
     ev.stopPropagation();

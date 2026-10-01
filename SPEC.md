@@ -91,7 +91,7 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 
 ```
 src/app/core/       supabase.service, auth.service, auth.guard, data.service, models, dates, theme.service
-src/app/shared/     ui.service (toast/erro/confirm), charts, money.pipe, icon-badge, month-nav, confirm.dialog
+src/app/shared/     ui.service (toast/erro/confirm), charts, money.pipe, icon-badge, month-nav, confirm.dialog, picker.sheet (folha inferior de escolha)
 src/app/layout/     shell — menu lateral (≥900px) / barra inferior + FAB (<900px), menu do utilizador
 src/app/features/
   auth/             login.page (Google + email/password), profile.dialog ("O meu nome")
@@ -112,7 +112,13 @@ src/app/features/
 
 **Movimentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); **a lista vem primeiro; o resumo Entradas/Saídas/Resultado fica fixo no fundo** (barra sticky acima da navegação); lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
 
-**Diálogo de movimento** — tipo (Despesa/Receita/Transferência), valor (ou "Valor total" no parcelado), descrição, data, conta (+ conta destino), categoria agrupada, pago, botão "Observação" que revela o campo de notas, **Repetir**: Não / Fixo (frequência + "terminar após N vezes" opcional) / Parcelado (frequência + n.º de parcelas + pré-visualização). Sem tags nem anexos. Em edição de uma ocorrência: checkbox "aplicar às seguintes por pagar" e botão "Terminar a partir daqui".
+**Diálogo de movimento** (`transaction.dialog.ts`, aberto por `openTransactionDialog()` — ecrã inteiro no telemóvel, janela de 480px no computador; mesma estrutura nos dois). Desenhado à imagem do Organizze mobile, a pedido da Ana:
+- **Cabeçalho colorido pelo tipo** (vermelho despesa, verde receita, cinzento transferência) com as três abas Despesa / Receita / Transferência (indicador por baixo), o **valor em letras grandes** à direita e o ícone de polegar que alterna pago/não pago.
+- **Passo 1 (só em criação)**: teclado numérico próprio (1–9, 0, apagar, limpar) que escreve da direita para a esquerda em cêntimos (1-2-5-0 → 12,50); no computador o teclado físico também funciona (dígitos, Backspace, Enter). Já se pode escrever a descrição neste passo. O botão verde ✓ confirma o valor e passa ao passo 2. Tocar no valor no cabeçalho volta ao teclado.
+- **Passo 2**: lista de campos em linhas grandes: Descrição; Categoria (badge + nome); "Pago com" / "Recebi em" (ou Conta origem + Conta destino nas transferências); Data ("Hoje", "Ontem", "Amanhã" ou dd/mm/aaaa, abre o calendário); Repetir movimento com **chips Fixo / Parcelado** (ao escolher aparecem frequência e n.º de parcelas / "terminar após", com pré-visualização); "Mais opções ▾" (Observação; em edição também Apagar e Terminar a partir daqui). Botão ✓ grande fixo em baixo para guardar.
+- Categoria e contas escolhem-se numa **folha inferior** (`PickerSheet`): categorias agrupadas (sub-categorias indentadas), contas com o saldo atual como dica.
+- **Autocomplete da descrição**: a partir da 1.ª letra procura movimentos recentes do mesmo tipo cuja descrição contém o texto (`DataService.suggestTransactions`, sem duplicados por descrição+categoria+conta, máx. 8) e mostra-os com badge da categoria, conta e valor; escolher um preenche **descrição, categoria e conta** (e conta destino nas transferências). O valor não é copiado.
+- Em edição abre diretamente no passo 2 com o tipo bloqueado; a checkbox "aplicar também às seguintes por pagar" aparece quando o movimento pertence a uma recorrência.
 
 **Relatórios (`/relatorios`)** — seletor de mês em fita sempre visível (ano a ano no modo Ano; no modo 12 meses indica "últimos 12 meses até …"); **filtros escondidos** atrás do botão de filtro: período Mês / Ano / 12 meses (**por defeito Mês**), conta, "considerar não pagos", Exportar CSV. Separadores: Categorias (despesas e receitas por principal, expansível, donut), Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`), Contas (movimento por conta no período + saldo atual). Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
 

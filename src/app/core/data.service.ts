@@ -357,6 +357,30 @@ export class DataService {
     return (data ?? []).map(numTx);
   }
 
+  /** Sugestões para o autocomplete da descrição: movimentos recentes do mesmo tipo cuja descrição contém o texto. */
+  async suggestTransactions(kind: Transaction['kind'], text: string, limit = 8): Promise<Transaction[]> {
+    const q = text.trim();
+    if (!q) return [];
+    const { data, error } = await this.sb
+      .from('transactions')
+      .select('*')
+      .eq('kind', kind)
+      .ilike('description', `%${q.replace(/[%_]/g, '')}%`)
+      .order('date', { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    const seen = new Set<string>();
+    const out: Transaction[] = [];
+    for (const t of (data ?? []).map(numTx)) {
+      const key = `${t.description.trim().toLowerCase()}|${t.category_id}|${t.account_id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(t);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
   async openingBalance(date: string, accountId: string | null, includeUnpaid: boolean): Promise<number> {
     const { data, error } = await this.sb.rpc('opening_balance', {
       p_date: date,
