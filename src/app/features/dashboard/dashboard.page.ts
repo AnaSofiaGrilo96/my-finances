@@ -16,7 +16,7 @@ import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
 import { DonutChart, DonutSlice } from '../../shared/charts';
 import { UiService } from '../../shared/ui.service';
-import { TransactionDialog } from '../transactions/transaction.dialog';
+import { openTransactionDialog } from '../transactions/transaction.dialog';
 
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -285,8 +285,8 @@ export class DashboardPage {
   dueLabel(iso: string) { return iso === this.today ? 'Hoje' : iso === this.tomorrow ? 'Amanhã' : `${this.fmtDay(iso)} · em atraso`; }
   accName(t: Transaction) { return this.data.accountMap().get(t.account_id)?.name ?? ''; }
 
-  add(kind: 'expense' | 'income' | 'transfer') { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { kind } }); }
-  edit(t: Transaction) { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { transaction: t } }); }
+  add(kind: 'expense' | 'income' | 'transfer') { openTransactionDialog(this.dialog, { kind }); }
+  edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
   async pay(t: Transaction, ev: Event) {
     ev.stopPropagation();
     try { await this.data.setPaid(t.id, true); } catch (e) { this.ui.error(e); }

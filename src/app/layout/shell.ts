@@ -16,7 +16,7 @@ import { AuthService } from '../core/auth.service';
 import { ThemeService } from '../core/theme.service';
 import { DataService } from '../core/data.service';
 import { UiService } from '../shared/ui.service';
-import { TransactionDialog } from '../features/transactions/transaction.dialog';
+import { openTransactionDialog } from '../features/transactions/transaction.dialog';
 import { ProfileDialog } from '../features/auth/profile.dialog';
 
 @Component({
@@ -136,7 +136,7 @@ export class Shell {
   }
 
   newTransaction() {
-    this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', autoFocus: 'first-tabbable' });
+    openTransactionDialog(this.dialog, {});
   }
 
   editProfile() {

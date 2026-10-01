@@ -64,3 +64,9 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 
 .mat-mdc-dialog-content { max-height: 75vh; }
 .mat-mdc-snack-bar-container { margin-bottom: 80px !important; }
+
+// Diálogo de movimento: sem padding; ecrã inteiro no telemóvel
+.tx-dialog .mat-mdc-dialog-surface, .tx-dialog-full .mat-mdc-dialog-surface { padding: 0; overflow: hidden; }
+.tx-dialog-full .mat-mdc-dialog-surface { border-radius: 0; }
+.tx-dialog .mat-mdc-dialog-surface { border-radius: 24px; }
+.tx-dialog-full .mat-mdc-dialog-container, .tx-dialog .mat-mdc-dialog-container { --mdc-dialog-container-shape: 0; }

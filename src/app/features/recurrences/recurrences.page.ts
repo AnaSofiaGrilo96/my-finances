@@ -11,7 +11,7 @@ import { FREQUENCIES, Recurrence } from '../../core/models';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { UiService } from '../../shared/ui.service';
-import { TransactionDialog } from '../transactions/transaction.dialog';
+import { openTransactionDialog } from '../transactions/transaction.dialog';
 
 @Component({
   selector: 'app-recurrences-page',
@@ -103,7 +103,7 @@ export class RecurrencesPage {
     return [this.data.categoryLabel(r.category_id), this.acc(r.account_id)?.name].filter(Boolean).join(' · ');
   }
 
-  add() { this.dialog.open(TransactionDialog, { width: '520px', maxWidth: '96vw', data: { repeat: 'fixed' } }); }
+  add() { openTransactionDialog(this.dialog, { repeat: 'fixed' }); }
 
   async toggle(r: Recurrence, active: boolean) {
     try { await this.data.setRecurrenceActive(r.id, active); } catch (e) { this.ui.error(e); }
