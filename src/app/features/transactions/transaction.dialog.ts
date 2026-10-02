@@ -15,7 +15,8 @@ import { FREQUENCIES, Frequency, Transaction, TransactionKind, splitInstallments
 import { addDays, fromIso, occurrenceDate, todayIso, toIso } from '../../core/dates';
 import { UiService } from '../../shared/ui.service';
 import { IconBadge } from '../../shared/icon-badge';
-import { PickerItem, PickerSheet } from '../../shared/picker.sheet';
+import { PickerData, PickerItem, PickerSheet } from '../../shared/picker.sheet';
+import { BackButtonService } from '../../shared/back-button.service';
 import { formatMoney } from '../../shared/money.pipe';
 
 export interface TransactionDialogData {
@@ -306,6 +307,7 @@ export class TransactionDialog {
   private readonly ui = inject(UiService);
   private readonly ref = inject(MatDialogRef<TransactionDialog>);
   private readonly sheet = inject(MatBottomSheet);
+  private readonly back = inject(BackButtonService);
   private readonly input = inject<TransactionDialogData>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
   readonly kinds: { id: TransactionKind; label: string }[] = [{ id: 'expense', label: 'Despesa' }, { id: 'income', label: 'Receita' }, { id: 'transfer', label: 'Transferência' }];
@@ -394,6 +396,11 @@ export class TransactionDialog {
   }
 
   // ---------- pickers ----------
+  private openPicker(data: PickerData): Promise<PickerItem | undefined> {
+    const ref = this.sheet.open(PickerSheet, { data });
+    this.back.track(ref);
+    return ref.afterDismissed().toPromise();
+  }
   async pickCategory() {
     const groups = this.kind() === 'income' ? this.data.incomeGroups() : this.data.expenseGroups();
     const items: PickerItem[] = [{ id: null, label: 'Sem categoria', icon: 'block', color: '#90a4ae' }];
@@ -401,7 +408,7 @@ export class TransactionDialog {
       if (!g.parent.archived) items.push({ id: g.parent.id, label: g.parent.name, icon: g.parent.icon, color: g.parent.color });
       for (const c of g.children) items.push({ id: c.id, label: c.name, icon: c.icon, color: c.color, sub: true });
     }
-    const picked = await this.sheet.open(PickerSheet, { data: { title: 'Categoria', items, selected: this.categoryId } }).afterDismissed().toPromise();
+    const picked = await this.openPicker({ title: 'Categoria', items, selected: this.categoryId });
     if (picked !== undefined) { this.categoryId = picked.id; this.tick.update((v) => v + 1); }
   }
 
@@ -410,7 +417,7 @@ export class TransactionDialog {
       .filter((a) => !(this.kind() === 'transfer' && (which === 'to' ? a.id === this.accountId : a.id === this.toAccountId)))
       .map((a) => ({ id: a.id, label: a.name, icon: a.icon, color: a.color, hint: formatMoney(this.data.balances()[a.id] ?? a.initial_balance) }));
     const title = which === 'to' ? 'Conta destino' : this.kind() === 'transfer' ? 'Conta origem' : this.kind() === 'income' ? 'Recebi em' : 'Pago com';
-    const picked = await this.sheet.open(PickerSheet, { data: { title, items, selected: which === 'to' ? this.toAccountId : this.accountId } }).afterDismissed().toPromise();
+    const picked = await this.openPicker({ title, items, selected: which === 'to' ? this.toAccountId : this.accountId });
     if (picked?.id) { if (which === 'to') this.toAccountId = picked.id; else this.accountId = picked.id; this.tick.update((v) => v + 1); }
   }
 

@@ -21,6 +21,7 @@ import { DataService } from '../core/data.service';
 import { UiService } from '../shared/ui.service';
 import { openTransactionDialog } from '../features/transactions/transaction.dialog';
 import { ProfileDialog } from '../features/auth/profile.dialog';
+import { BackButtonService } from '../shared/back-button.service';
 
 @Component({
   selector: 'app-shell',
@@ -122,6 +123,7 @@ export class Shell {
   readonly data = inject(DataService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly back = inject(BackButtonService); // ativa o tratamento do botão Voltar
   private readonly ui = inject(UiService);
   private readonly bp = inject(BreakpointObserver);
 

@@ -8,6 +8,7 @@ import { Transaction } from '../../core/models';
 import { addDays, todayIso } from '../../core/dates';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
+import { BackButtonService } from '../../shared/back-button.service';
 
 export type DetailAction = 'delete' | 'duplicate' | 'toggle' | 'edit' | 'notes';
 
@@ -15,9 +16,13 @@ export type DetailAction = 'delete' | 'duplicate' | 'toggle' | 'edit' | 'notes';
  * Abre o detalhe de um movimento: folha inferior no telemóvel (arrastar para baixo fecha),
  * janela centrada no computador (clique fora fecha). Devolve a ação escolhida ou undefined.
  */
-export async function openTransactionDetail(dialog: MatDialog, sheet: MatBottomSheet, t: Transaction): Promise<DetailAction | undefined> {
+export async function openTransactionDetail(dialog: MatDialog, sheet: MatBottomSheet, back: BackButtonService, t: Transaction): Promise<DetailAction | undefined> {
   const small = window.matchMedia('(max-width: 899px)').matches;
-  if (small) return (await sheet.open(TransactionDetailSheet, { data: t, panelClass: 'detail-sheet' }).afterDismissed().toPromise()) as DetailAction | undefined;
+  if (small) {
+    const ref = sheet.open(TransactionDetailSheet, { data: t, panelClass: 'detail-sheet' });
+    back.track(ref);
+    return (await ref.afterDismissed().toPromise()) as DetailAction | undefined;
+  }
   return (await dialog.open(TransactionDetailSheet, { data: t, width: '480px', maxWidth: '92vw', panelClass: 'detail-dialog', autoFocus: false }).afterClosed().toPromise()) as DetailAction | undefined;
 }
 
