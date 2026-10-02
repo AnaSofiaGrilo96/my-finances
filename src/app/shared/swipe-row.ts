@@ -6,7 +6,7 @@ let openRow: SwipeRow | null = null;
 
 /**
  * Linha que se arrasta para a esquerda (telemóvel) para revelar três ações:
- * estado de pagamento (polegar), editar e apagar. No computador as ações aparecem ao passar o rato.
+ * estado de pagamento (polegar), editar e apagar. No computador clica-se na linha e usa-se a folha de detalhe.
  */
 @Component({
   selector: 'app-swipe-row',
@@ -30,11 +30,6 @@ let openRow: SwipeRow | null = null;
     .act.paid { background: #8a8f95; } .act.edit { background: #5f6b67; } .act.del { background: #d9534f; }
     .content { position: relative; background: inherit; transition: transform .18s ease-out; touch-action: pan-y; will-change: transform; }
     .content.dragging { transition: none; }
-    /* computador: ações visíveis ao passar o rato, sem arrastar */
-    @media (hover: hover) and (min-width: 900px) {
-      :host:hover .actions { opacity: 1; pointer-events: auto; }
-      :host:hover .content { transform: translateX(-192px) !important; }
-    }
   `],
 })
 export class SwipeRow {
