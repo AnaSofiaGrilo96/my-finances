@@ -9,7 +9,6 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DataService } from '../../core/data.service';
 import { FREQUENCIES, Frequency, Transaction, TransactionKind, splitInstallments } from '../../core/models';
@@ -44,7 +43,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
 
 @Component({
   selector: 'app-transaction-dialog',
-  imports: [NgTemplateOutlet, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatCheckboxModule, MatTooltipModule, IconBadge],
+  imports: [NgTemplateOutlet, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTooltipModule, IconBadge],
   template: `
     <div class="wrap" [class]="'k-' + kind()">
       <!-- ===== Cabeçalho: tipo + valor ===== -->
@@ -189,7 +188,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
                 <mat-icon>repeat</mat-icon>
                 <div>
                   @if (r.installments) { Parcela {{ tx!.installment_no }}/{{ r.installments }} } @else { Recorrência {{ freqLabel(r.frequency).toLowerCase() }}{{ r.active ? '' : ' (terminada)' }} }
-                  <mat-checkbox [(ngModel)]="applyToFollowing" name="applyToFollowing">Aplicar também às seguintes por pagar</mat-checkbox>
+                  <span class="hint">Ao guardar, perguntamos se a alteração é só para este ou também para os próximos.</span>
                 </div>
               </div>
             </div>
@@ -204,7 +203,6 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
             @if (isEdit) {
               <div class="danger-row">
                 <button matButton (click)="remove()" [disabled]="busy()"><mat-icon>delete</mat-icon>Apagar</button>
-                @if (tx?.recurrence_id) { <button matButton (click)="removeSeries()" [disabled]="busy()"><mat-icon>event_busy</mat-icon>Terminar a partir daqui</button> }
               </div>
             }
           }
@@ -268,6 +266,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .small { flex: 1; min-width: 140px; }
     .hint { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); margin: 8px 0 0; }
     .rec-box { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+    .rec-box .hint { display: block; }
     .rec-box mat-icon { color: var(--mat-sys-primary); margin-top: 2px; }
     .more { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; background: none; border: none; border-bottom: 1px solid var(--mat-sys-outline-variant); color: inherit; font: inherit; font-size: 20px; padding: 16px; cursor: pointer; }
     .danger-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px; }
@@ -335,7 +334,6 @@ export class TransactionDialog {
   frequency: Frequency = 'monthly';
   installments: number | null = 12;
   times: number | null = null;
-  applyToFollowing = false;
 
   readonly suggestions = signal<Transaction[]>([]);
   readonly suggestOpen = signal(false);
@@ -490,9 +488,17 @@ export class TransactionDialog {
       const date = toIso(this.dateValue);
       const p = this.payload(date);
       if (this.isEdit) {
-        await this.data.saveTransaction({ id: this.tx!.id, ...p });
-        if (this.applyToFollowing && this.tx!.recurrence_id && this.recurrence()) {
-          await this.data.updateRecurrence(this.tx!.recurrence_id, { kind: p.kind, amount: p.amount, description: p.description, account_id: p.account_id, to_account_id: p.to_account_id, category_id: p.category_id, notes: p.notes }, addDays(date, 1));
+        const full: Transaction = { id: this.tx!.id, ...p };
+        if (this.tx!.recurrence_id && this.changedBeyondPaid(p)) {
+          // Pertence a uma recorrência e mudou algo além do estado: perguntar o alcance (como no Organizze).
+          this.busy.set(false);
+          const scope = await this.ui.recurrenceScope('Atualizar');
+          if (!scope) return;
+          this.busy.set(true);
+          if (scope === 'one') await this.data.saveDetached(full);
+          else await this.data.saveAndFollowing(full);
+        } else {
+          await this.data.saveTransaction(full);
         }
       } else if (this.repeat === 'installments') {
         const n = Math.floor(Number(this.installments));
@@ -507,21 +513,28 @@ export class TransactionDialog {
     } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
 
+  /** Mudou alguma coisa além do estado pago/não pago? (só o estado não justifica perguntar o alcance) */
+  private changedBeyondPaid(p: Omit<Transaction, 'id'>): boolean {
+    const t = this.tx!;
+    return p.date !== t.date || p.amount !== t.amount || p.description !== (t.description ?? '') || p.account_id !== t.account_id
+      || (p.to_account_id ?? null) !== (t.to_account_id ?? null) || (p.category_id ?? null) !== (t.category_id ?? null) || (p.notes ?? null) !== (t.notes ?? null);
+  }
+
   async remove() {
+    if (this.tx!.recurrence_id) {
+      const scope = await this.ui.recurrenceScope('Apagar');
+      if (!scope) return;
+      this.busy.set(true);
+      try {
+        if (scope === 'one') await this.data.deleteTransaction(this.tx!.id);
+        else await this.data.deleteAndFollowing(this.tx!);
+        this.ref.close(true);
+      } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
+      return;
+    }
     if (!(await this.ui.confirm('Apagar movimento', 'Esta ação não pode ser anulada.', 'Apagar'))) return;
     this.busy.set(true);
     try { await this.data.deleteTransaction(this.tx!.id); this.ref.close(true); }
     catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
-  }
-
-  async removeSeries() {
-    if (!(await this.ui.confirm('Terminar recorrência', 'Apaga este movimento e os seguintes por pagar, e termina a recorrência. Os já pagos ficam no histórico.', 'Terminar'))) return;
-    this.busy.set(true);
-    try {
-      if (!this.tx!.paid) await this.data.deleteTransaction(this.tx!.id);
-      if (this.recurrence()) await this.data.endRecurrence(this.tx!.recurrence_id!, this.tx!.date);
-      else await this.data.deleteOccurrencesFrom(this.tx!.recurrence_id!, this.tx!.date);
-      this.ref.close(true);
-    } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
 }

@@ -19,7 +19,7 @@ import { MonthNav } from '../../shared/month-nav';
 import { SwipeRow } from '../../shared/swipe-row';
 import { UiService } from '../../shared/ui.service';
 import { openTransactionDialog } from './transaction.dialog';
-import { DetailAction, TransactionDetailSheet } from './transaction-detail.sheet';
+import { openTransactionDetail } from './transaction-detail.sheet';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 
 interface DayGroup { date: string; label: string; items: Transaction[]; balance: number | null; }
@@ -264,7 +264,7 @@ export class TransactionsPage implements OnDestroy {
 
   /** Clicar numa linha abre a folha de detalhe (ver dados + ações); a edição é uma das ações. */
   async open(t: Transaction) {
-    const action = await this.sheet.open(TransactionDetailSheet, { data: t, panelClass: 'detail-sheet' }).afterDismissed().toPromise() as DetailAction | undefined;
+    const action = await openTransactionDetail(this.dialog, this.sheet, t);
     if (action === 'edit') this.edit(t);
     else if (action === 'notes') openTransactionDialog(this.dialog, { transaction: t, openNotes: true });
     else if (action === 'duplicate') openTransactionDialog(this.dialog, { prefill: t });
@@ -277,6 +277,12 @@ export class TransactionsPage implements OnDestroy {
   }
 
   async remove(t: Transaction) {
+    if (t.recurrence_id) {
+      const scope = await this.ui.recurrenceScope('Apagar');
+      if (!scope) return;
+      try { if (scope === 'one') await this.data.deleteTransaction(t.id); else await this.data.deleteAndFollowing(t); } catch (e) { this.ui.error(e); }
+      return;
+    }
     if (!(await this.ui.confirm('Apagar movimento', `Apagar "${t.description || this.nameOf(t)}" de ${t.amount.toFixed(2).replace('.', ',')} €? Esta ação não pode ser anulada.`, 'Apagar'))) return;
     try { await this.data.deleteTransaction(t.id); } catch (e) { this.ui.error(e); }
   }

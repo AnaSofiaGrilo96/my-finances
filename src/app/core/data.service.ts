@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Account, Category, CategoryGroup, Recurrence, Settings, Transaction, splitInstallments } from './models';
-import { addMonthsIso, occurrenceDate, todayIso } from './dates';
+import { addDays, addMonthsIso, occurrenceDate, todayIso } from './dates';
 
 type NewTransaction = Omit<Transaction, 'id'>;
 
@@ -315,6 +315,41 @@ export class DataService {
     const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', recurrenceId).eq('paid', false).gte('date', fromDate);
     if (error) throw error;
     await this.afterTxChange();
+  }
+
+  /**
+   * "Atualizar apenas este": guarda o movimento e desliga-o da recorrência (fica diferente dos outros,
+   * por isso deixa de ser tocado por alterações à série).
+   */
+  async saveDetached(t: Transaction): Promise<Transaction> {
+    return this.saveTransaction({ ...t, recurrence_id: null, installment_no: null });
+  }
+
+  /**
+   * "Este e os próximos": guarda o movimento e aplica os mesmos dados à regra (se existir) e às ocorrências
+   * não pagas seguintes. Em parcelados o valor de cada parcela não se propaga.
+   */
+  async saveAndFollowing(t: Transaction): Promise<void> {
+    await this.saveTransaction(t);
+    const id = t.recurrence_id!;
+    const fields = { kind: t.kind, description: t.description, account_id: t.account_id, to_account_id: t.to_account_id, category_id: t.category_id, notes: t.notes };
+    const rule = this.recurrences().find((r) => r.id === id);
+    if (rule) {
+      await this.updateRecurrence(id, rule.installments ? fields : { ...fields, amount: t.amount }, addDays(t.date, 1));
+    } else {
+      const { error } = await this.sb.from('transactions').update({ ...fields, amount: t.amount }).eq('recurrence_id', id).eq('paid', false).gt('date', t.date);
+      if (error) throw error;
+      await this.afterTxChange();
+    }
+  }
+
+  /** "Apagar este e os próximos": apaga o movimento, as ocorrências não pagas seguintes e termina a regra. Os já pagos ficam. */
+  async deleteAndFollowing(t: Transaction): Promise<void> {
+    const { error } = await this.sb.from('transactions').delete().eq('id', t.id);
+    if (error) throw error;
+    const id = t.recurrence_id!;
+    if (this.recurrences().some((r) => r.id === id)) await this.endRecurrence(id, t.date);
+    else await this.deleteOccurrencesFrom(id, t.date);
   }
 
   /** Movimentos por pagar até `until` (inclui atrasados). */

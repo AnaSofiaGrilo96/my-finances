@@ -75,5 +75,39 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 .tx-dialog .mat-mdc-dialog-surface { border-radius: 24px; height: min(92dvh, 760px); }
 .tx-dialog-full .mat-mdc-dialog-container, .tx-dialog .mat-mdc-dialog-container { --mdc-dialog-container-shape: 0; }
 
-// Folha de detalhe do movimento
+// Detalhe do movimento: folha inferior no telemóvel, janela centrada no computador
 .detail-sheet { border-radius: 24px 24px 0 0 !important; max-height: 85dvh; }
+.detail-dialog .mat-mdc-dialog-surface { border-radius: 24px; padding: 0; }
+// Pergunta com opções empilhadas
+.choice-dialog .mat-mdc-dialog-surface { border-radius: 22px; padding: 0; }
+
+// ---------- Animações (suaves, sem exagero) ----------
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+
+// Entrada de página ao navegar
+router-outlet + * { display: block; animation: fade-up .24s ease-out both; }
+// Cartões e linhas de lista aparecem a deslizar ligeiramente; cada linha com um pequeno atraso
+.card { animation: fade-up .26s ease-out both; }
+.rows > * { animation: fade-up .24s ease-out both; }
+@for $i from 1 through 12 { .rows > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 22}ms; } }
+// Pressão em botões redondos / chips / linhas clicáveis
+.row.clickable, .fab, .mat-mdc-icon-button { transition: background-color .18s ease, transform .15s ease; }
+.row.clickable:active { transform: scale(.985); }
+.fab:active, .mat-mdc-icon-button:active { transform: scale(.92); }
+// Barra de totais entra de baixo
+.sticky-bottom { animation: fade-up .3s ease-out both; }
+// Ícone do polegar e estado mudam com uma pequena transição
+.state, .amount { transition: color .2s ease, opacity .2s ease; }
+// Conteúdo da folha de detalhe e do teclado
+.detail-sheet app-icon-badge, .detail-dialog app-icon-badge { animation: pop-in .28s cubic-bezier(.2,.8,.2,1) both; }
+.detail-sheet .act, .detail-dialog .act, .tx-dialog .key, .tx-dialog-full .key, .tx-dialog .chip, .tx-dialog-full .chip, .tx-dialog .confirm, .tx-dialog-full .confirm,
+.mat-bottom-sheet-container .item { transition: transform .12s ease, background-color .18s ease, color .18s ease, filter .15s ease; }
+.detail-sheet .act:active, .detail-dialog .act:active, .tx-dialog .key:active, .tx-dialog-full .key:active, .tx-dialog .chip:active, .tx-dialog-full .chip:active,
+.tx-dialog .confirm:active, .tx-dialog-full .confirm:active, .mat-bottom-sheet-container .item:active { transform: scale(.93); }
+.tx-dialog .body, .tx-dialog-full .body { animation: fade-in .2s ease-out both; }
+// Menos movimento se o sistema o pedir
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
+}
