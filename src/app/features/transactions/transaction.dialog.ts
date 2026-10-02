@@ -64,7 +64,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
 
       <!-- ===== Passo 1: teclado ===== -->
       @if (step() === 1) {
-        <section class="body">
+        <section class="body scroll step1">
           <div class="field">
             <label>Descrição</label>
             <div class="inline">
@@ -162,7 +162,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
                   } @else {
                     <mat-form-field class="small" subscriptSizing="dynamic">
                       <mat-label>Terminar após</mat-label>
-                      <input matInput type="number" min="2" max="1000" [(ngModel)]="times" name="times" placeholder="sem fim" />
+                      <input matInput type="number" min="2" max="1000" [(ngModel)]="times" name="times" placeholder="∞" />
                       <span matTextSuffix>vezes</span>
                     </mat-form-field>
                   }
@@ -245,7 +245,8 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     /* ---- corpo ---- */
     .body { padding: 6px 0 0; }
     .body.scroll { flex: 1; overflow: auto; min-height: 0; }
-    .field { display: block; width: 100%; padding: 14px 20px; border-bottom: 1px solid var(--mat-sys-outline-variant); position: relative; text-align: left; background: none; border-left: none; border-right: none; border-top: none; color: inherit; font: inherit; }
+    .body.step1 { flex: 0 1 auto; }
+    .field { display: block; width: 100%; box-sizing: border-box; padding: 14px 20px; border-bottom: 1px solid var(--mat-sys-outline-variant); position: relative; text-align: left; background: none; border-left: none; border-right: none; border-top: none; color: inherit; font: inherit; }
     .field.row { cursor: pointer; } .field.row:hover { background: var(--mat-sys-surface-container); }
     .field label { display: block; font-size: 18px; font-weight: 500; margin-bottom: 10px; }
     .inline { display: flex; align-items: center; gap: 14px; font-size: 17px; min-height: 40px; }
@@ -267,19 +268,19 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .danger-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px; }
     .spacer-bottom { height: 110px; }
     /* ---- teclado ---- */
-    .keypad { margin-top: auto; background: var(--mat-sys-surface-container-lowest); border-radius: 28px 28px 0 0; padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; }
+    .keypad { margin-top: auto; flex-shrink: 0; background: var(--mat-sys-surface-container-lowest); border-radius: 28px 28px 0 0; padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; }
     html.dark .keypad { background: #0f0f0f; }
-    .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--mat-sys-outline-variant); margin-bottom: 14px; }
-    .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 28px; width: 100%; max-width: 340px; justify-items: center; }
-    .key { width: 74px; height: 74px; border-radius: 50%; border: 1.5px solid var(--mat-sys-outline-variant); background: none; color: inherit; font: inherit; font-size: 30px; cursor: pointer; display: grid; place-items: center; }
+    .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--mat-sys-outline-variant); margin-bottom: 10px; }
+    .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; width: 100%; max-width: 300px; justify-items: center; }
+    .key { width: 68px; height: 68px; border-radius: 50%; border: 1.5px solid var(--mat-sys-outline-variant); background: none; color: inherit; font: inherit; font-size: 30px; cursor: pointer; display: grid; place-items: center; }
     .key:active { background: var(--mat-sys-surface-container-high); }
     .key.flat { border: none; color: var(--mat-sys-on-surface-variant); }
-    .confirm { width: 76px; height: 76px; border-radius: 50%; border: none; background: #4caf6a; color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,.25); margin-top: 18px; }
+    .confirm { width: 72px; height: 72px; border-radius: 50%; border: none; background: #4caf6a; color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,.25); margin-top: 12px; }
     .confirm:disabled { opacity: .45; cursor: default; }
     .confirm mat-icon { font-size: 36px; width: 36px; height: 36px; }
     .confirm.save { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom)); margin: 0; }
     /* ---- sugestões ---- */
-    .suggest { position: absolute; left: 20px; right: 20px; top: 100%; margin-top: -6px; z-index: 30; background: var(--mat-sys-surface-container); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); overflow: hidden; max-height: 300px; overflow-y: auto; }
+    .suggest { margin: 10px 0 0; background: var(--mat-sys-surface-container); border-radius: 14px; overflow: hidden; max-height: 280px; overflow-y: auto; }
     .sug { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; border-bottom: 1px solid var(--mat-sys-outline-variant); color: inherit; font: inherit; text-align: left; padding: 10px 14px; cursor: pointer; }
     .sug:last-child { border-bottom: none; } .sug:hover { background: var(--mat-sys-surface-container-high); }
     .sug .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -288,8 +289,8 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .sug .val { font-size: 13px; color: var(--mat-sys-on-surface-variant); white-space: nowrap; }
     @media (min-width: 900px) {
       .amount { font-size: 44px; }
-      .key { width: 64px; height: 64px; font-size: 26px; }
-      .keys { gap: 10px 22px; }
+      .key { width: 60px; height: 60px; font-size: 24px; }
+      .keys { gap: 8px 10px; max-width: 260px; }
       .field label { font-size: 15px; margin-bottom: 6px; }
       .more { font-size: 16px; padding: 12px; }
       .spacer-bottom { height: 96px; }
