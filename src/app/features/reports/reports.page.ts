@@ -40,9 +40,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       </div>
 
       @if (period() !== 'year') {
-        <app-month-nav class="months" [month]="month()" (monthChange)="month.set($event)" />
+        <app-month-nav class="months sticky-top" [month]="month()" (monthChange)="month.set($event)" />
       } @else {
-        <app-month-nav class="months" [month]="month()" mode="year" (monthChange)="month.set($event)" />
+        <app-month-nav class="months sticky-top" [month]="month()" mode="year" (monthChange)="month.set($event)" />
       }
 
       @if (filtersOpen()) {
@@ -194,7 +194,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .f { width: 200px; }
     .filters { padding: 12px; margin-bottom: 4px; }
     .page-header button.on { background: var(--mat-sys-secondary-container); }
-    .months { margin: 0 0 14px; }
     .range { font-size: 13px; }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }

@@ -229,7 +229,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     /* ---- cabeçalho ---- */
     .head { padding: 10px 16px 22px; color: #fff; transition: background .2s; }
     .k-expense .head { background: #6b3d44; } .k-income .head { background: #2f6b47; } .k-transfer .head { background: #3c4149; }
-    html:not(.dark) .k-expense .head { background: #c0484f; } html:not(.dark) .k-income .head { background: #2e9e63; } html:not(.dark) .k-transfer .head { background: #5a6270; }
+    :host-context(html:not(.dark)) .k-expense .head { background: #c0484f; } :host-context(html:not(.dark)) .k-income .head { background: #2e9e63; } :host-context(html:not(.dark)) .k-transfer .head { background: #5a6270; }
     .tabs { display: flex; align-items: center; gap: 4px; }
     .tab { flex: 1; background: none; border: none; color: rgba(255,255,255,.7); font: inherit; font-size: 16px; padding: 10px 0 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .tab.on { color: #fff; font-weight: 600; }
@@ -270,7 +270,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .spacer-bottom { height: 110px; }
     /* ---- teclado ---- */
     .keypad { margin-top: auto; flex-shrink: 0; background: var(--mat-sys-surface-container-lowest); border-radius: 28px 28px 0 0; padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; }
-    html.dark .keypad { background: #0f0f0f; }
+    :host-context(html.dark) .keypad { background: #0f0f0f; }
     .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--mat-sys-outline-variant); margin-bottom: 10px; }
     .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; width: 100%; max-width: 300px; justify-items: center; }
     .key { width: 68px; height: 68px; border-radius: 50%; border: 1.5px solid var(--mat-sys-outline-variant); background: none; color: inherit; font: inherit; font-size: 30px; cursor: pointer; display: grid; place-items: center; }

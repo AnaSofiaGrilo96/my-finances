@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,6 +16,7 @@ import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
+import { SwipeRow } from '../../shared/swipe-row';
 import { UiService } from '../../shared/ui.service';
 import { openTransactionDialog } from './transaction.dialog';
 
@@ -25,7 +26,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
 
 @Component({
   selector: 'app-transactions-page',
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
   template: `
     <div class="page">
       <div class="page-header">
@@ -35,7 +36,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         </button>
       </div>
 
-      <app-month-nav class="months" [month]="month()" (monthChange)="setMonth($event)" />
+      <app-month-nav class="months sticky-top" [month]="month()" (monthChange)="setMonth($event)" />
 
       @if (filtersOpen()) {
         <div class="card filters">
@@ -102,29 +103,29 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           </div>
           <div class="card rows">
             @for (t of g.items; track t.id) {
-              <div class="row clickable" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)" (click)="edit(t)">
-                <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="38" />
-                <div class="main">
-                  <div class="title">
-                    {{ t.description || nameOf(t) }}
-                    @if (t.recurrence_id) { <mat-icon class="rep" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
-                    @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
+              <app-swipe-row [paid]="t.paid" (togglePaid)="togglePaid(t)" (edit)="edit(t)" (remove)="remove(t)" (tapped)="edit(t)">
+                <div class="row clickable" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)">
+                  <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="38" />
+                  <div class="main">
+                    <div class="title">
+                      {{ t.description || nameOf(t) }}
+                      @if (t.recurrence_id) { <mat-icon class="rep" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
+                      @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
+                    </div>
+                    <div class="sub">{{ subOf(t) }}</div>
                   </div>
-                  <div class="sub">{{ subOf(t) }}</div>
+                  <div class="right">
+                    <div class="amount" [class]="amountClass(t)">{{ signedAmount(t) | money:'signed' }}</div>
+                    <div class="state" [class.is-paid]="t.paid">{{ stateOf(t) }}</div>
+                  </div>
                 </div>
-                <div class="right">
-                  <div class="amount" [class]="amountClass(t)">{{ signedAmount(t) | money:'signed' }}</div>
-                  <div class="state" [class.is-paid]="t.paid">{{ stateOf(t) }}</div>
-                </div>
-                <button matIconButton class="paid" [class.is-paid]="t.paid" (click)="togglePaid(t, $event)" [matTooltip]="t.kind === 'income' ? (t.paid ? 'Recebido' : 'Não recebido') : (t.paid ? 'Pago' : 'Não pago')">
-                  <mat-icon>{{ t.paid ? 'thumb_up' : 'thumb_down' }}</mat-icon>
-                </button>
-              </div>
+              </app-swipe-row>
             }
           </div>
         </section>
       }
 
+      <div class="end-space"></div>
       <div class="summary card sticky-bottom">
         <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
         <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
@@ -140,8 +141,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     @media (max-width: 700px) { .filters .f { width: calc(50% - 5px); } .filters .search { width: 100%; } }
     :host .page { display: flex; flex-direction: column; min-height: calc(100dvh - 64px); box-sizing: border-box; }
     :host .page > * { flex-shrink: 0; }
-    .summary { margin-top: auto; }
-    .months { margin: 0 0 14px; }
+    .summary { margin-top: 0; }
+    .end-space { margin-top: auto; height: 0; }
+    @media (max-width: 899px) { .end-space { height: 84px; } }
     .summary { display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px; box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
     .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
@@ -149,7 +151,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px 6px; font-size: 13px; font-weight: 500; text-transform: capitalize; }
     .day-head .muted { text-transform: none; font-weight: 400; }
     .rows { padding: 4px 8px; }
-    .row { padding-left: 6px; padding-right: 2px; border-radius: 10px; }
+    .row { padding-left: 6px; padding-right: 10px; border-radius: 10px; background: var(--mat-sys-surface-container-lowest); }
+    :host-context(html.dark) .row { background: var(--mat-sys-surface-container); }
+    app-swipe-row { margin: 2px 0; }
+    .state.is-paid { color: #1eb980; }
     .row.due { background: color-mix(in srgb, #f5b301 18%, transparent); }
     .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); }
     .row.unpaid .title, .row.unpaid .amount { opacity: .75; }
@@ -157,12 +162,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
     .state { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
-    .paid { color: #e5484d; opacity: .8; }
-    .paid.is-paid { color: #1eb980; opacity: 1; }
     .sub-opt { padding-left: 18px; }
   `],
 })
-export class TransactionsPage {
+export class TransactionsPage implements OnDestroy {
   readonly data = inject(DataService);
   private readonly ui = inject(UiService);
   private readonly dialog = inject(MatDialog);
@@ -221,6 +224,7 @@ export class TransactionsPage {
   });
 
   constructor() {
+    document.body.classList.add('has-bottom-bar'); // o FAB sobe para não tapar a barra de totais
     if (this.activeFilters()) this.filtersOpen.set(true);
     effect(() => {
       const month = this.month(), acc = this.accountId();
@@ -247,15 +251,21 @@ export class TransactionsPage {
     } catch (e) { this.ui.error(e); } finally { this.loading.set(false); }
   }
 
+  ngOnDestroy() { document.body.classList.remove('has-bottom-bar'); }
+
   setMonth(m: string) { this.month.set(m); }
   clearFilters() { this.accountId.set(null); this.kind.set(null); this.categoryId.set(null); this.paidFilter.set(null); this.search.set(''); }
 
   add() { openTransactionDialog(this.dialog, { accountId: this.accountId() ?? undefined, kind: this.kind() ?? 'expense' }); }
   edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
 
-  async togglePaid(t: Transaction, ev: Event) {
-    ev.stopPropagation();
+  async togglePaid(t: Transaction) {
     try { await this.data.setPaid(t.id, !t.paid); } catch (e) { this.ui.error(e); }
+  }
+
+  async remove(t: Transaction) {
+    if (!(await this.ui.confirm('Apagar movimento', `Apagar "${t.description || this.nameOf(t)}" de ${t.amount.toFixed(2).replace('.', ',')} €? Esta ação não pode ser anulada.`, 'Apagar'))) return;
+    try { await this.data.deleteTransaction(t.id); } catch (e) { this.ui.error(e); }
   }
 
   // ---------- Apresentação ----------
