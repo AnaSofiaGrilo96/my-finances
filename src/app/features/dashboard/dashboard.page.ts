@@ -52,7 +52,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                     <div class="sub">{{ dueLabel(t.date) }} · {{ accName(t) }}</div>
                   </div>
                   <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
-                  <button matIconButton (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Marcar como recebido' : 'Marcar como pago'"><mat-icon>check_circle</mat-icon></button>
+                  <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
                 </div>
               }
             </div>
@@ -123,7 +123,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                         <div class="sub">{{ fmtDay(t.date) }} · {{ accName(t) }}</div>
                       </div>
                       <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
-                      <button matIconButton (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Marcar como recebido' : 'Marcar como pago'"><mat-icon>check_circle</mat-icon></button>
+                      <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
                     </div>
                   }
                 </div>
@@ -160,6 +160,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
   `,
   styles: [`
     .greet { padding: 4px 6px 14px; }
+    .paid { color: #e5484d; opacity: .8; }
     .greet h1 { margin: 0; font-size: 24px; font-weight: 600; }
     .due { padding: 6px 8px; margin-bottom: 16px; border-left: 4px solid #f5b301; }
     .due.ok { border-left-color: #1eb980; }

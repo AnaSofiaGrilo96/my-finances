@@ -116,8 +116,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
                   <div class="amount" [class]="amountClass(t)">{{ signedAmount(t) | money:'signed' }}</div>
                   <div class="state" [class.is-paid]="t.paid">{{ stateOf(t) }}</div>
                 </div>
-                <button matIconButton class="paid" [class.is-paid]="t.paid" (click)="togglePaid(t, $event)" [matTooltip]="t.paid ? 'Marcar como por pagar' : (t.kind === 'income' ? 'Marcar como recebido' : 'Marcar como pago')">
-                  <mat-icon>{{ t.paid ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <button matIconButton class="paid" [class.is-paid]="t.paid" (click)="togglePaid(t, $event)" [matTooltip]="t.kind === 'income' ? (t.paid ? 'Recebido' : 'Não recebido') : (t.paid ? 'Pago' : 'Não pago')">
+                  <mat-icon>{{ t.paid ? 'thumb_up' : 'thumb_down' }}</mat-icon>
                 </button>
               </div>
             }
@@ -157,8 +157,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
     .state { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
-    .paid { color: var(--mat-sys-outline); }
-    .paid.is-paid { color: #1eb980; }
+    .paid { color: #e5484d; opacity: .8; }
+    .paid.is-paid { color: #1eb980; opacity: 1; }
     .sub-opt { padding-left: 18px; }
   `],
 })
@@ -274,7 +274,6 @@ export class TransactionsPage {
   }
   stateOf(t: Transaction) {
     if (t.kind === 'income') return t.paid ? 'recebido' : 'não recebido';
-    if (t.kind === 'transfer') return t.paid ? 'efetuada' : 'por efetuar';
     return t.paid ? 'pago' : 'não pago';
   }
   signedAmount(t: Transaction) {
