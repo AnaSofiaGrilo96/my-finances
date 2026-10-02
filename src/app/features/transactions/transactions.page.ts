@@ -19,6 +19,8 @@ import { MonthNav } from '../../shared/month-nav';
 import { SwipeRow } from '../../shared/swipe-row';
 import { UiService } from '../../shared/ui.service';
 import { openTransactionDialog } from './transaction.dialog';
+import { DetailAction, TransactionDetailSheet } from './transaction-detail.sheet';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 
 interface DayGroup { date: string; label: string; items: Transaction[]; balance: number | null; }
 
@@ -103,7 +105,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           </div>
           <div class="card rows">
             @for (t of g.items; track t.id) {
-              <app-swipe-row [paid]="t.paid" (togglePaid)="togglePaid(t)" (edit)="edit(t)" (remove)="remove(t)" (tapped)="edit(t)">
+              <app-swipe-row [paid]="t.paid" (togglePaid)="togglePaid(t)" (edit)="edit(t)" (remove)="remove(t)" (tapped)="open(t)">
                 <div class="row clickable" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)">
                   <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="38" />
                   <div class="main">
@@ -169,6 +171,7 @@ export class TransactionsPage implements OnDestroy {
   readonly data = inject(DataService);
   private readonly ui = inject(UiService);
   private readonly dialog = inject(MatDialog);
+  private readonly sheet = inject(MatBottomSheet);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -258,6 +261,16 @@ export class TransactionsPage implements OnDestroy {
 
   add() { openTransactionDialog(this.dialog, { accountId: this.accountId() ?? undefined, kind: this.kind() ?? 'expense' }); }
   edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
+
+  /** Clicar numa linha abre a folha de detalhe (ver dados + ações); a edição é uma das ações. */
+  async open(t: Transaction) {
+    const action = await this.sheet.open(TransactionDetailSheet, { data: t, panelClass: 'detail-sheet' }).afterDismissed().toPromise() as DetailAction | undefined;
+    if (action === 'edit') this.edit(t);
+    else if (action === 'notes') openTransactionDialog(this.dialog, { transaction: t, openNotes: true });
+    else if (action === 'duplicate') openTransactionDialog(this.dialog, { prefill: t });
+    else if (action === 'toggle') await this.togglePaid(t);
+    else if (action === 'delete') await this.remove(t);
+  }
 
   async togglePaid(t: Transaction) {
     try { await this.data.setPaid(t.id, !t.paid); } catch (e) { this.ui.error(e); }

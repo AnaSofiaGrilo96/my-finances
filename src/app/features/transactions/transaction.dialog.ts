@@ -25,6 +25,10 @@ export interface TransactionDialogData {
   date?: string;
   accountId?: string;
   repeat?: 'none' | 'fixed' | 'installments';
+  /** Duplicar: novo movimento pré-preenchido a partir deste (data de hoje, não ligado a recorrência). */
+  prefill?: Transaction;
+  /** Abrir já com "Mais opções" (observação) visível. */
+  openNotes?: boolean;
 }
 
 type RepeatMode = 'none' | 'fixed' | 'installments';
@@ -310,22 +314,23 @@ export class TransactionDialog {
 
   readonly tx = this.input.transaction;
   readonly isEdit = !!this.tx;
+  private readonly src = this.tx ?? this.input.prefill; // valores iniciais (edição ou duplicação)
   readonly busy = signal(false);
-  readonly step = signal<1 | 2>(this.isEdit ? 2 : 1);
-  readonly more = signal(!!this.tx?.notes);
-  readonly kind = signal<TransactionKind>(this.tx?.kind ?? this.input.kind ?? 'expense');
+  readonly step = signal<1 | 2>(this.src ? 2 : 1);
+  readonly more = signal(!!this.src?.notes || !!this.input.openNotes);
+  readonly kind = signal<TransactionKind>(this.src?.kind ?? this.input.kind ?? 'expense');
 
   /** Valor em cêntimos (o teclado escreve da direita para a esquerda, como numa caixa registadora). */
-  private cents = Math.round((this.tx?.amount ?? 0) * 100);
+  private cents = Math.round((this.src?.amount ?? 0) * 100);
   get amount() { return this.cents / 100; }
 
-  description = this.tx?.description ?? '';
+  description = this.src?.description ?? '';
   dateValue: Date = fromIso(this.tx?.date ?? this.input.date ?? todayIso());
-  accountId: string | null = this.tx?.account_id ?? this.input.accountId ?? this.data.activeAccounts()[0]?.id ?? null;
-  toAccountId: string | null = this.tx?.to_account_id ?? null;
-  categoryId: string | null = this.tx?.category_id ?? null;
+  accountId: string | null = this.src?.account_id ?? this.input.accountId ?? this.data.activeAccounts()[0]?.id ?? null;
+  toAccountId: string | null = this.src?.to_account_id ?? null;
+  categoryId: string | null = this.src?.category_id ?? null;
   paid = this.tx?.paid ?? true;
-  notes = this.tx?.notes ?? '';
+  notes = this.src?.notes ?? '';
   repeat: RepeatMode = this.input.repeat ?? 'none';
   frequency: Frequency = 'monthly';
   installments: number | null = 12;
