@@ -57,7 +57,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
             {{ display() }}
           </button>
           <button type="button" class="paid" [class.on]="paid" (click)="paid = !paid" [matTooltip]="paidLabel()" [attr.aria-label]="paidLabel()">
-            <mat-icon>{{ paid ? 'thumb_up' : 'thumb_up_off_alt' }}</mat-icon>
+            <mat-icon>{{ paid ? 'thumb_up' : 'thumb_down' }}</mat-icon>
           </button>
         </div>
       </header>
@@ -240,6 +240,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .amount { background: none; border: none; color: #fff; font: inherit; font-size: 56px; font-weight: 700; letter-spacing: -1px; cursor: pointer; line-height: 1; padding: 0; display: flex; align-items: baseline; gap: 10px; }
     .amount small { font-size: 13px; font-weight: 400; opacity: .8; }
     .paid { background: none; border: none; color: rgba(255,255,255,.45); cursor: pointer; padding: 4px; display: grid; place-items: center; }
+    .paid { color: rgba(255,255,255,.75); }
     .paid.on { color: #fff; }
     .paid mat-icon { font-size: 34px; width: 34px; height: 34px; }
     /* ---- corpo ---- */
@@ -386,7 +387,6 @@ export class TransactionDialog {
   paidLabel() {
     const k = this.kind();
     if (k === 'income') return this.paid ? 'Recebido' : 'Não recebido';
-    if (k === 'transfer') return this.paid ? 'Efetuada' : 'Por efetuar';
     return this.paid ? 'Pago' : 'Não pago';
   }
 
