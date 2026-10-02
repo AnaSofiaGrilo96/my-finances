@@ -64,7 +64,7 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 // FAB no telemóvel fica acima da barra inferior
 .fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; width: 64px !important; height: 64px !important; border-radius: 50% !important; box-shadow: 0 6px 18px rgba(0,0,0,.25) !important; }
 .fab mat-icon { font-size: 30px; width: 30px; height: 30px; }
-@media (max-width: 899px) { .fab { bottom: calc(80px + env(safe-area-inset-bottom)) !important; } body.has-bottom-bar .fab { bottom: calc(152px + env(safe-area-inset-bottom)) !important; } }
+@media (max-width: 899px) { .fab { bottom: calc(80px + env(safe-area-inset-bottom)) !important; } body.has-bottom-bar .fab { bottom: calc(150px + env(safe-area-inset-bottom)) !important; } }
 
 .mat-mdc-dialog-content { max-height: 75vh; }
 .mat-mdc-snack-bar-container { margin-bottom: 80px !important; }
@@ -80,6 +80,10 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 .detail-dialog .mat-mdc-dialog-surface { border-radius: 24px; padding: 0; }
 // Pergunta com opções empilhadas
 .choice-dialog .mat-mdc-dialog-surface { border-radius: 22px; padding: 0; }
+// Modo escuro: janelas e folhas destacam-se do fundo (fundo mais claro, contorno e sombra)
+html.dark .detail-sheet, html.dark .mat-bottom-sheet-container { background: var(--mat-sys-surface-container-high); border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 55%, transparent); border-bottom: none; box-shadow: 0 -10px 40px rgba(0,0,0,.6); }
+html.dark .detail-dialog .mat-mdc-dialog-surface, html.dark .choice-dialog .mat-mdc-dialog-surface, html.dark .tx-dialog .mat-mdc-dialog-surface { background: var(--mat-sys-surface-container-high); border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 55%, transparent); box-shadow: 0 16px 48px rgba(0,0,0,.65); }
+html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-mix(in srgb, var(--mat-sys-on-surface) 12%, var(--mat-sys-surface-container-high)); }
 
 // ---------- Animações (suaves, sem exagero) ----------
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -96,8 +100,6 @@ router-outlet + * { display: block; animation: fade-up .24s ease-out both; }
 .row.clickable, .fab, .mat-mdc-icon-button { transition: background-color .18s ease, transform .15s ease; }
 .row.clickable:active { transform: scale(.985); }
 .fab:active, .mat-mdc-icon-button:active { transform: scale(.92); }
-// Barra de totais entra de baixo
-.sticky-bottom { animation: fade-up .3s ease-out both; }
 // Ícone do polegar e estado mudam com uma pequena transição
 .state, .amount { transition: color .2s ease, opacity .2s ease; }
 // Conteúdo da folha de detalhe e do teclado
