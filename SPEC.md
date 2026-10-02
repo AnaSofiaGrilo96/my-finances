@@ -2,7 +2,7 @@
 
 Documento de referência para quem pegar neste projeto (pessoa ou assistente de IA). Descreve o propósito, as decisões tomadas e as regras de negócio, para que alterações futuras não se desviem do que a app é. Atualizar este ficheiro sempre que uma decisão aqui descrita mudar.
 
-Última revisão: 2026-10-01 (v2: movimentos, frequências/parcelado, início mobile reduzido).
+Última revisão: 2026-10-02 (v3). **Estado atual em §10** — ler primeiro quando se retoma o trabalho.
 
 ---
 
@@ -34,7 +34,7 @@ O que a app **não** é: não é multi-utilizador (cada utilizador vê só os se
 | Moeda | EUR, formato `€ 1.234,56` (ponto nos milhares, vírgula nos decimais) — `MoneyPipe` | É o formato a que a Ana está habituada (Organizze) |
 | Datas | ISO `YYYY-MM-DD` em todo o lado, sem fusos horários (`src/app/core/dates.ts`) | Evita bugs de timezone em datas de movimentos |
 | Idioma | Interface em **português de Portugal** (tu-cá-tu-lá informal: "Tens 2 contas a pagar") | Utilizadora única, portuguesa |
-| Vocabulário | "**Movimentos**" (não "movimentos") para despesas/receitas/transferências; rota `/movimentos` (`/lancamentos` redireciona) | Pedido da Ana |
+| Vocabulário | "**Movimentos**" (não "lançamentos") para despesas/receitas/transferências; rota `/movimentos` (`/lancamentos` redireciona) | Pedido da Ana |
 | Estado | `DataService` (signals) é a única fonte de verdade no cliente: contas, categorias, recorrências, saldos e `settings` carregam uma vez; movimentos carregam por intervalo de datas; `version()` incrementa a cada alteração de movimentos e as páginas recarregam por `effect` | Simples, sem store externo |
 
 Ficheiros `src/environments/environment*.ts` contêm o URL e a **chave anon** do Supabase e vão para o Git de propósito (a chave anon é pública por desenho; a segurança está nas políticas RLS). A chave `service_role` nunca pode aparecer no repositório.
@@ -91,13 +91,13 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 
 ```
 src/app/core/       supabase.service, auth.service, auth.guard, data.service, models, dates, theme.service
-src/app/shared/     ui.service (toast/erro/confirm), charts, money.pipe, icon-badge, month-nav, confirm.dialog, picker.sheet (folha inferior de escolha)
+src/app/shared/     ui.service (toast/erro/confirm), charts, money.pipe, icon-badge, month-nav (fita de meses), confirm.dialog, picker.sheet (folha inferior de escolha), swipe-row (arrastar para revelar ações)
 src/app/layout/     shell — menu lateral (≥900px) / barra inferior + FAB (<900px), menu do utilizador
 src/app/features/
   auth/             login.page (Google + email/password), profile.dialog ("O meu nome")
   dashboard/        visão geral
-  transactions/     transactions.page (lista mensal), transaction.dialog (criar/editar; recorrências)
-  reports/          relatórios: Categorias, Entradas x Saídas, Contas, Tags; exportar CSV
+  transactions/     transactions.page (lista mensal), transaction.dialog (criar/editar; recorrências), transaction-detail.sheet (folha de detalhe)
+  reports/          relatórios: Categorias, Entradas x Saídas, Contas; exportar CSV
   recurrences/      lista de regras, total fixo mensal, pausar/retomar/apagar
   accounts/         contas (CRUD, ordenar, arquivar)
   categories/       categorias em árvore (CRUD, sub-categorias)
@@ -110,7 +110,11 @@ src/app/features/
 - **Computador** mostra além disso: receita/despesa/resultado do mês com navegador de mês e botões Despesa / Entrada / Transferência; Maiores gastos do mês (top 5 por categoria principal + donut); Próximos movimentos por pagar (depois de amanhã, até 30 dias).
 - Cartão de aviso: "Tens N contas a pagar e N a receber · hoje e amanhã: a pagar X · a receber Y · N em atraso"; expande para a lista com botão de marcar como pago. Inclui atrasados (data < hoje) até serem pagos. Transferências não entram.
 
-**Movimentos (`/lancamentos`)** — mês a mês; filtros Conta / Tipo / Categoria (agrupada) / Pesquisa (descrição, tags, notas); **a lista vem primeiro; o resumo Entradas/Saídas/Resultado fica fixo no fundo** (barra sticky acima da navegação); lista agrupada por dia com "Saldo no dia" (só quando os filtros o tornam coerente: sem filtro de tipo/categoria/pesquisa); polegar para alternar pago/por pagar. Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
+**Movimentos (`/movimentos`)** — mês a mês; **filtros escondidos** atrás do botão de filtro no cabeçalho (badge com o n.º de filtros ativos): Conta / Tipo / Categoria (agrupada) / Estado (pagos, por pagar) / Pesquisa (descrição, observação). **A lista vem primeiro; o resumo Entradas/Saídas/Resultado fica fixo no fundo** (barra sticky acima da navegação). Lista agrupada por dia ("Hoje", "Amanhã") com "Saldo no dia" (só quando os filtros o tornam coerente). **Movimentos por pagar com data até amanhã (ou atrasados) têm fundo amarelo translúcido** — os mesmos do aviso do início. Parcelas mostram "3/12". Cada linha mostra o estado em texto.
+- **Nomenclatura fixa de estado**: "pago" / "não pago" para despesas e transferências, "recebido" / "não recebido" para receitas — nada mais (nunca "por efetuar", "efetuada"). O ícone é sempre o **polegar**: 👍 pago/recebido, 👎 não pago/não recebido (lista, folha de detalhe, janela de movimento e aviso do início).
+- **Telemóvel: arrastar a linha para a esquerda** (`SwipeRow`) revela três ações: polegar (alterna pago), lápis (editar), caixote (apagar, com confirmação). Só uma linha aberta de cada vez. **No computador não há hover** — usa-se a folha de detalhe.
+- **Tocar/clicar numa linha (telemóvel e computador) abre a folha de detalhe** (`TransactionDetailSheet`, à imagem do Organizze): ícone grande da categoria, descrição, valor colorido, quatro botões redondos (apagar, duplicar, polegar, editar) e os dados — Data (hoje/ontem/amanhã/dd/mm/aaaa), Estado, Conta (ou origem/destino), Categoria, Observação ("Adicionar" abre a edição já com o campo visível), Repetição. Editar abre a janela de movimento; **duplicar** abre-a como novo movimento pré-preenchido (data de hoje, sem ligação à recorrência).
+- Query params `mes`, `conta`, `tipo`, `categoria`, `q` para links vindos de outras páginas.
 
 **Diálogo de movimento** (`transaction.dialog.ts`, aberto por `openTransactionDialog()` — ecrã inteiro no telemóvel, janela de 480px no computador; mesma estrutura nos dois). Desenhado à imagem do Organizze mobile, a pedido da Ana:
 - **Cabeçalho colorido pelo tipo** (vermelho despesa, verde receita, cinzento transferência) com as três abas Despesa / Receita / Transferência (indicador por baixo), o **valor em letras grandes** à direita e o ícone de polegar que alterna pago/não pago.
@@ -129,7 +133,9 @@ src/app/features/
 - **Cada área é um cartão** (`.card`): fundo ligeiramente diferente do da página (`surface-container-lowest` em claro, `surface-container` em escuro), borda subtil, cantos arredondados (18px). Novas secções devem usar `.card`.
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
 - Ícones Material Icons (fonte Google); categorias e contas têm cor + ícone, mostrados por `app-icon-badge`.
-- Diálogos com `width: 520px`, `maxWidth: 96vw`. Confirmar sempre antes de apagar (`UiService.confirm`).
+- Diálogos normais com `width: 440–520px`, `maxWidth: 96vw`; folhas inferiores (`MatBottomSheet`) para escolhas e detalhe. Confirmar sempre antes de apagar (`UiService.confirm`).
+- **Estilos por tema dentro de componentes**: usar `:host-context(html.dark)` / `:host-context(html:not(.dark))` — `html.dark .x` dentro de `styles:` de um componente NÃO funciona (encapsulamento).
+- **Service worker**: o `Shell` escuta `SwUpdate.versionUpdates` e mostra "Há uma nova versão da app — Atualizar". Sem isto, uma versão nova só se aplicava ao fechar e reabrir a PWA (confundiu a Ana uma vez).
 - Layout mobile-first: FAB "+" **redondo e grande (64px)** no telemóvel em todas as páginas **exceto Relatórios** (lá não se criam movimentos); em Movimentos sobe para ficar acima da barra de totais e a lista tem espaço extra no fim para a última linha nunca ficar debaixo dele; barra inferior com 3 entradas (Início, Movimentos, Relatórios). **Contas, Categorias, Recorrências e "O meu nome" ficam no menu do ícone de perfil** (canto superior direito), tanto no telemóvel como no computador; o menu lateral do desktop tem só as 3 páginas principais.
 - **Seletor de mês em fita** (`app-month-nav`): ‹ Setembro [Outubro] Novembro › — o mês atual numa pílula ao centro, vizinhos clicáveis; **arrastar a fita para a esquerda/direita também muda o mês** (telemóvel); fica **fixa no topo** (abaixo da barra superior) enquanto o conteúdo faz scroll (`.sticky-top`). Usado em Movimentos e Relatórios (em Relatórios com modo "Ano" navega ano a ano). Clicar na pílula volta ao mês atual.
 
@@ -165,11 +171,11 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 
 ## 8. Roadmap / ideias discutidas (só fazer quando pedido)
 
-- Backup e restauro completos (ver §7).
-- Importar os movimentos registados no Organizze depois de 30/09/2026 **sem duplicar** os que já existem na app (a Ana vai fornecer o export quando a app estiver estável).
-- Melhorias visuais (a Ana vai enviar prints).
-- Anexos a movimentos, pesquisa global fora do mês, gráficos de evolução anual.
-- Área "Importar" na app para CSV (hoje a importação foi feita uma vez por SQL).
+- A Ana disse em 02/10/2026: "ainda há coisas a melhorar, terminamos mais tarde" — vai trazer mais prints/pedidos de melhorias visuais e funcionais. Pedir-lhe a lista quando retomar.
+- Importar os movimentos registados no Organizze depois de 30/09/2026 **sem duplicar** os que já existem na app (a Ana vai fornecer o export quando a app estiver estável). Modelo: `005_recorrencias_iniciais.sql` (correspondência por descrição sem acentos, conta, tipo, data ±3 dias).
+- Backup e restauro completos (ver §7) — a Ana adiou ("para já não").
+- Pesquisa global fora do mês, gráficos de evolução anual, área "Importar" na app para CSV.
+- **Não fazer** (decisões explícitas): botão de calculadora no teclado numérico (nunca usou), tags, anexos, limites de gastos, hover para ações no computador.
 
 ---
 
@@ -177,8 +183,27 @@ Em 30/09/2026 importou-se o export completo do Organizze (`movimentacoes_*.xls`,
 
 - **Nunca duplicar movimentos**: qualquer importação ou criação em massa tem de procurar primeiro o que já existe (descrição sem acentos/maiúsculas, conta, tipo, data igual ou próxima) e ligar/ignorar em vez de inserir — ver `005_recorrencias_iniciais.sql` como modelo.
 
-- Alterações entregues na pasta local da Ana e commitadas com mensagens em português; ela faz o push.
+- **Fluxo de entrega usado até agora** (assistente a trabalhar a partir da cloud, com a pasta da Ana ligada): construir e verificar o código numa cópia de trabalho; empacotar com `tar --exclude=node_modules --exclude=src/environments`; copiar para a pasta `My Apps`; extrair por cima de `MyFinances`; `git add -A && git commit` com mensagem em português; **a Ana faz o `git push`** (dispara o deploy). Nunca sobrescrever `src/environments/*` dela. Apagar os `.git/*.lock` que o git deixa quando corre pela shell montada.
+- Verificação visual: servidor `ng serve` + Playwright com as chamadas ao Supabase simuladas (mock), screenshots a 390px (telemóvel) e 1280px (computador), em modo claro e escuro; os ícones Material aparecem como texto nesse ambiente (sem acesso à fonte) — não é um bug.
+- A Ana vê a app pela PWA instalada no telemóvel e pela versão publicada no computador; o `npm start` local é opcional. Depois de um push, lembrar que a PWA pode mostrar a versão antiga até atualizar (botão "Atualizar" ou fechar/reabrir).
 - `npm install` / `npm start` correm no Windows dela; o build de verificação pode ser feito noutro ambiente mas `src/environments/*` dela não devem ser sobrescritos (contêm as chaves do projeto real).
 - Antes de entregar: `ng build --configuration production` sem erros; se mexer em saldos/relatórios, validar com dados reais ou com o Postgres local + `schema.sql` + migrações.
 - Alterou o esquema? → nova migração numerada + `schema.sql` atualizado + instrução para correr no SQL Editor (o editor rejeita ficheiros > ~1 MB; dividir se necessário).
 - Alterou uma regra de negócio? → atualizar este `SPEC.md`.
+
+---
+
+## 10. Estado atual (02/10/2026) — ler primeiro ao retomar
+
+**Tudo o que está descrito neste documento está implementado, commitado e com push feito** (último commit `d957391`, "Folha de detalhe do movimento…"). A app está publicada em `https://anasofiagrilo96.github.io/MyFinances/` e instalada como PWA no telemóvel da Ana; o login é por email + password (o Google OAuth ainda não foi configurado — a Ana não pediu).
+
+**Base de dados (Supabase, projeto `iblswnveqkrckbxozdpl`)** — migrações já corridas pela Ana, por ordem: `schema.sql` (versão inicial), `001`, `003`, `004`, `005`, e a importação `importacao_organizze/01…10`. Contém o histórico completo desde 2018 (7.084 movimentos), as 57 categorias, as 6 contas e as **24 recorrências** da folha `recorrencias.xlsx` (todas mensais exceto: Daniel semanal às segundas desde 05/10; Depilação e Combustível quinzenais desde 01/10; Google Drive, IUC e Quotas fotografARTE anuais; Carpintarias Veiga parcelado 20× 291,48 € desde 27/11, categoria Casa). O Salário passa a entrar no Crédito Agrícola. A Prestação Crédito Terreno tem 155,51 € como valor de planeamento — a Ana ajusta cêntimos mês a mês.
+
+**Sessão de 02/10 — o que foi feito, por ordem**: aviso de nova versão (service worker); correção de cortes na janela de movimento (box-sizing) e teclado mais compacto; polegar + nomenclatura fixa; arrastar linha para ações no telemóvel; fita de meses fixa no topo com swipe; FAB acima dos totais e ausente nos Relatórios; folha de detalhe ao clicar numa linha com duplicar; remoção do hover no computador.
+
+**Pendentes conhecidos / a confirmar com a Ana**:
+- Ela ia reportar mais melhorias visuais ("terminamos mais tarde").
+- Confirmar que a correspondência da 005 ligou bem os movimentos de outubro (ela não chegou a dizer o número de "movimentos de outubro ligados").
+- Export dos movimentos do Organizze pós-30/09 para importar sem duplicar.
+- Google OAuth (passos no README §3) — só se ela quiser.
+- Backup/restauro.

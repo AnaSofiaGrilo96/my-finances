@@ -1,6 +1,6 @@
 # MyFinances
 
-Antes de qualquer alteração, lê `SPEC.md` — é a especificação da app (propósito, decisões, modelo de dados, regras de negócio, convenções) e deve manter-se atualizada quando uma regra muda.
+Antes de qualquer alteração, lê `SPEC.md` (começa pela secção **10 — Estado atual**) — é a especificação da app (propósito, decisões, modelo de dados, regras de negócio, convenções) e deve manter-se atualizada quando uma regra muda.
 
 Resumo de 10 segundos: app de finanças pessoais de uma só pessoa (Ana), Angular 21 + Angular Material + Supabase, PWA publicada no GitHub Pages com hash routing. Interface em português de Portugal. Prioridades: números certos ao cêntimo, registo rápido, simplicidade (não acrescentar funcionalidades não pedidas), independência de fornecedores.
 
