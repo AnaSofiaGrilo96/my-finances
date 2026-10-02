@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
@@ -89,7 +89,9 @@ import { ProfileDialog } from '../features/auth/profile.dialog';
           </a>
         }
       </nav>
-      <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
+      @if (showFab()) {
+        <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
+      }
     }
   `,
   styles: [`
@@ -125,6 +127,9 @@ export class Shell {
 
   readonly isSmall = toSignal(this.bp.observe('(max-width: 899px)').pipe(map((r) => r.matches)), { initialValue: false });
   readonly loadError = signal(false);
+  /** Sem botão "+" nos Relatórios (lá não se criam movimentos). */
+  private readonly url = toSignal(this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), map((e) => e.urlAfterRedirects)), { initialValue: this.router.url });
+  readonly showFab = computed(() => !this.url().startsWith('/relatorios'));
 
   readonly navItems = [
     { path: '/', icon: 'dashboard', label: 'Visão geral', short: 'Início' },

@@ -13,7 +13,7 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Jul
   selector: 'app-month-nav',
   imports: [MatIconModule],
   template: `
-    <div class="strip" [class.year]="mode() === 'year'">
+    <div class="strip" [class.year]="mode() === 'year'" (click)="onClick($event)" (pointerdown)="down($event)" (pointerup)="up($event)" (pointercancel)="sx = null">
       <button type="button" class="arrow" (click)="go(-1)" [attr.aria-label]="mode() === 'year' ? 'Ano anterior' : 'Mês anterior'"><mat-icon>chevron_left</mat-icon></button>
       <button type="button" class="side" (click)="go(-1)">{{ label(-1) }}</button>
       <button type="button" class="pill" (click)="monthChange.emit(today)" [title]="'Ir para ' + (mode() === 'year' ? 'o ano atual' : 'o mês atual')">
@@ -24,14 +24,14 @@ const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Jul
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host { display: block; touch-action: pan-y; user-select: none; }
     .strip { display: grid; grid-template-columns: 36px 1fr auto 1fr 36px; align-items: center; gap: 4px; width: 100%; }
     button { background: none; border: none; font: inherit; color: inherit; cursor: pointer; padding: 0; border-radius: 999px; min-height: 40px; }
     .arrow { display: grid; place-items: center; color: var(--mat-sys-on-surface-variant); }
     .arrow:hover, .side:hover { background: var(--mat-sys-surface-container-high); }
     .side { color: var(--mat-sys-on-surface-variant); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; }
     .pill { font-size: 16px; font-weight: 600; padding: 8px 20px; border: 1.5px solid var(--mat-sys-outline-variant); background: var(--mat-sys-surface-container-lowest); white-space: nowrap; }
-    html.dark .pill { background: var(--mat-sys-surface-container-high); }
+    :host-context(html.dark) .pill { background: var(--mat-sys-surface-container-high); }
     .pill small { font-weight: 400; font-size: 12px; margin-left: 6px; color: var(--mat-sys-on-surface-variant); }
     @media (min-width: 900px) { .strip { width: auto; grid-template-columns: 36px 120px auto 120px 36px; } }
   `],
@@ -50,4 +50,14 @@ export class MonthNav {
     return MONTHS[Number(m.slice(5, 7)) - 1];
   }
   go(d: number) { this.monthChange.emit(shiftMonth(this.month(), this.mode() === 'year' ? 12 * d : d)); }
+
+  /** Arrastar a fita para a esquerda avança; para a direita recua (telemóvel). */
+  onClick(ev: Event) { if (this.swiped) { this.swiped = false; ev.stopPropagation(); ev.preventDefault(); } }
+  sx: number | null = null; private sy = 0; private swiped = false;
+  down(ev: PointerEvent) { if (ev.pointerType === 'mouse') return; this.sx = ev.clientX; this.sy = ev.clientY; this.swiped = false; }
+  up(ev: PointerEvent) {
+    if (this.sx === null) return;
+    const dx = ev.clientX - this.sx, dy = ev.clientY - this.sy; this.sx = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { this.swiped = true; this.go(dx < 0 ? 1 : -1); ev.preventDefault(); }
+  }
 }
