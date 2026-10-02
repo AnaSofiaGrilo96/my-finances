@@ -12,6 +12,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { filter } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { ThemeService } from '../core/theme.service';
 import { DataService } from '../core/data.service';
@@ -131,7 +134,17 @@ export class Shell {
 
   readonly sideItems = this.navItems;
 
+  private readonly swUpdate = inject(SwUpdate);
+  private readonly snack = inject(MatSnackBar);
+
   constructor() {
+    // Nova versão publicada: avisa e oferece recarregar (senão só se aplicava ao fechar e reabrir a app).
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.versionUpdates.pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY')).subscribe(() => {
+        this.snack.open('Há uma nova versão da app.', 'Atualizar', { duration: 0 }).onAction().subscribe(() => document.location.reload());
+      });
+      this.swUpdate.checkForUpdate().catch(() => {});
+    }
     this.data.ensureLoaded().catch((e) => { this.loadError.set(true); this.ui.error(e); });
   }
 
