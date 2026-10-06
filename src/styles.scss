@@ -62,7 +62,7 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 .fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--mat-sys-surface-container-low, #f4f6f4); border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 50%, transparent); }
 .fixed-head app-month-nav { flex: 1; min-width: 0; }
 .fixed-head h1 { display: none; }
-.fixed-head button.on { background: var(--mat-sys-secondary-container); }
+.fixed-head > .inner > button.on { background: var(--mat-sys-secondary-container); } // só o botão de filtros, não os meses da roda
 .fixed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 0; overscroll-behavior: contain; }
 .fixed-body .end-space { height: 88px; }
 @media (min-width: 900px) {
