@@ -53,6 +53,30 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 .row.clickable { cursor: pointer; border-radius: 10px; }
 .row.clickable:hover { background: var(--mat-sys-surface-container-high); }
 
+// Página de altura fixa: cabeçalho (roda de meses + filtros) fixo no topo, corpo com scroll próprio.
+// Usado em Movimentos e Relatórios. A barra superior tem 56px no telemóvel e 64px a partir de 600px.
+.fixed-page { --toolbar-h: 56px; display: flex; flex-direction: column; height: calc(100dvh - var(--toolbar-h)); box-sizing: border-box; padding: 0; max-width: none; margin: 0; overflow: hidden; }
+@media (min-width: 600px) { .fixed-page { --toolbar-h: 64px; } }
+.fixed-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px; flex-shrink: 0; background: var(--mat-sys-surface-container-low, #f4f6f4); border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 50%, transparent); }
+.fixed-head app-month-nav { flex: 1; min-width: 0; }
+.fixed-head h1 { display: none; }
+.fixed-head button.on { background: var(--mat-sys-secondary-container); }
+.fixed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 0; overscroll-behavior: contain; }
+.fixed-body .end-space { height: 88px; }
+@media (min-width: 900px) {
+  .fixed-head { padding: 12px 24px 10px; gap: 16px; }
+  .fixed-head > .inner { display: flex; align-items: center; gap: 16px; max-width: 1200px; width: 100%; margin: 0 auto; }
+  .fixed-head h1 { display: block; font-size: 22px; font-weight: 500; margin: 0; }
+  .fixed-head app-month-nav { flex: 0 1 auto; margin-right: auto; }
+  .fixed-body { padding: 8px 24px 0; }
+  .fixed-body > .inner { max-width: 1200px; width: 100%; margin: 0 auto; }
+  .fixed-body .end-space { height: 24px; }
+}
+
+// Fundo escurecido por trás de janelas e folhas: mais leve, sobretudo no modo escuro (empilham-se)
+.cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .28); }
+html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }
+
 // Fita de meses fixa no topo (abaixo da barra superior); o conteúdo faz scroll por baixo
 .sticky-top { position: sticky; top: 56px; z-index: 6; background: var(--mat-sys-surface-container-low, #f4f6f4); margin: 0 -16px 14px; padding: 6px 16px 8px; }
 @media (min-width: 700px) { .sticky-top { top: 64px; margin: 0 -24px 14px; padding: 6px 24px 8px; } }

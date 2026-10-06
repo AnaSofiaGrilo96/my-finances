@@ -31,17 +31,17 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
   selector: 'app-transactions-page',
   imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
   template: `
-    <div class="page tx-page">
+    <div class="page fixed-page">
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
-      <div class="head">
-        <h1 class="desktop-only">Movimentos</h1>
-        <app-month-nav class="months" [month]="month()" (monthChange)="setMonth($event)" />
+      <div class="fixed-head"><div class="inner">
+        <h1>Movimentos</h1>
+        <app-month-nav [month]="month()" (monthChange)="setMonth($event)" />
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
-      </div>
+      </div></div>
 
-      <div class="list">
+      <div class="fixed-body"><div class="inner">
       @if (filtersOpen()) {
         <div class="card filters">
           <mat-form-field class="f" subscriptSizing="dynamic">
@@ -130,7 +130,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       }
 
       <div class="end-space"></div>
-      </div>
+      </div></div>
 
       <!-- Totais: faixa fixa em baixo (quadrada no telemóvel, cartão redondo no computador) -->
       <div class="summary">
@@ -141,32 +141,17 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     </div>
   `,
   styles: [`
-    /* A página ocupa a altura toda abaixo da barra superior: cabeçalho fixo, lista com scroll próprio, totais fixos */
-    :host { --toolbar-h: 56px; }
-    @media (min-width: 600px) { :host { --toolbar-h: 64px; } }
-    :host .page.tx-page { display: flex; flex-direction: column; height: calc(100dvh - var(--toolbar-h)); box-sizing: border-box; padding: 0; overflow: hidden; }
-    .head { display: flex; align-items: center; gap: 6px; padding: 6px 8px 4px; flex-shrink: 0; }
-    .head .months { flex: 1; min-width: 0; }
-    .head button.on { background: var(--mat-sys-secondary-container); }
-    .desktop-only { display: none; }
-    .list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 0; overscroll-behavior: contain; }
+    /* Layout fixo partilhado (.fixed-page/.fixed-head/.fixed-body em styles.scss); aqui só a faixa de totais */
     .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; padding: 12px; }
     .filters .f { width: 160px; }
     .filters .search { width: 220px; }
     @media (max-width: 700px) { .filters .f { width: calc(50% - 5px); } .filters .search { width: 100%; } }
-    .end-space { height: 88px; }
     /* Totais: no telemóvel é uma faixa quadrada colada à barra de navegação */
     .summary { flex-shrink: 0; display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px calc(74px + env(safe-area-inset-bottom)); background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); } /* o fundo prolonga-se por baixo da barra de navegação para não haver falhas */
     :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
     .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
     @media (min-width: 900px) {
-      .head { padding: 14px 24px 8px; gap: 16px; max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
-      .desktop-only { display: block; font-size: 22px; font-weight: 500; margin: 0; }
-      .head .months { flex: 0 1 auto; }
-      .head app-month-nav { margin-right: auto; }
-      .list { padding: 4px 24px 0; max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
-      .end-space { height: 24px; }
       /* No computador mantém o aspeto de cartão redondo, sempre com folga ao fundo */
       .summary { margin: 10px auto 18px; max-width: calc(1200px - 48px); width: calc(100% - 48px); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; background: var(--mat-sys-surface-container-lowest); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 10px 12px; }
       :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }

@@ -30,20 +30,22 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
   selector: 'app-reports-page',
   imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatFormFieldModule, MatSelectModule, MatButtonToggleModule, MatCheckboxModule, MatProgressBarModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
-    <div class="page">
-      <div class="page-header">
+    <div class="page fixed-page">
+      <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
+      <div class="fixed-head"><div class="inner">
         <h1>Relatórios</h1>
-        @if (period() === '12m') { <span class="muted range">Últimos 12 meses até {{ monthLabel() }}</span> }
+        @if (period() !== 'year') {
+          <app-month-nav [month]="month()" (monthChange)="month.set($event)" />
+        } @else {
+          <app-month-nav [month]="month()" mode="year" (monthChange)="month.set($event)" />
+        }
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
-      </div>
+      </div></div>
 
-      @if (period() !== 'year') {
-        <app-month-nav class="months sticky-top" [month]="month()" (monthChange)="month.set($event)" />
-      } @else {
-        <app-month-nav class="months sticky-top" [month]="month()" mode="year" (monthChange)="month.set($event)" />
-      }
+      <div class="fixed-body"><div class="inner">
+      @if (period() === '12m') { <p class="muted range">Últimos 12 meses até {{ monthLabel() }}</p> }
 
       @if (filtersOpen()) {
         <div class="card toolbar filters">
@@ -188,13 +190,14 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         </mat-tab>
 
       </mat-tab-group>
+      <div class="end-space"></div>
+      </div></div>
     </div>
   `,
   styles: [`
     .f { width: 200px; }
     .filters { padding: 12px; margin-bottom: 4px; }
-    .page-header button.on { background: var(--mat-sys-secondary-container); }
-    .range { font-size: 13px; }
+    .range { font-size: 13px; margin: 2px 4px 8px; text-align: center; }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
     .cat-layout .list { width: 100%; min-width: 0; }
