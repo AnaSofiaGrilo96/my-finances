@@ -65,7 +65,10 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 .fixed-head h1 { display: none; }
 .fixed-head > .inner > button { --mdc-icon-button-state-layer-size: 40px; width: 40px; height: 40px; padding: 8px; flex-shrink: 0; }
 .fixed-head > .inner > button.on { background: var(--mat-sys-secondary-container); } // só o botão de filtros, não os meses da roda
-.fixed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 0; overscroll-behavior: contain; }
+.fixed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 0; overscroll-behavior: contain; scrollbar-gutter: stable; }
+// Cabeçalho e rodapé reservam o mesmo espaço da barra de scroll do corpo, para ficarem com a largura exata dos cartões
+.fixed-head, .fixed-foot { overflow-y: auto; scrollbar-gutter: stable; }
+.fixed-foot { flex-shrink: 0; }
 .fixed-body .end-space { height: 88px; }
 @media (min-width: 900px) {
   .fixed-head { padding: 12px 24px 0; }
@@ -74,6 +77,8 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
   .fixed-head app-month-nav { flex: 0 1 auto; }
   .fixed-body { padding: 8px 24px 0; }
   .fixed-body > .inner { max-width: 1200px; width: 100%; margin: 0 auto; }
+  .fixed-foot { padding: 10px 24px 18px; }
+  .fixed-foot > .inner { max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
   .fixed-body .end-space { height: 24px; }
 }
 

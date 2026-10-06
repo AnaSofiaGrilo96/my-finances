@@ -133,11 +133,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       </div></div>
 
       <!-- Totais: faixa fixa em baixo (quadrada no telemóvel, cartão redondo no computador) -->
-      <div class="summary">
+      <div class="fixed-foot"><div class="summary inner">
         <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
         <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
         <div><span class="muted">Resultado</span><b [class.income]="totals().result >= 0" [class.expense]="totals().result < 0">{{ totals().result | money }}</b></div>
-      </div>
+      </div></div>
     </div>
   `,
   styles: [`
@@ -153,7 +153,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .summary b { font-size: 16px; }
     @media (min-width: 900px) {
       /* No computador mantém o aspeto de cartão redondo, sempre com folga ao fundo */
-      .summary { margin: 10px auto 18px; max-width: calc(1200px - 48px); width: calc(100% - 48px); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; background: var(--mat-sys-surface-container-lowest); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 10px 12px; }
+      /* .fixed-foot (styles.scss) dá-lhe exatamente a mesma largura do cabeçalho e dos cartões */
+      .summary { margin: 0; width: auto; max-width: none; border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; background: var(--mat-sys-surface-container-lowest); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 10px 12px; }
       :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
     }
     .day { margin-bottom: 14px; }
