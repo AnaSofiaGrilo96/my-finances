@@ -11,13 +11,15 @@ export function formatMoney(v: number | null | undefined, symbol = true): string
   return (neg ? '-' : '') + (symbol ? `€ ${s}` : s);
 }
 
-/** `{{ v | money }}` → "€ 1.234,56"; `{{ v | money:'plain' }}` → "1.234,56"; `'signed'` mostra +/-. */
+/**
+ * `{{ v | money }}` → "€ 1.234,56"; `'signed'` → "+€ 1.234,56" / "−€ 1.234,56".
+ * O símbolo do euro aparece SEMPRE (pedido da Ana, 07/10); `'plain'` fica como sinónimo de `'symbol'` por compatibilidade.
+ */
 @Pipe({ name: 'money' })
 export class MoneyPipe implements PipeTransform {
   transform(v: number | null | undefined, mode: 'symbol' | 'plain' | 'signed' = 'symbol'): string {
     const n = Number(v ?? 0);
-    if (mode === 'plain') return formatMoney(n, false);
-    if (mode === 'signed') return (n > 0 ? '+' : n < 0 ? '−' : '') + formatMoney(Math.abs(n), false);
+    if (mode === 'signed') return (n > 0 ? '+' : n < 0 ? '−' : '') + formatMoney(Math.abs(n), true);
     return formatMoney(n, true);
   }
 }

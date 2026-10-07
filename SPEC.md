@@ -31,7 +31,7 @@ O que a app **não** é: não é multi-utilizador (cada utilizador vê só os se
 | Hosting | GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`), **hash routing** (`#/…`) | Gratuito; hash routing evita 404 em refresh no Pages |
 | Mobile | PWA (manifest + `@angular/service-worker`), navegação por barra inferior + FAB | Sem lojas de apps; instala-se "Adicionar ao ecrã principal" |
 | Gráficos | SVG próprio em `src/app/shared/charts.ts` (donut, barras+saldo, anel) | Sem dependência externa de charts; leve e com o tema Material |
-| Moeda | EUR, formato `€ 1.234,56` (ponto nos milhares, vírgula nos decimais) — `MoneyPipe` | É o formato a que a Ana está habituada (outra aplicação de gestão de finanças) |
+| Moeda | EUR, formato `€ 1.234,56` (ponto nos milhares, vírgula nos decimais) — `MoneyPipe`; **o símbolo € aparece sempre**, em todos os valores (07/10) | É o formato a que a Ana está habituada (outra aplicação de gestão de finanças) |
 | Datas | ISO `YYYY-MM-DD` em todo o lado, sem fusos horários (`src/app/core/dates.ts`) | Evita bugs de timezone em datas de movimentos |
 | Idioma | Interface em **português de Portugal** (tu-cá-tu-lá informal: "Tens 2 contas a pagar") | Utilizadora única, portuguesa |
 | Vocabulário | "**Movimentos**" (não "lançamentos") para despesas/receitas/transferências; rota `/movimentos` (`/lancamentos` redireciona) | Pedido da Ana |

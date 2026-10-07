@@ -354,7 +354,7 @@ export class TransactionDialog {
   }
 
   // ---------- teclado ----------
-  display() { return formatMoney(this.amount, false); }
+  display() { return formatMoney(this.amount); }
 
   @HostListener('document:keydown', ['$event'])
   onKey(ev: KeyboardEvent) {

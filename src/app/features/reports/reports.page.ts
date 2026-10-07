@@ -216,8 +216,8 @@ export class RangeDialog {
                   @for (r of flowRows(); track r.key) {
                     <tr [class.zero]="!r.income && !r.expense">
                       <td class="lbl">{{ r.label }}</td>
-                      <td class="income">{{ r.income ? (r.income | money:'plain') : '0,00' }}</td>
-                      <td class="expense">{{ r.expense ? '-' + (r.expense | money:'plain') : '0,00' }}</td>
+                      <td class="income">{{ r.income ? (r.income | money:'plain') : '€ 0,00' }}</td>
+                      <td class="expense">{{ r.expense ? '-' + (r.expense | money:'plain') : '€ 0,00' }}</td>
                       <td [class.income]="r.result > 0" [class.expense]="r.result < 0">{{ r.result | money:'signed' }}</td>
                       <td class="bal" [class.expense]="r.balance < 0">{{ r.balance | money:'plain' }}</td>
                     </tr>
