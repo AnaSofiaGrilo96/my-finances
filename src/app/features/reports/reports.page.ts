@@ -12,18 +12,64 @@ import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
 import { Transaction, signFor } from '../../core/models';
-import { currentMonth, eachDay, fromIso, monthLabel, monthRange, shiftMonth, shortMonthLabel, toIso } from '../../core/dates';
+import { addDays, currentMonth, eachDay, fromIso, monthRange, shiftMonth, shortMonthLabel, todayIso, toIso } from '../../core/dates';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
 import { DonutChart, DonutSlice, FlowChart, FlowPoint } from '../../shared/charts';
 import { UiService } from '../../shared/ui.service';
 
-type Period = 'month' | 'year' | '12m';
+type Period = 'today' | 'week' | 'month' | '3m' | '6m' | '12m' | 'year' | 'custom';
+const PERIODS: { id: Period; label: string; icon: string }[] = [
+  { id: 'today', label: 'Hoje', icon: 'today' },
+  { id: 'week', label: 'Esta semana', icon: 'date_range' },
+  { id: 'month', label: 'Este mês', icon: 'calendar_view_month' },
+  { id: '3m', label: 'Últimos 3 meses', icon: 'history' },
+  { id: '6m', label: 'Últimos 6 meses', icon: 'history' },
+  { id: '12m', label: 'Últimos 12 meses', icon: 'history' },
+  { id: 'year', label: 'Este ano', icon: 'calendar_today' },
+  { id: 'custom', label: 'Escolher período', icon: 'edit_calendar' },
+];
 type Granularity = 'daily' | 'weekly' | 'monthly';
 interface FlowRow { key: string; label: string; income: number; expense: number; result: number; balance: number; }
 
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** "Escolher período": intervalo de datas livre. Devolve { start, end } em ISO ou undefined. */
+@Component({
+  selector: 'app-range-dialog',
+  imports: [FormsModule, MatDialogModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule],
+  template: `
+    <h2 mat-dialog-title>Escolher período</h2>
+    <mat-dialog-content>
+      <mat-form-field class="full">
+        <mat-label>De – até</mat-label>
+        <mat-date-range-input [rangePicker]="picker">
+          <input matStartDate [(ngModel)]="start" placeholder="Início" />
+          <input matEndDate [(ngModel)]="end" placeholder="Fim" />
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="picker" />
+        <mat-date-range-picker #picker touchUi />
+      </mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button matButton mat-dialog-close>Cancelar</button>
+      <button matButton="filled" [disabled]="!start || !end" (click)="ok()">Aplicar</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`.full { width: 100%; margin-top: 8px; }`],
+})
+export class RangeDialog {
+  private readonly ref = inject(MatDialogRef<RangeDialog>);
+  private readonly data = inject<{ start: string; end: string }>(MAT_DIALOG_DATA);
+  start: Date | null = fromIso(this.data.start);
+  end: Date | null = fromIso(this.data.end);
+  ok() { if (this.start && this.end) this.ref.close({ start: toIso(this.start), end: toIso(this.end) }); }
+}
 
 @Component({
   selector: 'app-reports-page',
@@ -33,10 +79,12 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Relatórios</h1>
-        @if (period() !== 'year') {
+        @if (period() === 'month') {
           <app-month-nav [month]="month()" (monthChange)="month.set($event)" />
-        } @else {
+        } @else if (period() === 'year') {
           <app-month-nav [month]="month()" mode="year" (monthChange)="month.set($event)" />
+        } @else {
+          <div class="range-head"><mat-icon>date_range</mat-icon>{{ rangeLabel() }}</div>
         }
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
@@ -44,8 +92,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       </div></div>
 
       <div class="fixed-body"><div class="inner">
-      @if (period() === '12m') { <p class="muted range">Últimos 12 meses até {{ monthLabel() }}</p> }
-
       @if (filtersOpen()) {
         <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
         <div class="fbar">
@@ -69,9 +115,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         </div>
 
         <mat-menu #periodMenu="matMenu" class="fmenu">
-          <button mat-menu-item (click)="period.set('month')" [class.sel]="period() === 'month'"><mat-icon>calendar_view_month</mat-icon>Mês</button>
-          <button mat-menu-item (click)="period.set('year')" [class.sel]="period() === 'year'"><mat-icon>calendar_today</mat-icon>Ano</button>
-          <button mat-menu-item (click)="period.set('12m')" [class.sel]="period() === '12m'"><mat-icon>history</mat-icon>Últimos 12 meses</button>
+          @for (p of periods; track p.id) {
+            <button mat-menu-item (click)="choosePeriod(p.id)" [class.sel]="period() === p.id"><mat-icon>{{ p.icon }}</mat-icon>{{ p.label }}</button>
+          }
         </mat-menu>
         <mat-menu #accMenu="matMenu" class="fmenu">
           <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all"><span class="ph"></span>Todas as contas</span></button>
@@ -155,9 +201,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           <div class="card tabbody">
             <div class="toolbar">
               <mat-button-toggle-group [value]="granularity()" (change)="granularity.set($event.value)" hideSingleSelectionIndicator>
-                <mat-button-toggle value="daily" [disabled]="period() !== 'month'">diário</mat-button-toggle>
-                <mat-button-toggle value="weekly">semanal</mat-button-toggle>
-                <mat-button-toggle value="monthly" [disabled]="period() === 'month'">mensal</mat-button-toggle>
+                <mat-button-toggle value="daily" [disabled]="rangeDays() > 93">diário</mat-button-toggle>
+                <mat-button-toggle value="weekly" [disabled]="rangeDays() < 8">semanal</mat-button-toggle>
+                <mat-button-toggle value="monthly" [disabled]="rangeDays() < 45">mensal</mat-button-toggle>
               </mat-button-toggle-group>
               <span class="spacer"></span>
               <div class="muted small">Saldo inicial do período: <b>{{ opening() | money }}</b></div>
@@ -189,7 +235,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     </div>
   `,
   styles: [`
-    .range { font-size: 13px; margin: 2px 4px 8px; text-align: center; }
+    .range-head { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; font-size: 15px; font-weight: 500; }
+    .range-head mat-icon { color: var(--mat-sys-on-surface-variant); }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
     .cat-layout .list { width: 100%; min-width: 0; }
@@ -203,10 +250,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }
     .small { font-size: 13px; }
     .table-wrap { overflow-x: auto; margin-top: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-    th { text-align: right; font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 8px 10px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+    th { text-align: right; font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 12px 14px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
     th:first-child { text-align: left; }
-    td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--mat-sys-outline-variant); white-space: nowrap; }
+    td { text-align: right; padding: 14px 14px; border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent); white-space: nowrap; }
     td.lbl { text-align: left; color: var(--mat-sys-on-surface-variant); }
     td.bal { font-weight: 500; }
     tr.zero td { opacity: .55; }
@@ -218,6 +265,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 export class ReportsPage {
   readonly data = inject(DataService);
   private readonly ui = inject(UiService);
+  private readonly dialog = inject(MatDialog);
 
   readonly month = signal(currentMonth());
   readonly period = signal<Period>('month');
@@ -227,20 +275,42 @@ export class ReportsPage {
   readonly loading = signal(false);
   readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
   readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
-  periodLabel() { return this.period() === 'month' ? 'Mês' : this.period() === 'year' ? 'Ano' : 'Últimos 12 meses'; }
-  clearFilters() { this.period.set('month'); this.accountId.set(null); this.includeUnpaid.set(true); }
-  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1) + (this.period() !== 'month' ? 1 : 0));
-  monthLabel() { return monthLabel(this.month()); }
+  readonly periods = PERIODS;
+  readonly customRange = signal<{ start: string; end: string } | null>(null);
+  periodLabel() { return PERIODS.find((p) => p.id === this.period())?.label ?? ''; }
+  clearFilters() { this.period.set('month'); this.month.set(currentMonth()); this.accountId.set(null); this.includeUnpaid.set(true); }
+  async choosePeriod(p: Period) {
+    if (p === 'custom') {
+      const r = await this.dialog.open(RangeDialog, { data: this.customRange() ?? this.range(), width: '360px', autoFocus: false }).afterClosed().toPromise();
+      if (!r) return;
+      this.customRange.set(r);
+    }
+    if (p === 'month' || p === 'year') this.month.set(currentMonth());
+    this.period.set(p);
+  }
+  /** Texto do intervalo no cabeçalho (fora de mês/ano). */
+  rangeLabel() {
+    const { start, end } = this.range();
+    const f = (iso: string) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    return start === end ? f(start) : `${f(start)} – ${f(end)}`;
+  }
+  readonly rangeDays = computed(() => Math.round((fromIso(this.range().end).getTime() - fromIso(this.range().start).getTime()) / 86400000) + 1);
+  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1) + (this.period() !== 'month' || this.month() !== currentMonth() ? 1 : 0));
 
   private readonly raw = signal<Transaction[]>([]);
   readonly opening = signal(0);
 
   readonly range = computed(() => {
-    const m = this.month();
-    if (this.period() === 'month') return monthRange(m);
-    if (this.period() === 'year') { const y = m.slice(0, 4); return { start: `${y}-01-01`, end: `${y}-12-31`, next: `${Number(y) + 1}-01-01` }; }
-    const r = monthRange(m);
-    return { start: monthRange(shiftMonth(m, -11)).start, end: r.end, next: r.next };
+    const m = this.month(), p = this.period(), today = todayIso();
+    const mk = (start: string, end: string) => ({ start, end, next: addDays(end, 1) });
+    switch (p) {
+      case 'today': return mk(today, today);
+      case 'week': { const d = fromIso(today); const dow = (d.getDay() + 6) % 7; const mon = addDays(today, -dow); return mk(mon, addDays(mon, 6)); }
+      case 'month': return monthRange(m);
+      case 'year': { const y = m.slice(0, 4); return mk(`${y}-01-01`, `${y}-12-31`); }
+      case '3m': case '6m': case '12m': { const n = Number(p.slice(0, -1)); const cur = currentMonth(); return mk(monthRange(shiftMonth(cur, -(n - 1))).start, monthRange(cur).end); }
+      case 'custom': { const c = this.customRange(); return c ? mk(c.start, c.end) : monthRange(m); }
+    }
   });
 
   readonly txs = computed(() => (this.includeUnpaid() ? this.raw() : this.raw().filter((t) => t.paid)));
@@ -316,11 +386,14 @@ export class ReportsPage {
       this.data.version();
       untracked(() => this.load(start, end, acc, unpaid));
     });
+    // Granularidade automática conforme o tamanho do intervalo (o utilizador pode mudar nos botões, dentro do permitido)
     effect(() => {
-      const p = this.period();
+      const days = this.rangeDays();
       untracked(() => {
-        if (p === 'month' && this.granularity() === 'monthly') this.granularity.set('daily');
-        if (p !== 'month' && this.granularity() === 'daily') this.granularity.set('monthly');
+        const g = this.granularity();
+        if (days > 93 && g === 'daily') this.granularity.set('monthly');
+        else if (days < 8 && g !== 'daily') this.granularity.set('daily');
+        else if (days < 45 && g === 'monthly') this.granularity.set('daily');
       });
     });
   }
