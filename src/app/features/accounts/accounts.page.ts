@@ -138,7 +138,7 @@ export class AdjustBalanceDialog {
         <button matButton="filled" (click)="add()"><mat-icon>add</mat-icon>Nova conta</button>
       </div>
 
-      <p class="muted intro">Para acertar o saldo de uma conta com o valor real usa <mat-icon class="inl">balance</mat-icon> — a app cria automaticamente um movimento "Ajuste de saldo" com a diferença.</p>
+      <p class="muted intro">Para acertar o saldo de uma conta com o valor real usa <mat-icon class="inl">edit</mat-icon> — a app cria automaticamente um movimento "Ajuste de saldo" com a diferença.</p>
       <div class="card total">
         <span class="muted">Saldo geral</span>
         <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
@@ -157,12 +157,12 @@ export class AdjustBalanceDialog {
               <div class="sub">{{ typeLabel(a) }}</div>
             </div>
             <div class="amount" [class.expense]="balance(a) < 0">{{ balance(a) | money }}</div>
-            <button matIconButton (click)="adjust(a)" matTooltip="Acertar saldo"><mat-icon>balance</mat-icon></button>
+            <button matIconButton (click)="adjust(a)" matTooltip="Acertar saldo"><mat-icon>edit</mat-icon></button>
             <button matIconButton [matMenuTriggerFor]="m"><mat-icon>more_vert</mat-icon></button>
             <mat-menu #m="matMenu">
               <button mat-menu-item [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }"><mat-icon>receipt_long</mat-icon>Ver movimentos</button>
-              <button mat-menu-item (click)="adjust(a)"><mat-icon>balance</mat-icon>Acertar saldo</button>
-              <button mat-menu-item (click)="edit(a)"><mat-icon>edit</mat-icon>Editar</button>
+              <button mat-menu-item (click)="adjust(a)"><mat-icon>edit</mat-icon>Acertar saldo</button>
+              <button mat-menu-item (click)="edit(a)"><mat-icon>tune</mat-icon>Editar conta</button>
               <button mat-menu-item (click)="move(a, -1)" [disabled]="$first"><mat-icon>arrow_upward</mat-icon>Subir</button>
               <button mat-menu-item (click)="move(a, 1)" [disabled]="$last"><mat-icon>arrow_downward</mat-icon>Descer</button>
               <button mat-menu-item (click)="remove(a)"><mat-icon>delete</mat-icon>Apagar</button>

@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -22,7 +23,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart],
+  imports: [NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart],
   template: `
     <div class="page">
       <!-- Saudação -->
@@ -111,24 +112,14 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             </div>
 
             <div class="card">
-              <h2>Próximos movimentos por pagar</h2>
+              <h2>Próximos movimentos a pagar</h2>
               <p class="muted small">De hoje até daqui a 30 dias.</p>
-              @if (pending().length) {
+              @if (pendingPay().length) {
                 <div class="rows">
-                  @for (t of pending(); track t.id) {
-                    <div class="row clickable" (click)="edit(t)">
-                      <app-icon-badge [icon]="t.kind === 'income' ? 'call_received' : 'call_made'" [color]="t.kind === 'income' ? '#1eb980' : '#e5484d'" [size]="34" />
-                      <div class="main">
-                        <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
-                        <div class="sub">{{ fmtDay(t.date) }} · {{ accName(t) }}</div>
-                      </div>
-                      <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
-                      <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
-                    </div>
-                  }
+                  @for (t of pendingPay(); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
                 </div>
               } @else {
-                <p class="empty">Nada por pagar nos próximos 30 dias.</p>
+                <p class="empty">Nada a pagar nos próximos 30 dias.</p>
               }
             </div>
           </div>
@@ -154,9 +145,36 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             </div>
             <div class="link-row"><a matButton="outlined" routerLink="/contas" class="manage"><mat-icon>tune</mat-icon>Gerir contas</a></div>
           </div>
+
+          @if (!isSmall()) {
+            <div class="card">
+              <h2>Próximos movimentos a receber</h2>
+              <p class="muted small">De hoje até daqui a 30 dias.</p>
+              @if (pendingRecv().length) {
+                <div class="rows">
+                  @for (t of pendingRecv(); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
+                </div>
+              } @else {
+                <p class="empty">Nada a receber nos próximos 30 dias.</p>
+              }
+            </div>
+          }
         </div>
       </div>
     </div>
+
+    <!-- Linha de um movimento por pagar/receber (usada nos dois cartões) -->
+    <ng-template #pendingRow let-t>
+      <div class="row clickable" (click)="edit(t)">
+        <app-icon-badge [icon]="t.kind === 'income' ? 'call_received' : 'call_made'" [color]="t.kind === 'income' ? '#1eb980' : '#e5484d'" [size]="34" />
+        <div class="main">
+          <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
+          <div class="sub">{{ fmtDay(t.date) }} · {{ accName(t) }}</div>
+        </div>
+        <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
+        <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
+      </div>
+    </ng-template>
   `,
   styles: [`
     .greet { padding: 4px 6px 14px; }
@@ -207,6 +225,8 @@ export class DashboardPage {
   readonly tomorrow = addDays(this.today, 1);
   private readonly txs = signal<Transaction[]>([]);
   readonly pending = signal<Transaction[]>([]);
+  readonly pendingPay = computed(() => this.pending().filter((t) => t.kind !== 'income').slice(0, 8));
+  readonly pendingRecv = computed(() => this.pending().filter((t) => t.kind === 'income').slice(0, 8));
   readonly due = signal<Transaction[]>([]);
   readonly dueOpen = signal(false);
 
@@ -270,7 +290,7 @@ export class DashboardPage {
       this.txs.set(txs);
       const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
       this.due.set(nonTransfer.filter((t) => t.date <= this.today));
-      this.pending.set(nonTransfer.filter((t) => t.date >= this.today).slice(0, 8));
+      this.pending.set(nonTransfer.filter((t) => t.date >= this.today));
     } catch (e) { this.ui.error(e); }
   }
 
