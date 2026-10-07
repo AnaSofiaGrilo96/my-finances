@@ -23,7 +23,8 @@ body {
 }
 
 // ---------- Utilitários partilhados ----------
-.page { padding: 16px; max-width: 1200px; margin: 0 auto; padding-bottom: 96px; }
+:root { --content-max: min(1400px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…)
+.page { padding: 16px; max-width: var(--content-max); margin: 0 auto; padding-bottom: 96px; }
 @media (min-width: 700px) { .page { padding: 20px 24px 40px; } }
 .page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .page-header h1 { font-size: 22px; font-weight: 500; margin: 0; flex: 1; }
@@ -72,13 +73,13 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 .fixed-body .end-space { height: 88px; }
 @media (min-width: 900px) {
   .fixed-head { padding: 12px 24px 0; }
-  .fixed-head > .inner { max-width: 1200px; width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
+  .fixed-head > .inner { max-width: var(--content-max); width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
   .fixed-head h1 { display: block; flex: 1; font-size: 22px; font-weight: 500; margin: 0; line-height: 40px; }
   .fixed-head app-month-nav { flex: 0 1 auto; }
   .fixed-body { padding: 8px 24px 0; }
-  .fixed-body > .inner { max-width: 1200px; width: 100%; margin: 0 auto; }
+  .fixed-body > .inner { max-width: var(--content-max); width: 100%; margin: 0 auto; }
   .fixed-foot { padding: 10px 24px 18px; }
-  .fixed-foot > .inner { max-width: 1200px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+  .fixed-foot > .inner { max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; }
   .fixed-body .end-space { height: 24px; }
 }
 

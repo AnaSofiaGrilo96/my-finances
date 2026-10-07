@@ -126,7 +126,18 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
                       @if (t.recurrence_id) { <mat-icon class="rep" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
                       @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
                     </div>
-                    <div class="sub">{{ subOf(t) }}</div>
+                    <div class="sub mobile-only">{{ subOf(t) }}</div>
+                    <div class="sub desktop-only">{{ catOf(t) }}</div>
+                  </div>
+                  <!-- Coluna da conta (só no computador): badge + nome; nas transferências origem → destino -->
+                  <div class="acc-col desktop-only">
+                    @if (t.kind === 'transfer') {
+                      @if (acc(t.account_id); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="26" /> }
+                      <mat-icon class="arrow">arrow_forward</mat-icon>
+                      @if (acc(t.to_account_id); as b) { <app-icon-badge [icon]="b.icon" [color]="b.color" [size]="26" /><span>{{ b.name }}</span> }
+                    } @else if (acc(t.account_id); as a) {
+                      <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="26" /><span>{{ a.name }}</span>
+                    }
                   </div>
                   <div class="right">
                     <div class="amount" [class]="amountClass(t)">{{ signedAmount(t) | money:'signed' }}</div>
@@ -183,6 +194,16 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .rep { font-size: 14px; width: 14px; height: 14px; vertical-align: -2px; color: var(--mat-sys-on-surface-variant); }
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
+    .desktop-only { display: none; }
+    @media (min-width: 900px) {
+      .mobile-only { display: none; }
+      .desktop-only { display: flex; }
+      .row { padding-top: 12px; padding-bottom: 12px; }
+      .row .main { flex: 1 1 40%; }
+      .acc-col { flex: 0 0 34%; display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant); font-size: 14px; min-width: 0; }
+      .acc-col span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .acc-col .arrow { font-size: 16px; width: 16px; height: 16px; color: var(--mat-sys-outline); }
+    }
     .state { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
   `],
 })
@@ -317,7 +338,9 @@ export class TransactionsPage implements OnDestroy {
   /** Por pagar e com data até hoje (ou em atraso): é o que aparece no aviso do início. */
   isDue(t: Transaction) { return !t.paid && t.date <= this.today; }
   private cat(t: Transaction) { return t.category_id ? this.data.categoryMap().get(t.category_id) : undefined; }
-  private acc(id: string | null) { return id ? this.data.accountMap().get(id) : undefined; }
+  acc(id: string | null) { return id ? this.data.accountMap().get(id) : undefined; }
+  /** Sub-linha no computador: só a categoria (a conta tem coluna própria). */
+  catOf(t: Transaction) { return t.kind === 'transfer' ? 'Transferência' : (this.data.categoryLabel(t.category_id) || '—'); }
   installmentsOf(t: Transaction) { return this.data.recurrences().find((r) => r.id === t.recurrence_id)?.installments ?? '?'; }
 
   iconOf(t: Transaction) { return t.kind === 'transfer' ? 'swap_horiz' : (this.cat(t)?.icon ?? (t.kind === 'income' ? 'more_horiz' : 'label')); }
