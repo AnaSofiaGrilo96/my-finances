@@ -90,7 +90,10 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 .fmenu .mat-mdc-menu-item.child { padding-left: 34px; min-height: 40px; }
 .fmenu .mat-mdc-menu-item.child .mat-mdc-menu-item-text { font-size: 14px; }
 .fmenu .mat-mdc-menu-item.sel { background: var(--mat-sys-secondary-container); }
-.fmenu .all { color: var(--mat-sys-primary); font-weight: 500; }
+// ícones de tipo/estado e os cabeçalhos "Todas…" ocupam a mesma largura (28px) dos badges, para o texto ficar alinhado
+.fmenu .mat-mdc-menu-item > mat-icon, .fmenu .mat-mdc-menu-item .mat-mdc-menu-item-text > mat-icon { width: 28px; height: 28px; font-size: 24px; margin: 0; display: grid; place-items: center; }
+.fmenu .all { color: var(--mat-sys-primary); font-weight: 500; display: inline-flex; align-items: center; gap: 10px; }
+.fmenu .all .ph { display: inline-block; width: 28px; height: 28px; }
 
 // Fundo escurecido por trás de janelas e folhas: mais leve, sobretudo no modo escuro (empilham-se)
 .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .28); }

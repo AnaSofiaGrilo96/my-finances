@@ -72,28 +72,28 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         </div>
 
         <mat-menu #accMenu="matMenu" class="fmenu">
-          <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all">Todas as contas</span></button>
+          <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all"><span class="ph"></span>Todas as contas</span></button>
           @for (a of data.accounts(); track a.id) {
             <button mat-menu-item (click)="accountId.set(a.id)" [class.sel]="accountId() === a.id"><app-icon-badge [icon]="a.icon" [color]="a.color" [size]="28" />{{ a.name }}</button>
           }
         </mat-menu>
         <mat-menu #kindMenu="matMenu" class="fmenu">
-          <button mat-menu-item (click)="kind.set(null)" [class.sel]="!kind()"><span class="all">Todos os tipos</span></button>
+          <button mat-menu-item (click)="kind.set(null)" [class.sel]="!kind()"><span class="all"><span class="ph"></span>Todos os tipos</span></button>
           <button mat-menu-item (click)="kind.set('expense')" [class.sel]="kind() === 'expense'"><mat-icon class="expense">remove_circle</mat-icon>Despesas</button>
           <button mat-menu-item (click)="kind.set('income')" [class.sel]="kind() === 'income'"><mat-icon class="income">add_circle</mat-icon>Receitas</button>
           <button mat-menu-item (click)="kind.set('transfer')" [class.sel]="kind() === 'transfer'"><mat-icon>swap_horiz</mat-icon>Transferências</button>
         </mat-menu>
         <mat-menu #catMenu="matMenu" class="fmenu tall">
-          <button mat-menu-item (click)="categoryId.set(null)" [class.sel]="!categoryId()"><span class="all">Todas as categorias</span></button>
+          <button mat-menu-item (click)="categoryId.set(null)" [class.sel]="!categoryId()"><span class="all"><span class="ph"></span>Todas as categorias</span></button>
           @for (g of data.categoryGroups(); track g.parent.id) {
             <button mat-menu-item (click)="categoryId.set(g.parent.id)" [class.sel]="categoryId() === g.parent.id"><app-icon-badge [icon]="g.parent.icon" [color]="g.parent.color" [size]="28" />{{ g.parent.name }}</button>
             @for (c of g.children; track c.id) {
-              <button mat-menu-item class="child" (click)="categoryId.set(c.id)" [class.sel]="categoryId() === c.id"><app-icon-badge [icon]="c.icon" [color]="c.color" [size]="22" />{{ c.name }}</button>
+              <button mat-menu-item class="child" (click)="categoryId.set(c.id)" [class.sel]="categoryId() === c.id"><app-icon-badge [icon]="c.icon" [color]="c.color" [size]="28" />{{ c.name }}</button>
             }
           }
         </mat-menu>
         <mat-menu #stateMenu="matMenu" class="fmenu">
-          <button mat-menu-item (click)="paidFilter.set(null)" [class.sel]="!paidFilter()"><span class="all">Todos</span></button>
+          <button mat-menu-item (click)="paidFilter.set(null)" [class.sel]="!paidFilter()"><span class="all"><span class="ph"></span>Todos</span></button>
           <button mat-menu-item (click)="paidFilter.set('paid')" [class.sel]="paidFilter() === 'paid'"><mat-icon class="income">thumb_up</mat-icon>Pagos / recebidos</button>
           <button mat-menu-item (click)="paidFilter.set('unpaid')" [class.sel]="paidFilter() === 'unpaid'"><mat-icon>thumb_down</mat-icon>Por pagar / receber</button>
         </mat-menu>
