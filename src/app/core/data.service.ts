@@ -360,12 +360,19 @@ export class DataService {
   }
 
   // ---------- Movimentos ----------
+  /** Lê em páginas de 1.000 (limite por pedido da Supabase) para intervalos grandes (ex.: vários anos nos relatórios). */
   async listTransactions(start: string, end: string, accountId?: string | null): Promise<Transaction[]> {
-    let q = this.sb.from('transactions').select('*').gte('date', start).lte('date', end);
-    if (accountId) q = q.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
-    const { data, error } = await q.order('date').order('created_at');
-    if (error) throw error;
-    return (data ?? []).map(numTx);
+    const PAGE = 1000;
+    const all: Transaction[] = [];
+    for (let from = 0; ; from += PAGE) {
+      let q = this.sb.from('transactions').select('*').gte('date', start).lte('date', end);
+      if (accountId) q = q.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
+      const { data, error } = await q.order('date').order('created_at').order('id').range(from, from + PAGE - 1);
+      if (error) throw error;
+      all.push(...(data ?? []).map(numTx));
+      if (!data || data.length < PAGE) break;
+    }
+    return all;
   }
 
   /** Movimentos por pagar entre hoje e daqui a N dias (contas a pagar / a receber). */

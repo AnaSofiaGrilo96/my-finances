@@ -190,6 +190,7 @@ Em 30/09/2026 importou-se o histórico completo desde 2018 exportado de outra ap
 
 ## 9. Como trabalhar neste projeto
 
+- **A Supabase devolve no máximo 1.000 linhas por pedido**: qualquer leitura que possa passar disso (relatórios de vários anos, exports) tem de paginar com `.range()` — `listTransactions` já o faz.
 - **Nunca duplicar movimentos**: qualquer importação ou criação em massa tem de procurar primeiro o que já existe (descrição sem acentos/maiúsculas, conta, tipo, data igual ou próxima) e ligar/ignorar em vez de inserir — modelo em `_local/supabase-dados/` (fora do repositório).
 - **Repositório público**: nunca commitar dados (inserts, exports, restauros) nem nomes de outras aplicações de finanças.
 
