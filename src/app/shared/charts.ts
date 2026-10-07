@@ -93,12 +93,12 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
       <span><i style="background:var(--color-expense)"></i>Saídas</span>
       <span><i class="area"></i>Saldo</span>
     </div>
-    <div class="scroll">
+    <div class="scroll" (mousemove)="move($event)" (mouseleave)="hover.set(null)">
       <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" [style.min-width.px]="minWidth()" preserveAspectRatio="none" role="img" aria-label="Entradas, saídas e saldo">
         <path [attr.d]="areaPath()" class="area" />
         <path [attr.d]="linePath()" class="line" />
         @for (p of bars(); track $index) {
-          <g (mouseenter)="hover.set($index)" (mouseleave)="hover.set(null)">
+          <g (mouseenter)="hover.set($index)">
             <rect [attr.x]="p.x - p.w" [attr.y]="p.yIn" [attr.width]="p.w" [attr.height]="p.hIn" class="in" />
             <rect [attr.x]="p.x" [attr.y]="p.yOut" [attr.width]="p.w" [attr.height]="p.hOut" class="out" />
             <rect [attr.x]="p.x - p.slot / 2" y="0" [attr.width]="p.slot" [attr.height]="H" fill="transparent" />
@@ -108,38 +108,52 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
           <line [attr.x1]="bars()[hover()!].x" [attr.x2]="bars()[hover()!].x" y1="0" [attr.y2]="H" class="cursor" />
         }
       </svg>
+      <!-- Tooltip flutuante junto ao cursor -->
+      @if (hover() !== null) {
+        <div class="tooltip" [class.left]="tipLeft()" [style.left.px]="tipX()" [style.top.px]="tipY()">
+          <b>{{ points()[hover()!].label }}</b>
+          <span><i class="dot in"></i>Entradas <em class="in">{{ fmt(points()[hover()!].income) }}</em></span>
+          <span><i class="dot out"></i>Saídas <em class="out">{{ fmt(points()[hover()!].expense) }}</em></span>
+          <span><i class="dot bal"></i>Saldo <em>{{ fmt(points()[hover()!].balance) }}</em></span>
+        </div>
+      }
     </div>
-    @if (hover() !== null; as h) {
-      <div class="tip">
-        <b>{{ points()[hover()!].label }}</b>
-        <span class="in">+{{ fmt(points()[hover()!].income) }}</span>
-        <span class="out">−{{ fmt(points()[hover()!].expense) }}</span>
-        <span>Saldo {{ fmt(points()[hover()!].balance) }}</span>
-      </div>
-    } @else {
-      <div class="tip muted">Passe o rato sobre o gráfico para ver os valores.</div>
-    }
   `,
   styles: [`
     :host { display: block; --color-income: #1eb980; --color-expense: #e5484d; }
     .legend { display: flex; gap: 16px; justify-content: flex-end; font-size: 12px; color: var(--mat-sys-on-surface-variant); margin-bottom: 4px; }
     .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
     .legend i.area { background: color-mix(in srgb, var(--mat-sys-primary) 25%, transparent); }
-    .scroll { overflow-x: auto; }
+    .scroll { overflow-x: auto; position: relative; }
     svg { width: 100%; height: 220px; display: block; }
     .area { fill: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent); }
     .line { fill: none; stroke: var(--mat-sys-primary); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
     rect.in { fill: var(--color-income); }
     rect.out { fill: var(--color-expense); }
     .cursor { stroke: var(--mat-sys-outline); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
-    .tip { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; margin-top: 6px; min-height: 20px; }
-    .tip .in { color: var(--color-income); } .tip .out { color: var(--color-expense); }
-    .muted { color: var(--mat-sys-on-surface-variant); }
+    .tooltip { position: absolute; pointer-events: none; z-index: 3; display: flex; flex-direction: column; gap: 4px; min-width: 150px; padding: 10px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.3;
+               background: var(--mat-sys-inverse-surface); color: var(--mat-sys-inverse-on-surface); box-shadow: 0 6px 20px rgba(0,0,0,.25); transform: translate(14px, -50%); animation: fade-in .12s ease-out; }
+    .tooltip.left { transform: translate(calc(-100% - 14px), -50%); }
+    .tooltip b { font-size: 13px; margin-bottom: 2px; }
+    .tooltip span { display: flex; align-items: center; gap: 6px; }
+    .tooltip em { font-style: normal; font-weight: 600; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+    .tooltip em.in { color: #4ad99a; } .tooltip em.out { color: #ff7b80; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.in { background: var(--color-income); } .dot.out { background: var(--color-expense); } .dot.bal { background: var(--mat-sys-primary); }
   `],
 })
 export class FlowChart {
   readonly points = input.required<FlowPoint[]>();
   readonly hover = signal<number | null>(null);
+  readonly tipX = signal(0);
+  readonly tipY = signal(0);
+  readonly tipLeft = signal(false);
+  /** Posição do tooltip relativa ao contentor do gráfico; vira para a esquerda perto da margem direita. */
+  move(ev: MouseEvent) {
+    const box = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = ev.clientX - box.left + (ev.currentTarget as HTMLElement).scrollLeft, y = ev.clientY - box.top;
+    this.tipX.set(x); this.tipY.set(y); this.tipLeft.set(ev.clientX - box.left > box.width * 0.65);
+  }
   readonly W = 1000;
   readonly H = 220;
 
