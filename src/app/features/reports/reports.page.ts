@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
-import { Account, Transaction, signFor } from '../../core/models';
+import { Transaction, signFor } from '../../core/models';
 import { currentMonth, eachDay, fromIso, monthLabel, monthRange, shiftMonth, shortMonthLabel, toIso } from '../../core/dates';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
@@ -183,30 +183,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           </div>
         </mat-tab>
 
-        <!-- ---------------- Contas ---------------- -->
-        <mat-tab label="Contas">
-          <div class="card tabbody">
-            <p class="muted small">Movimento por conta no período (transferências contam como entrada na conta de destino e saída na de origem).</p>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Conta</th><th>Entradas</th><th>Saídas</th><th>Resultado</th><th>Saldo atual</th></tr></thead>
-                <tbody>
-                  @for (r of accountRows(); track r.account.id) {
-                    <tr class="clickable" (click)="accountId.set(r.account.id)">
-                      <td class="lbl"><span class="acc"><app-icon-badge [icon]="r.account.icon" [color]="r.account.color" [size]="26" />{{ r.account.name }}</span></td>
-                      <td class="income">{{ r.income | money:'plain' }}</td>
-                      <td class="expense">-{{ r.expense | money:'plain' }}</td>
-                      <td [class.income]="r.income - r.expense > 0" [class.expense]="r.income - r.expense < 0">{{ r.income - r.expense | money:'signed' }}</td>
-                      <td class="bal" [class.expense]="r.balance < 0">{{ r.balance | money:'plain' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-            <p class="muted small">Clica numa conta para filtrar todos os relatórios por essa conta.</p>
-          </div>
-        </mat-tab>
-
       </mat-tab-group>
       <div class="end-space"></div>
       </div></div>
@@ -332,14 +308,6 @@ export class ReportsPage {
   });
 
   readonly flowPoints = computed<FlowPoint[]>(() => this.flowRows().map((r) => ({ label: r.label, income: r.income, expense: r.expense, balance: r.balance })));
-
-  readonly accountRows = computed(() =>
-    this.data.activeAccounts().map((account: Account) => {
-      let income = 0, expense = 0;
-      for (const t of this.txs()) { const s = signFor(t, account.id); if (s > 0) income += t.amount; else if (s < 0) expense += t.amount; }
-      return { account, income, expense, balance: this.data.balances()[account.id] ?? account.initial_balance };
-    }),
-  );
 
   constructor() {
     effect(() => {
