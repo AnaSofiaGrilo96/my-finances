@@ -112,7 +112,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
             <div class="card">
               <h2>Próximos movimentos por pagar</h2>
-              <p class="muted small">A partir de amanhã, nos próximos 30 dias.</p>
+              <p class="muted small">De hoje até daqui a 30 dias.</p>
               @if (pending().length) {
                 <div class="rows">
                   @for (t of pending(); track t.id) {
@@ -270,7 +270,7 @@ export class DashboardPage {
       this.txs.set(txs);
       const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
       this.due.set(nonTransfer.filter((t) => t.date <= this.today));
-      this.pending.set(nonTransfer.filter((t) => t.date > this.today).slice(0, 8));
+      this.pending.set(nonTransfer.filter((t) => t.date >= this.today).slice(0, 8));
     } catch (e) { this.ui.error(e); }
   }
 
