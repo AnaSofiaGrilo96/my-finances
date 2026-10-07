@@ -36,9 +36,6 @@ import { BackButtonService } from '../shared/back-button.service';
         </nav>
       }
       <span class="spacer"></span>
-      @if (!isSmall()) {
-        <button matIconButton (click)="newTransaction()" matTooltip="Novo movimento" aria-label="Novo movimento"><mat-icon>add_circle</mat-icon></button>
-      }
       <button matIconButton (click)="themeSvc.dark.set(!themeSvc.dark())" [matTooltip]="themeSvc.dark() ? 'Modo claro' : 'Modo escuro'">
         <mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
@@ -70,6 +67,11 @@ import { BackButtonService } from '../shared/back-button.service';
       }
     </main>
 
+    <!-- Botão flutuante redondo em todos os ecrãs (exceto Relatórios) -->
+    @if (showFab()) {
+      <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento" matTooltip="Novo movimento"><mat-icon>add</mat-icon></button>
+    }
+
     @if (isSmall()) {
       <nav class="bottom-nav">
         @for (item of navItems; track item.path) {
@@ -79,9 +81,6 @@ import { BackButtonService } from '../shared/back-button.service';
           </a>
         }
       </nav>
-      @if (showFab()) {
-        <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
-      }
     }
   `,
   styles: [`
@@ -91,11 +90,11 @@ import { BackButtonService } from '../shared/back-button.service';
     :host-context(html.dark) .topbar { background: #178f45; }
     .brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 19px; letter-spacing: -.2px; }
     .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
-    .links { display: flex; align-items: stretch; gap: 4px; height: 100%; margin-left: 48px; }
+    .links { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px; }
     .links a { display: flex; align-items: center; padding: 0 16px; color: rgba(255,255,255,.85); text-decoration: none; font-size: 16.5px; font-weight: 400; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background-color .15s; }
     .links a:hover { color: #fff; background: rgba(255,255,255,.08); }
     .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
-    .topbar.desktop { height: 64px; padding: 0 24px; }
+    .topbar.desktop { height: 64px; padding: 0 24px; position: sticky; }
     .topbar.desktop .brand { font-size: 22px; }
     .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; }
     .user-info { padding: 8px 16px 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); margin-bottom: 4px; }
