@@ -14,7 +14,6 @@ import { Transaction } from '../../core/models';
 import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
-import { MonthNav } from '../../shared/month-nav';
 import { DonutChart, DonutSlice } from '../../shared/charts';
 import { UiService } from '../../shared/ui.service';
 import { openTransactionDialog } from '../transactions/transaction.dialog';
@@ -23,7 +22,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, MonthNav, DonutChart],
+  imports: [NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, DonutChart],
   template: `
     <div class="page">
       <!-- Saudação -->
@@ -77,7 +76,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             <div><span class="muted">Resultado</span><b [class.income]="totals().income - totals().expense >= 0" [class.expense]="totals().income - totals().expense < 0">{{ totals().income - totals().expense | money }}</b></div>
           </div>
           <div class="actions">
-            <app-month-nav [month]="month()" (monthChange)="month.set($event)" />
             <div class="btns">
               <button matButton="outlined" (click)="add('expense')"><mat-icon class="expense">remove_circle</mat-icon>Despesa</button>
               <button matButton="outlined" (click)="add('income')"><mat-icon class="income">add_circle</mat-icon>Entrada</button>
@@ -91,7 +89,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         @if (!isSmall()) {
           <div class="col">
             <div class="card">
-              <h2>Maiores gastos do mês</h2>
+              <h2>Maiores gastos do mês atual</h2>
               @if (topCategories().length) {
                 <div class="top">
                   <div class="rows list">
@@ -195,7 +193,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .kpis { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
     .kpis div { display: flex; flex-direction: column; font-size: 13px; }
     .kpis b { font-size: 20px; }
-    .actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .actions { display: flex; align-items: center; }
     .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
     .top { display: flex; gap: 16px; align-items: center; }
