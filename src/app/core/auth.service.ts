@@ -26,7 +26,7 @@ export class AuthService {
     this.user.set(session?.user ?? null);
   }
 
-  /** Remove ?code=... da URL depois do regresso do Google, para não ficar visível. */
+  /** Remove ?code=... da URL (resto de um fluxo OAuth), para não ficar visível. */
   private cleanOAuthParams() {
     try {
       const url = new URL(window.location.href);
@@ -41,20 +41,6 @@ export class AuthService {
 
   async waitUntilReady(): Promise<void> {
     await this.readyPromise;
-  }
-
-  /** URL de regresso: a página base da app (funciona em localhost e no GitHub Pages). */
-  private redirectUrl(): string {
-    const { origin, pathname } = window.location;
-    return origin + pathname;
-  }
-
-  async signInWithGoogle(): Promise<string | null> {
-    const { error } = await this.sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: this.redirectUrl(), queryParams: { prompt: 'select_account' } },
-    });
-    return error ? error.message : null;
   }
 
   async signInWithPassword(email: string, password: string): Promise<string | null> {
