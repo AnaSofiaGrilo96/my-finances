@@ -1,10 +1,13 @@
 -- ============================================================
--- MyFinances — esquema da base de dados (Supabase / Postgres)
--- Executar no SQL Editor do projeto Supabase (uma vez).
--- Todas as tabelas têm RLS: cada utilizador só vê os seus dados.
+-- MyFinances — esquema COMPLETO da base de dados (Supabase / Postgres)
+-- Script único: cria a base de dados de raiz (tabelas, RLS, vista de saldos, funções, backup).
+-- Executar no SQL Editor do projeto Supabase. Pode voltar a correr-se (idempotente).
+-- Os DADOS (contas, categorias, movimentos) não estão aqui: repõem-se a partir do backup do Drive
+-- com um script de restauro gerado localmente (nunca vai para o repositório — ver README §2).
 -- ============================================================
 
 create extension if not exists "pgcrypto";
+set search_path to public, extensions;  -- na Supabase o pgcrypto (gen_random_bytes, digest) vive no esquema `extensions`
 
 -- ---------- Contas ----------
 create table if not exists public.accounts (
@@ -145,7 +148,7 @@ as $$
         where t.date < p_date and (p_include_unpaid or t.paid)), 0);
 $$;
 
--- ---------- Categorias iniciais para um utilizador novo (opcional) ----------
+-- ---------- Categorias iniciais para um utilizador novo (opcional; a Ana usa as do backup/restauro) ----------
 create or replace function public.seed_default_categories()
 returns void
 language plpgsql
@@ -173,3 +176,59 @@ begin
     ('Investimentos',            'income',  '#66bb6a', 'trending_up',       2),
     ('Outras receitas',          'income',  '#1de9b6', 'more_horiz',       99);
 end $$;
+
+-- ============================================================
+-- Backup mensal (Google Apps Script em backup/apps-script.gs)
+-- Função que devolve TODOS os dados em JSON, chamada por HTTP (/rest/v1/rpc/backup_export) com a chave anon
+-- + uma chave de backup secreta cujo hash fica em private.backup_keys. Sem a chave certa devolve erro.
+-- ============================================================
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+create table if not exists private.backup_keys (
+  id         int primary key default 1 check (id = 1),
+  key_hash   text not null,
+  created_at timestamptz not null default now(),
+  last_used  timestamptz
+);
+
+create or replace function public.backup_export(p_key text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, extensions, pg_temp  -- `extensions`: onde a Supabase instala o pgcrypto (digest)
+as $$
+declare
+  uid uuid;
+  result jsonb;
+begin
+  if p_key is null or not exists (select 1 from private.backup_keys where key_hash = encode(digest(p_key, 'sha256'), 'hex')) then
+    raise exception 'chave de backup inválida' using errcode = '28000';
+  end if;
+  update private.backup_keys set last_used = now() where id = 1;  -- a Supabase recusa update sem where
+  select id into uid from auth.users order by created_at limit 1;
+
+  select jsonb_build_object(
+    'exported_at', now(),
+    'accounts',     (select coalesce(jsonb_agg(to_jsonb(a) order by a.sort_order, a.name), '[]') from public.accounts a where a.user_id = uid),
+    'categories',   (select coalesce(jsonb_agg(to_jsonb(c) order by c.kind, c.sort_order, c.name), '[]') from public.categories c where c.user_id = uid),
+    'recurrences',  (select coalesce(jsonb_agg(to_jsonb(r) order by r.description), '[]') from public.recurrences r where r.user_id = uid),
+    'settings',     (select to_jsonb(s) from public.settings s where s.user_id = uid),
+    'transactions', (select coalesce(jsonb_agg(to_jsonb(t) order by t.date, t.created_at), '[]') from public.transactions t where t.user_id = uid)
+  ) into result;
+  return result;
+end $$;
+
+revoke all on function public.backup_export(text) from public;
+grant execute on function public.backup_export(text) to anon, authenticated;
+
+-- Chave de backup: criada só se ainda não existir, e devolvida como RESULTADO desta query (copia-a para o Apps Script;
+-- não volta a aparecer). Se já existir, não devolve nada. Para rodar a chave: delete from private.backup_keys; e correr este bloco.
+with k as (select encode(gen_random_bytes(24), 'hex') as key),
+ins as (
+  insert into private.backup_keys (id, key_hash)
+  select 1, encode(digest(key, 'sha256'), 'hex') from k
+  on conflict (id) do nothing
+  returning id
+)
+select key as "Chave de backup — copia agora" from k join ins on true;
