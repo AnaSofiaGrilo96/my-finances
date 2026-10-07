@@ -302,8 +302,8 @@ export class TransactionsPage implements OnDestroy {
   }
 
   // ---------- Apresentação ----------
-  /** Por pagar e com data até amanhã (ou em atraso): é o que aparece no aviso do início. */
-  isDue(t: Transaction) { return !t.paid && t.date <= this.tomorrow; }
+  /** Por pagar e com data até hoje (ou em atraso): é o que aparece no aviso do início. */
+  isDue(t: Transaction) { return !t.paid && t.date <= this.today; }
   private cat(t: Transaction) { return t.category_id ? this.data.categoryMap().get(t.category_id) : undefined; }
   private acc(id: string | null) { return id ? this.data.accountMap().get(id) : undefined; }
   installmentsOf(t: Transaction) { return this.data.recurrences().find((r) => r.id === t.recurrence_id)?.installments ?? '?'; }

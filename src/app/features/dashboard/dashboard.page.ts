@@ -31,7 +31,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         <h1>{{ firstName() }}</h1>
       </div>
 
-      <!-- Aviso: a pagar / a receber hoje e amanhã (e atrasados) -->
+      <!-- Aviso: a pagar / a receber hoje (e atrasados) -->
       @if (due().length) {
         <div class="card due" [class.open]="dueOpen()">
           <button type="button" class="due-head" (click)="dueOpen.set(!dueOpen())">
@@ -62,7 +62,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         <div class="card due ok">
           <div class="due-head static">
             <span class="due-icon ok"><mat-icon>task_alt</mat-icon></span>
-            <span class="due-text"><b>Nada a pagar ou receber</b><span class="muted">hoje e amanhã</span></span>
+            <span class="due-text"><b>Nada a pagar ou receber</b><span class="muted">hoje</span></span>
           </div>
         </div>
       }
@@ -112,7 +112,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
             <div class="card">
               <h2>Próximos movimentos por pagar</h2>
-              <p class="muted small">Depois de amanhã, nos próximos 30 dias.</p>
+              <p class="muted small">A partir de amanhã, nos próximos 30 dias.</p>
               @if (pending().length) {
                 <div class="rows">
                   @for (t of pending(); track t.id) {
@@ -248,7 +248,7 @@ export class DashboardPage {
     const parts = [];
     if (pay) parts.push(`a pagar ${formatMoney(pay)}`);
     if (recv) parts.push(`a receber ${formatMoney(recv)}`);
-    return `Hoje e amanhã: ${parts.join(' · ')}${overdue ? ` · ${overdue} em atraso` : ''}`;
+    return `Hoje: ${parts.join(' · ')}${overdue ? ` · ${overdue} em atraso` : ''}`;
   });
 
   constructor() {
@@ -269,8 +269,8 @@ export class DashboardPage {
       ]);
       this.txs.set(txs);
       const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
-      this.due.set(nonTransfer.filter((t) => t.date <= this.tomorrow));
-      this.pending.set(nonTransfer.filter((t) => t.date > this.tomorrow).slice(0, 8));
+      this.due.set(nonTransfer.filter((t) => t.date <= this.today));
+      this.pending.set(nonTransfer.filter((t) => t.date > this.today).slice(0, 8));
     } catch (e) { this.ui.error(e); }
   }
 
@@ -283,7 +283,7 @@ export class DashboardPage {
   balance(id: string) { return this.data.balances()[id] ?? 0; }
   pct(v: number) { const t = this.totals().expense; return t ? (100 * v / t).toFixed(2).replace('.', ',') + '%' : ''; }
   fmtDay(iso: string) { return DAY_FMT.format(fromIso(iso)); }
-  dueLabel(iso: string) { return iso === this.today ? 'Hoje' : iso === this.tomorrow ? 'Amanhã' : `${this.fmtDay(iso)} · em atraso`; }
+  dueLabel(iso: string) { return iso === this.today ? 'Hoje' : `${this.fmtDay(iso)} · em atraso`; }
   accName(t: Transaction) { return this.data.accountMap().get(t.account_id)?.name ?? ''; }
 
   add(kind: 'expense' | 'income' | 'transfer') { openTransactionDialog(this.dialog, { kind }); }
