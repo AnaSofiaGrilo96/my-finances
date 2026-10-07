@@ -46,7 +46,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             <div class="rows">
               @for (t of due(); track t.id) {
                 <div class="row clickable" (click)="edit(t)">
-                  <app-icon-badge [icon]="t.kind === 'income' ? 'call_received' : 'call_made'" [color]="t.kind === 'income' ? '#1eb980' : '#e5484d'" [size]="34" />
+                  <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="34" />
                   <div class="main">
                     <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
                     <div class="sub">{{ dueLabel(t.date) }} · {{ accName(t) }}</div>
@@ -113,9 +113,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <h2>Próximos movimentos a pagar</h2>
               <p class="muted small">De hoje até daqui a 30 dias.</p>
               @if (pendingPay().length) {
-                <div class="rows">
-                  @for (t of pendingPay(); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
-                </div>
+                <ng-container *ngTemplateOutlet="pendingList; context: { $implicit: pendingPay() }" />
               } @else {
                 <p class="empty">Nada a pagar nos próximos 30 dias.</p>
               }
@@ -149,9 +147,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <h2>Próximos movimentos a receber</h2>
               <p class="muted small">De hoje até daqui a 30 dias.</p>
               @if (pendingRecv().length) {
-                <div class="rows">
-                  @for (t of pendingRecv(); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
-                </div>
+                <ng-container *ngTemplateOutlet="pendingList; context: { $implicit: pendingRecv() }" />
               } @else {
                 <p class="empty">Nada a receber nos próximos 30 dias.</p>
               }
@@ -162,9 +158,25 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     </div>
 
     <!-- Linha de um movimento por pagar/receber (usada nos dois cartões) -->
+    <!-- Lista dividida em "Vence hoje" (inclui atrasados) e "Próximas", como na outra aplicação de gestão de finanças -->
+    <ng-template #pendingList let-list>
+      @if (dueOf(list).length) {
+        <div class="band today">Vence hoje</div>
+        <div class="rows">
+          @for (t of dueOf(list); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
+        </div>
+      }
+      @if (nextOf(list).length) {
+        <div class="band">Próximas</div>
+        <div class="rows">
+          @for (t of nextOf(list); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
+        </div>
+      }
+    </ng-template>
+
     <ng-template #pendingRow let-t>
       <div class="row clickable" (click)="edit(t)">
-        <app-icon-badge [icon]="t.kind === 'income' ? 'call_received' : 'call_made'" [color]="t.kind === 'income' ? '#1eb980' : '#e5484d'" [size]="34" />
+        <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="34" />
         <div class="main">
           <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
           <div class="sub">{{ fmtDay(t.date) }} · {{ accName(t) }}</div>
@@ -205,6 +217,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .amount.acc { color: var(--mat-sys-primary); }
     .empty a { color: var(--mat-sys-primary); }
     .small { font-size: 12.5px; margin: -6px 0 8px; }
+    .band { text-align: center; font-size: 14px; font-weight: 500; padding: 8px; border-radius: 10px; margin: 6px 0 2px; background: var(--mat-sys-surface-container); color: var(--mat-sys-on-surface-variant); }
+    .band.today { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
     @media (max-width: 899px) { .link-row { justify-content: stretch; } .manage { width: 100%; } }
   `],
 })
@@ -303,6 +317,10 @@ export class DashboardPage {
   fmtDay(iso: string) { return DAY_FMT.format(fromIso(iso)); }
   dueLabel(iso: string) { return iso === this.today ? 'Hoje' : `${this.fmtDay(iso)} · em atraso`; }
   accName(t: Transaction) { return this.data.accountMap().get(t.account_id)?.name ?? ''; }
+  iconOf(t: Transaction) { return this.data.categoryMap().get(t.category_id ?? '')?.icon ?? (t.kind === 'income' ? 'call_received' : 'call_made'); }
+  colorOf(t: Transaction) { return this.data.categoryMap().get(t.category_id ?? '')?.color ?? (t.kind === 'income' ? '#1eb980' : '#e5484d'); }
+  dueOf(list: Transaction[]) { return list.filter((t) => t.date <= this.today); }
+  nextOf(list: Transaction[]) { return list.filter((t) => t.date > this.today); }
 
   add(kind: 'expense' | 'income' | 'transfer') { openTransactionDialog(this.dialog, { kind }); }
   edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
