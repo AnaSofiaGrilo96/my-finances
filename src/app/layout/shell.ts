@@ -3,9 +3,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -25,61 +23,52 @@ import { BackButtonService } from '../shared/back-button.service';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatProgressBarModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatProgressBarModule],
   template: `
-    <mat-sidenav-container class="container">
+    <!-- Barra superior verde com a navegação ao centro (computador) / só título (telemóvel); sem menu lateral -->
+    <mat-toolbar class="topbar" [class.desktop]="!isSmall()">
+      <a class="brand" routerLink="/"><mat-icon>account_balance_wallet</mat-icon><span>MyFinances</span></a>
       @if (!isSmall()) {
-        <mat-sidenav mode="side" opened class="sidenav">
-          <div class="brand"><mat-icon>account_balance_wallet</mat-icon><span>MyFinances</span></div>
-          <mat-nav-list>
-            @for (item of sideItems; track item.path) {
-              <a mat-list-item [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
-                <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-                <span matListItemTitle>{{ item.label }}</span>
-              </a>
-            }
-          </mat-nav-list>
-          <div class="side-actions">
-            <button matButton="filled" (click)="newTransaction()"><mat-icon>add</mat-icon>Novo movimento</button>
-          </div>
-        </mat-sidenav>
-      }
-      <mat-sidenav-content>
-        <mat-toolbar class="topbar">
-          @if (isSmall()) {
-            <mat-icon class="logo">account_balance_wallet</mat-icon>
-            <span class="brand-small">MyFinances</span>
+        <nav class="links">
+          @for (item of navItems; track item.path) {
+            <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">{{ item.label }}</a>
           }
-          <span class="spacer"></span>
-          <button matIconButton (click)="themeSvc.dark.set(!themeSvc.dark())" [matTooltip]="themeSvc.dark() ? 'Modo claro' : 'Modo escuro'">
-            <mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-          </button>
-          <button matIconButton [matMenuTriggerFor]="userMenu" aria-label="Conta">
-            @if (auth.avatarUrl(); as url) {
-              <img class="avatar" [src]="url" alt="" referrerpolicy="no-referrer" />
-            } @else {
-              <mat-icon>account_circle</mat-icon>
-            }
-          </button>
-          <mat-menu #userMenu="matMenu">
-            <div class="user-info">
-              <div class="name">{{ data.displayName() || auth.displayName() }}</div>
-              <div class="muted">{{ auth.user()?.email }}</div>
-            </div>
-            <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
-            <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
-            <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
-            <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
-            <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
-          </mat-menu>
-        </mat-toolbar>
-        @if (!data.loaded()) {
-          <mat-progress-bar mode="indeterminate" />
+        </nav>
+      }
+      <span class="spacer"></span>
+      @if (!isSmall()) {
+        <button matIconButton (click)="newTransaction()" matTooltip="Novo movimento" aria-label="Novo movimento"><mat-icon>add_circle</mat-icon></button>
+      }
+      <button matIconButton (click)="themeSvc.dark.set(!themeSvc.dark())" [matTooltip]="themeSvc.dark() ? 'Modo claro' : 'Modo escuro'">
+        <mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+      <button matIconButton [matMenuTriggerFor]="userMenu" aria-label="Conta">
+        @if (auth.avatarUrl(); as url) {
+          <img class="avatar" [src]="url" alt="" referrerpolicy="no-referrer" />
         } @else {
-          <router-outlet />
+          <mat-icon>account_circle</mat-icon>
         }
-      </mat-sidenav-content>
-    </mat-sidenav-container>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <div class="user-info">
+          <div class="name">{{ data.displayName() || auth.displayName() }}</div>
+          <div class="muted">{{ auth.user()?.email }}</div>
+        </div>
+        <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
+        <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
+        <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
+        <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
+        <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="content">
+      @if (!data.loaded()) {
+        <mat-progress-bar mode="indeterminate" />
+      } @else {
+        <router-outlet />
+      }
+    </main>
 
     @if (isSmall()) {
       <nav class="bottom-nav">
@@ -96,25 +85,30 @@ import { BackButtonService } from '../shared/back-button.service';
     }
   `,
   styles: [`
-    .container { height: 100dvh; }
-    .sidenav { width: 240px; border-right: none; display: flex; flex-direction: column; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 20px 16px 12px; font-weight: 500; font-size: 17px; color: var(--mat-sys-primary); }
-    .brand-small { font-weight: 500; margin-left: 8px; }
-    .logo { color: var(--mat-sys-primary); }
-    .side-actions { padding: 16px; margin-top: auto; }
-    .side-actions button { width: 100%; }
-    .topbar { background: var(--mat-sys-surface); border-bottom: 1px solid var(--mat-sys-outline-variant); position: sticky; top: 0; z-index: 10; }
+    :host { display: block; height: 100dvh; }
+    /* ---- barra superior verde ---- */
+    .topbar { position: sticky; top: 0; z-index: 10; background: #1cbf4f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
+    :host-context(html.dark) .topbar { background: #178f45; }
+    .brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 19px; letter-spacing: -.2px; }
+    .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    .links { display: flex; align-items: stretch; gap: 4px; height: 100%; margin-left: 48px; }
+    .links a { display: flex; align-items: center; padding: 0 16px; color: rgba(255,255,255,.85); text-decoration: none; font-size: 16.5px; font-weight: 400; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background-color .15s; }
+    .links a:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
+    .topbar.desktop { height: 64px; padding: 0 24px; }
+    .topbar.desktop .brand { font-size: 22px; }
     .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; }
     .user-info { padding: 8px 16px 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); margin-bottom: 4px; }
     .user-info .name { font-weight: 500; }
     .user-info .muted { font-size: 12px; }
-    a.active { background: var(--mat-sys-secondary-container); border-radius: 24px; }
+    /* ---- conteúdo ---- */
+    .content { display: block; }
+    /* ---- telemóvel ---- */
     .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
     .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; font-size: 11px; color: var(--mat-sys-on-surface-variant); text-decoration: none; }
     .bottom-nav a.active { color: var(--mat-sys-primary); }
     .bottom-nav a mat-icon { padding: 2px 16px; border-radius: 14px; }
     .bottom-nav a.active mat-icon { background: var(--mat-sys-secondary-container); }
-    mat-sidenav-content { padding-bottom: 0; }
   `],
 })
 export class Shell {
@@ -138,8 +132,6 @@ export class Shell {
     { path: '/movimentos', icon: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
     { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
   ];
-
-  readonly sideItems = this.navItems;
 
   private readonly swUpdate = inject(SwUpdate);
   private readonly snack = inject(MatSnackBar);

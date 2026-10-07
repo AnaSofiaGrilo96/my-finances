@@ -92,6 +92,8 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 .fmenu .mat-mdc-menu-item.sel { background: var(--mat-sys-secondary-container); }
 // ícones de tipo/estado e os cabeçalhos "Todas…" ocupam a mesma largura (28px) dos badges, para o texto ficar alinhado
 .fmenu .mat-mdc-menu-item > mat-icon, .fmenu .mat-mdc-menu-item .mat-mdc-menu-item-text > mat-icon { width: 28px; height: 28px; font-size: 24px; margin: 0; display: grid; place-items: center; }
+// o Material dá margin-right a qualquer mat-icon dentro de um item de menu — dentro do badge isso descentra o ícone
+.fmenu .mat-mdc-menu-item app-icon-badge .mat-icon { margin: 0 !important; }
 .fmenu .all { color: var(--mat-sys-primary); font-weight: 500; display: inline-flex; align-items: center; gap: 10px; }
 .fmenu .all .ph { display: inline-block; width: 28px; height: 28px; }
 
