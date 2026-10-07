@@ -152,24 +152,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
   `,
   styles: [`
     /* Layout fixo partilhado (.fixed-page/.fixed-head/.fixed-body em styles.scss); aqui só a faixa de totais */
-    /* ---- barra de filtros ---- */
-    .fbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
-    .pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--mat-sys-surface-container); overflow-x: auto; scrollbar-width: none; }
-    .pills::-webkit-scrollbar { display: none; }
-    .pill { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: none; background: none; color: inherit; font: inherit; font-size: 14.5px; padding: 6px 8px 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background-color .15s, transform .12s; }
-    .pill:hover { background: var(--mat-sys-surface-container-high); }
-    .pill:active { transform: scale(.97); }
-    .pill.on { background: var(--mat-sys-surface-container-lowest); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    :host-context(html.dark) .pill.on { background: var(--mat-sys-surface-container-highest); }
-    .pill > mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--mat-sys-on-surface-variant); }
-    .pill > mat-icon.lead { font-size: 20px; width: 20px; height: 20px; color: inherit; }
-    .pill.clear { color: var(--mat-sys-on-surface-variant); padding-left: 8px; } .pill.clear mat-icon { color: inherit; }
-    .search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--mat-sys-surface-container); padding: 2px; transition: width .2s; }
-    .search.open { flex: 1; min-width: 0; }
-    .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-    .sbtn:hover { background: var(--mat-sys-surface-container-high); }
-    .search input { flex: 1; min-width: 60px; border: none; background: none; outline: none; font: inherit; font-size: 14.5px; color: inherit; }
-    @media (max-width: 899px) { .search.open { position: absolute; left: 12px; right: 12px; z-index: 2; } .fbar { position: relative; } }
+    /* barra de filtros em pílulas: estilos partilhados em styles.scss (.fbar/.pills/.pill/.search) */
     /* Totais: no telemóvel é uma faixa quadrada colada à barra de navegação */
     .summary { flex-shrink: 0; display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px calc(74px + env(safe-area-inset-bottom)); background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); } /* o fundo prolonga-se por baixo da barra de navegação para não haver falhas */
     :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }

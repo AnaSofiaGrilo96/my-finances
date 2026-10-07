@@ -4,10 +4,9 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -28,7 +27,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
 @Component({
   selector: 'app-reports-page',
-  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatFormFieldModule, MatSelectModule, MatButtonToggleModule, MatCheckboxModule, MatProgressBarModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
+  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, MatButtonToggleModule, MatProgressBarModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
     <div class="page fixed-page">
       <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
@@ -48,23 +47,42 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       @if (period() === '12m') { <p class="muted range">Últimos 12 meses até {{ monthLabel() }}</p> }
 
       @if (filtersOpen()) {
-        <div class="card toolbar filters">
-          <mat-button-toggle-group [value]="period()" (change)="period.set($event.value)" hideSingleSelectionIndicator>
-            <mat-button-toggle value="month">Mês</mat-button-toggle>
-            <mat-button-toggle value="year">Ano</mat-button-toggle>
-            <mat-button-toggle value="12m">12 meses</mat-button-toggle>
-          </mat-button-toggle-group>
-          <mat-form-field class="f" subscriptSizing="dynamic">
-            <mat-label>Conta</mat-label>
-            <mat-select [ngModel]="accountId()" (ngModelChange)="accountId.set($event)">
-              <mat-option [value]="null">Todas as contas</mat-option>
-              @for (a of data.accounts(); track a.id) { <mat-option [value]="a.id">{{ a.name }}</mat-option> }
-            </mat-select>
-          </mat-form-field>
-          <mat-checkbox [ngModel]="includeUnpaid()" (ngModelChange)="includeUnpaid.set($event)">Considerar movimentos não pagos</mat-checkbox>
-          <span class="spacer"></span>
-          <button matButton (click)="exportCsv()"><mat-icon>download</mat-icon>Exportar CSV</button>
+        <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
+        <div class="fbar">
+          <div class="pills">
+            <button type="button" class="pill" [class.on]="period() !== 'month'" [matMenuTriggerFor]="periodMenu">
+              <mat-icon class="lead">date_range</mat-icon>{{ periodLabel() }}<mat-icon>expand_more</mat-icon>
+            </button>
+            <button type="button" class="pill" [class.on]="accountId()" [matMenuTriggerFor]="accMenu">
+              @if (accSel(); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="22" />{{ a.name }} } @else { Conta }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            <button type="button" class="pill" [class.on]="!includeUnpaid()" [matMenuTriggerFor]="stateMenu">
+              @if (!includeUnpaid()) { <mat-icon class="lead income">thumb_up</mat-icon>Só pagos } @else { Estado }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            @if (activeFilters()) { <button type="button" class="pill clear" (click)="clearFilters()"><mat-icon>close</mat-icon>Limpar</button> }
+          </div>
+          <div class="search">
+            <button type="button" class="sbtn" (click)="exportCsv()" matTooltip="Exportar CSV" aria-label="Exportar CSV"><mat-icon>download</mat-icon></button>
+          </div>
         </div>
+
+        <mat-menu #periodMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="period.set('month')" [class.sel]="period() === 'month'"><mat-icon>calendar_view_month</mat-icon>Mês</button>
+          <button mat-menu-item (click)="period.set('year')" [class.sel]="period() === 'year'"><mat-icon>calendar_today</mat-icon>Ano</button>
+          <button mat-menu-item (click)="period.set('12m')" [class.sel]="period() === '12m'"><mat-icon>history</mat-icon>Últimos 12 meses</button>
+        </mat-menu>
+        <mat-menu #accMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all"><span class="ph"></span>Todas as contas</span></button>
+          @for (a of data.accounts(); track a.id) {
+            <button mat-menu-item (click)="accountId.set(a.id)" [class.sel]="accountId() === a.id"><app-icon-badge [icon]="a.icon" [color]="a.color" [size]="28" />{{ a.name }}</button>
+          }
+        </mat-menu>
+        <mat-menu #stateMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="includeUnpaid.set(true)" [class.sel]="includeUnpaid()"><span class="all"><span class="ph"></span>Todos os movimentos</span></button>
+          <button mat-menu-item (click)="includeUnpaid.set(false)" [class.sel]="!includeUnpaid()"><mat-icon class="income">thumb_up</mat-icon>Só pagos / recebidos</button>
+        </mat-menu>
       }
 
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
@@ -195,8 +213,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     </div>
   `,
   styles: [`
-    .f { width: 200px; }
-    .filters { padding: 12px; margin-bottom: 4px; }
     .range { font-size: 13px; margin: 2px 4px 8px; text-align: center; }
     .tabbody { margin-top: 16px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
@@ -233,7 +249,10 @@ export class ReportsPage {
   readonly accountId = signal<string | null>(null);
   readonly includeUnpaid = signal(true);
   readonly loading = signal(false);
-  readonly filtersOpen = signal(false);
+  readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
+  readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
+  periodLabel() { return this.period() === 'month' ? 'Mês' : this.period() === 'year' ? 'Ano' : 'Últimos 12 meses'; }
+  clearFilters() { this.period.set('month'); this.accountId.set(null); this.includeUnpaid.set(true); }
   readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1) + (this.period() !== 'month' ? 1 : 0));
   monthLabel() { return monthLabel(this.month()); }
 
