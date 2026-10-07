@@ -82,6 +82,16 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
   .fixed-body .end-space { height: 24px; }
 }
 
+// Menus da barra de filtros (Movimentos): ícones das contas/categorias, sub-categorias indentadas, seleção marcada
+.fmenu.mat-mdc-menu-panel { border-radius: 16px !important; min-width: 240px; }
+.fmenu.tall.mat-mdc-menu-panel { max-height: 70vh; }
+.fmenu .mat-mdc-menu-item { gap: 10px; }
+.fmenu .mat-mdc-menu-item .mat-mdc-menu-item-text { display: flex; align-items: center; gap: 10px; }
+.fmenu .mat-mdc-menu-item.child { padding-left: 34px; min-height: 40px; }
+.fmenu .mat-mdc-menu-item.child .mat-mdc-menu-item-text { font-size: 14px; }
+.fmenu .mat-mdc-menu-item.sel { background: var(--mat-sys-secondary-container); }
+.fmenu .all { color: var(--mat-sys-primary); font-weight: 500; }
+
 // Fundo escurecido por trás de janelas e folhas: mais leve, sobretudo no modo escuro (empilham-se)
 .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .28); }
 html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }

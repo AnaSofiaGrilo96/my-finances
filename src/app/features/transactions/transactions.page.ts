@@ -3,12 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/data.service';
 import { Transaction, TransactionKind, signFor } from '../../core/models';
@@ -29,7 +27,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
 
 @Component({
   selector: 'app-transactions-page',
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, MatInputModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MatMenuModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
   template: `
     <div class="page fixed-page">
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
@@ -43,50 +41,62 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
 
       <div class="fixed-body"><div class="inner">
       @if (filtersOpen()) {
-        <div class="card filters">
-          <mat-form-field class="f" subscriptSizing="dynamic">
-            <mat-label>Conta</mat-label>
-            <mat-select [ngModel]="accountId()" (ngModelChange)="accountId.set($event)">
-              <mat-option [value]="null">Todas</mat-option>
-              @for (a of data.accounts(); track a.id) { <mat-option [value]="a.id">{{ a.name }}</mat-option> }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="f" subscriptSizing="dynamic">
-            <mat-label>Tipo</mat-label>
-            <mat-select [ngModel]="kind()" (ngModelChange)="kind.set($event)">
-              <mat-option [value]="null">Todos</mat-option>
-              <mat-option value="expense">Despesas</mat-option>
-              <mat-option value="income">Receitas</mat-option>
-              <mat-option value="transfer">Transferências</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="f" subscriptSizing="dynamic">
-            <mat-label>Categoria</mat-label>
-            <mat-select [ngModel]="categoryId()" (ngModelChange)="categoryId.set($event)">
-              <mat-option [value]="null">Todas</mat-option>
-              @for (g of data.categoryGroups(); track g.parent.id) {
-                <mat-option [value]="g.parent.id">{{ g.parent.name }}</mat-option>
-                @for (c of g.children; track c.id) { <mat-option [value]="c.id"><span class="sub-opt">{{ c.name }}</span></mat-option> }
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="f" subscriptSizing="dynamic">
-            <mat-label>Estado</mat-label>
-            <mat-select [ngModel]="paidFilter()" (ngModelChange)="paidFilter.set($event)">
-              <mat-option [value]="null">Todos</mat-option>
-              <mat-option value="paid">Pagos</mat-option>
-              <mat-option value="unpaid">Por pagar</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="f search" subscriptSizing="dynamic">
-            <mat-label>Pesquisar</mat-label>
-            <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="descrição, observação…" />
-            @if (search()) { <button matIconButton matSuffix (click)="search.set('')"><mat-icon>close</mat-icon></button> }
-          </mat-form-field>
-          @if (activeFilters()) {
-            <button matButton (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon>Limpar filtros</button>
-          }
+        <!-- Barra de filtros em pílulas (à imagem da outra aplicação de gestão de finanças): cada uma abre um menu com ícones -->
+        <div class="fbar">
+          <div class="pills">
+            <button type="button" class="pill" [class.on]="accountId()" [matMenuTriggerFor]="accMenu">
+              @if (accSel(); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="22" />{{ a.name }} } @else { Conta }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            <button type="button" class="pill" [class.on]="kind()" [matMenuTriggerFor]="kindMenu">
+              @if (kind(); as k) { <mat-icon class="lead" [class]="k">{{ kindIcon(k) }}</mat-icon>{{ kindLabel(k) }} } @else { Tipo }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            <button type="button" class="pill" [class.on]="categoryId()" [matMenuTriggerFor]="catMenu">
+              @if (catSel(); as c) { <app-icon-badge [icon]="c.icon" [color]="c.color" [size]="22" />{{ c.name }} } @else { Categoria }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            <button type="button" class="pill" [class.on]="paidFilter()" [matMenuTriggerFor]="stateMenu">
+              @if (paidFilter(); as p) { <mat-icon class="lead" [class.income]="p === 'paid'">{{ p === 'paid' ? 'thumb_up' : 'thumb_down' }}</mat-icon>{{ p === 'paid' ? 'Pagos' : 'Por pagar' }} } @else { Estado }
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            @if (activeFilters()) { <button type="button" class="pill clear" (click)="clearFilters()"><mat-icon>close</mat-icon>Limpar</button> }
+          </div>
+          <div class="search" [class.open]="searchOpen() || search()">
+            <button type="button" class="sbtn" (click)="toggleSearch()" matTooltip="Pesquisar" aria-label="Pesquisar"><mat-icon>search</mat-icon></button>
+            @if (searchOpen() || search()) {
+              <input #searchBox type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="descrição, observação…" (keydown.escape)="search.set(''); searchOpen.set(false)" />
+              <button type="button" class="sbtn" (click)="search.set(''); searchOpen.set(false)" aria-label="Fechar pesquisa"><mat-icon>close</mat-icon></button>
+            }
+          </div>
         </div>
+
+        <mat-menu #accMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all">Todas as contas</span></button>
+          @for (a of data.accounts(); track a.id) {
+            <button mat-menu-item (click)="accountId.set(a.id)" [class.sel]="accountId() === a.id"><app-icon-badge [icon]="a.icon" [color]="a.color" [size]="28" />{{ a.name }}</button>
+          }
+        </mat-menu>
+        <mat-menu #kindMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="kind.set(null)" [class.sel]="!kind()"><span class="all">Todos os tipos</span></button>
+          <button mat-menu-item (click)="kind.set('expense')" [class.sel]="kind() === 'expense'"><mat-icon class="expense">remove_circle</mat-icon>Despesas</button>
+          <button mat-menu-item (click)="kind.set('income')" [class.sel]="kind() === 'income'"><mat-icon class="income">add_circle</mat-icon>Receitas</button>
+          <button mat-menu-item (click)="kind.set('transfer')" [class.sel]="kind() === 'transfer'"><mat-icon>swap_horiz</mat-icon>Transferências</button>
+        </mat-menu>
+        <mat-menu #catMenu="matMenu" class="fmenu tall">
+          <button mat-menu-item (click)="categoryId.set(null)" [class.sel]="!categoryId()"><span class="all">Todas as categorias</span></button>
+          @for (g of data.categoryGroups(); track g.parent.id) {
+            <button mat-menu-item (click)="categoryId.set(g.parent.id)" [class.sel]="categoryId() === g.parent.id"><app-icon-badge [icon]="g.parent.icon" [color]="g.parent.color" [size]="28" />{{ g.parent.name }}</button>
+            @for (c of g.children; track c.id) {
+              <button mat-menu-item class="child" (click)="categoryId.set(c.id)" [class.sel]="categoryId() === c.id"><app-icon-badge [icon]="c.icon" [color]="c.color" [size]="22" />{{ c.name }}</button>
+            }
+          }
+        </mat-menu>
+        <mat-menu #stateMenu="matMenu" class="fmenu">
+          <button mat-menu-item (click)="paidFilter.set(null)" [class.sel]="!paidFilter()"><span class="all">Todos</span></button>
+          <button mat-menu-item (click)="paidFilter.set('paid')" [class.sel]="paidFilter() === 'paid'"><mat-icon class="income">thumb_up</mat-icon>Pagos / recebidos</button>
+          <button mat-menu-item (click)="paidFilter.set('unpaid')" [class.sel]="paidFilter() === 'unpaid'"><mat-icon>thumb_down</mat-icon>Por pagar / receber</button>
+        </mat-menu>
       }
 
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
@@ -142,10 +152,24 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
   `,
   styles: [`
     /* Layout fixo partilhado (.fixed-page/.fixed-head/.fixed-body em styles.scss); aqui só a faixa de totais */
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; padding: 12px; }
-    .filters .f { width: 160px; }
-    .filters .search { width: 220px; }
-    @media (max-width: 700px) { .filters .f { width: calc(50% - 5px); } .filters .search { width: 100%; } }
+    /* ---- barra de filtros ---- */
+    .fbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
+    .pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--mat-sys-surface-container); overflow-x: auto; scrollbar-width: none; }
+    .pills::-webkit-scrollbar { display: none; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: none; background: none; color: inherit; font: inherit; font-size: 14.5px; padding: 6px 8px 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background-color .15s, transform .12s; }
+    .pill:hover { background: var(--mat-sys-surface-container-high); }
+    .pill:active { transform: scale(.97); }
+    .pill.on { background: var(--mat-sys-surface-container-lowest); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    :host-context(html.dark) .pill.on { background: var(--mat-sys-surface-container-highest); }
+    .pill > mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--mat-sys-on-surface-variant); }
+    .pill > mat-icon.lead { font-size: 20px; width: 20px; height: 20px; color: inherit; }
+    .pill.clear { color: var(--mat-sys-on-surface-variant); padding-left: 8px; } .pill.clear mat-icon { color: inherit; }
+    .search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--mat-sys-surface-container); padding: 2px; transition: width .2s; }
+    .search.open { flex: 1; min-width: 0; }
+    .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+    .sbtn:hover { background: var(--mat-sys-surface-container-high); }
+    .search input { flex: 1; min-width: 60px; border: none; background: none; outline: none; font: inherit; font-size: 14.5px; color: inherit; }
+    @media (max-width: 899px) { .search.open { position: absolute; left: 12px; right: 12px; z-index: 2; } .fbar { position: relative; } }
     /* Totais: no telemóvel é uma faixa quadrada colada à barra de navegação */
     .summary { flex-shrink: 0; display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px calc(74px + env(safe-area-inset-bottom)); background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); } /* o fundo prolonga-se por baixo da barra de navegação para não haver falhas */
     :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
@@ -177,7 +201,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
     .state { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
-    .sub-opt { padding-left: 18px; }
   `],
 })
 export class TransactionsPage implements OnDestroy {
@@ -199,11 +222,17 @@ export class TransactionsPage implements OnDestroy {
   readonly paidFilter = signal<'paid' | 'unpaid' | null>(null);
   readonly search = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   readonly loading = signal(false);
-  readonly filtersOpen = signal(false);
+  readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
+  readonly searchOpen = signal(false);
 
   private readonly all = signal<Transaction[]>([]);
   private readonly opening = signal<number | null>(null);
 
+  readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
+  readonly catSel = computed(() => this.categoryId() ? this.data.categoryMap().get(this.categoryId()!) : undefined);
+  kindIcon(k: TransactionKind) { return k === 'expense' ? 'remove_circle' : k === 'income' ? 'add_circle' : 'swap_horiz'; }
+  kindLabel(k: TransactionKind) { return k === 'expense' ? 'Despesas' : k === 'income' ? 'Receitas' : 'Transferências'; }
+  toggleSearch() { this.searchOpen.update((v) => !v); if (this.searchOpen()) setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus()); }
   readonly activeFilters = computed(() => [this.accountId(), this.kind(), this.categoryId(), this.paidFilter(), this.search()].filter(Boolean).length);
 
   readonly filtered = computed(() => {
