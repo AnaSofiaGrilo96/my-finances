@@ -84,7 +84,7 @@ import { BackButtonService } from '../shared/back-button.service';
     }
   `,
   styles: [`
-    :host { display: block; height: 100dvh; }
+    :host { display: block; min-height: 100dvh; } /* min-height (não height): senão a barra sticky sai com o fim do host nas páginas que fazem scroll */
     /* ---- barra superior verde ---- */
     .topbar { position: sticky; top: 0; z-index: 10; background: #1cbf4f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
     :host-context(html.dark) .topbar { background: #178f45; }
