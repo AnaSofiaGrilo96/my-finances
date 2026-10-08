@@ -139,7 +139,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
           <button type="button" class="field row" (click)="dp.open()">
             <label>Data</label>
             <div class="inline"><mat-icon class="lead">calendar_today</mat-icon><span>{{ dateLabel() }}</span></div>
-            <input class="hidden-dp" [matDatepicker]="dp" [(ngModel)]="dateValue" name="date" />
+            <input class="hidden-dp" [matDatepicker]="dp" [ngModel]="dateValue" (ngModelChange)="setDate($event)" name="date" />
             <mat-datepicker #dp touchUi />
           </button>
 
@@ -336,7 +336,8 @@ export class TransactionDialog {
     const cats = this.data.categories().filter((c) => c.kind === kind && !c.archived && c.name.trim().toLowerCase() === name);
     return (cats.find((c) => !c.parent_id) ?? cats[0])?.id ?? null;
   }
-  paid = this.tx?.paid ?? true;
+  // Estado inicial: novo movimento com data até hoje nasce pago/recebido; no futuro nasce por pagar
+  paid = this.tx?.paid ?? toIso(this.dateValue) <= todayIso();
   notes = this.src?.notes ?? '';
   repeat: RepeatMode = this.input.repeat ?? 'none';
   frequency: Frequency = 'monthly';
@@ -425,6 +426,14 @@ export class TransactionDialog {
     const title = which === 'to' ? 'Conta destino' : this.kind() === 'transfer' ? 'Conta origem' : this.kind() === 'income' ? 'Recebi em' : 'Pago com';
     const picked = await this.openPicker({ title, items, selected: which === 'to' ? this.toAccountId : this.accountId });
     if (picked?.id) { if (which === 'to') this.toAccountId = picked.id; else this.accountId = picked.id; this.tick.update((v) => v + 1); }
+  }
+
+  /** Mudar a data ajusta o estado: data futura → não pago/não recebido; hoje ou passado → pago/recebido (pedido de 08/10). */
+  setDate(d: Date | null) {
+    if (!d) return;
+    this.dateValue = d;
+    this.paid = toIso(d) <= todayIso();
+    this.tick.update((v) => v + 1);
   }
 
   dateLabel() {
