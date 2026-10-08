@@ -7,7 +7,7 @@ html {
       primary: mat.$green-palette,
       tertiary: mat.$azure-palette,
     ),
-    typography: Roboto,
+    typography: Inter,   // fonte da outra aplicação de gestão de finanças (experiência de 08/10; antes Roboto)
     density: -1,
   ));
 }
@@ -24,7 +24,8 @@ html:not(.dark) {
 
 html, body { height: 100%; margin: 0; }
 body {
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Inter, Roboto, "Helvetica Neue", sans-serif;
+  font-variant-numeric: tabular-nums; // algarismos com largura fixa: colunas de valores alinhadas
   background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4));
   color: var(--mat-sys-on-surface);
   -webkit-tap-highlight-color: transparent;

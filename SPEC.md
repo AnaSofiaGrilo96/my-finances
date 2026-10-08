@@ -147,6 +147,7 @@ src/app/features/
 
 ### Convenções de UI
 - Material 3 com paleta verde (`styles.scss`), modo escuro por botão no topo (guardado em `localStorage`).
+- **Fonte Inter** (Google Fonts, pesos 300–700), a mesma da outra aplicação de gestão de finanças, como fonte do tema Material e do `body`, com `font-variant-numeric: tabular-nums` global (colunas de valores alinhadas). Experiência de 08/10 — a Ana pode pedir para voltar à Roboto (trocar o `<link>` em `index.html` e `typography`/`font-family` em `styles.scss`).
 - **Cada área é um cartão** (`.card`): fundo `--app-card-bg` (claro) / `surface-container` (escuro), contorno `1px solid color-mix(outline-variant 60%)`, cantos arredondados (18px). Novas secções devem usar `.card`. **Esse mesmo contorno** é usado nas barras de filtros (`.pills`, `.search`) e no cabeçalho fixo (`.fixed-head > .inner`).
 - **Modo claro** (08/10): fundo da página `#F2F4EF`, barras de filtros e cabeçalho (título + roda) `#FEFDF9` com o mesmo contorno dos cartões, cartões (e linhas, pílula do mês, totais) `#FEFDF9` — variáveis `--app-bg`, `--app-bar-bg`, `--app-card-bg` em `html:not(.dark)`; o modo escuro mantém o tema Material.
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
