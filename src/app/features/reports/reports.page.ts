@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -133,7 +133,7 @@ export class RangeDialog {
 
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
-      <mat-tab-group mat-stretch-tabs="false" animationDuration="150ms">
+      <mat-tab-group mat-stretch-tabs="false" animationDuration="150ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
         <!-- ---------------- Categorias ---------------- -->
         <mat-tab label="Categorias">
           <div class="grid-2 tabbody">
@@ -267,16 +267,21 @@ export class ReportsPage {
   private readonly ui = inject(UiService);
   private readonly dialog = inject(MatDialog);
 
-  readonly month = signal(currentMonth());
-  readonly period = signal<Period>('month');
-  readonly granularity = signal<Granularity>('daily');
-  readonly accountId = signal<string | null>(null);
-  readonly includeUnpaid = signal(true);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly qp = this.route.snapshot.queryParamMap;
+  // Estado inicial a partir da URL (?periodo=&mes=&conta=&pagos=&de=&ate=&vista=&separador=) para partilhar/voltar atrás
+  readonly month = signal(this.qp.get('mes') ?? currentMonth());
+  readonly period = signal<Period>((PERIODS.some((p) => p.id === this.qp.get('periodo')) ? this.qp.get('periodo') : 'month') as Period);
+  readonly granularity = signal<Granularity>((['daily', 'weekly', 'monthly'].includes(this.qp.get('vista') ?? '') ? this.qp.get('vista') : 'daily') as Granularity);
+  readonly accountId = signal<string | null>(this.qp.get('conta'));
+  readonly includeUnpaid = signal(this.qp.get('pagos') !== '1');
+  readonly tab = signal(Number(this.qp.get('separador') ?? 0) || 0);
   readonly loading = signal(false);
   readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
   readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
   readonly periods = PERIODS;
-  readonly customRange = signal<{ start: string; end: string } | null>(null);
+  readonly customRange = signal<{ start: string; end: string } | null>(this.qp.get('de') && this.qp.get('ate') ? { start: this.qp.get('de')!, end: this.qp.get('ate')! } : null);
   periodLabel() { return PERIODS.find((p) => p.id === this.period())?.label ?? ''; }
   clearFilters() { this.period.set('month'); this.month.set(currentMonth()); this.accountId.set(null); this.includeUnpaid.set(true); }
   async choosePeriod(p: Period) {
@@ -385,6 +390,21 @@ export class ReportsPage {
       const acc = this.accountId(), unpaid = this.includeUnpaid();
       this.data.version();
       untracked(() => this.load(start, end, acc, unpaid));
+    });
+    // Reflete os filtros na URL (sem criar entradas no histórico) — permite partilhar o link e voltar ao mesmo sítio
+    effect(() => {
+      const p = this.period(), c = this.customRange();
+      const q: Record<string, string | null> = {
+        periodo: p === 'month' ? null : p,
+        mes: (p === 'month' || p === 'year') && this.month() !== currentMonth() ? this.month() : null,
+        conta: this.accountId(),
+        pagos: this.includeUnpaid() ? null : '1',
+        de: p === 'custom' && c ? c.start : null,
+        ate: p === 'custom' && c ? c.end : null,
+        vista: this.granularity() === 'daily' ? null : this.granularity(),
+        separador: this.tab() ? String(this.tab()) : null,
+      };
+      untracked(() => this.router.navigate([], { queryParams: q, replaceUrl: true }));
     });
     // Granularidade automática conforme o tamanho do intervalo (o utilizador pode mudar nos botões, dentro do permitido)
     effect(() => {
