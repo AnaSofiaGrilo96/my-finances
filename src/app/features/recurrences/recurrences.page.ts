@@ -110,7 +110,7 @@ export class RecurrencesPage {
   }
 
   async remove(r: Recurrence) {
-    if (!(await this.ui.confirm('Apagar recorrência', `Apaga a regra "${r.description || this.nameOf(r)}" e todos os seus movimentos por pagar. Os já pagos ficam.`, 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar recorrência?', `Apaga a regra "${r.description || this.nameOf(r)}" e todos os seus movimentos por pagar. Os já pagos ficam.`, 'Apagar'))) return;
     try { await this.data.deleteRecurrence(r.id); } catch (e) { this.ui.error(e); }
   }
 }

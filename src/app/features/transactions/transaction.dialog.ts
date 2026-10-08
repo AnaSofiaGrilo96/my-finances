@@ -537,7 +537,7 @@ export class TransactionDialog {
       } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
       return;
     }
-    if (!(await this.ui.confirm('Apagar movimento', 'Esta ação não pode ser anulada.', 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar movimento?', `Tens a certeza que queres apagar o movimento "${this.description.trim() || 'sem descrição'}"? Esta ação não pode ser anulada.`, 'Apagar movimento'))) return;
     this.busy.set(true);
     try { await this.data.deleteTransaction(this.tx!.id); this.ref.close(true); }
     catch (e) { this.ui.error(e); } finally { this.busy.set(false); }

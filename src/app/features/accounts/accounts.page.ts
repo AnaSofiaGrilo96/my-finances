@@ -217,7 +217,7 @@ export class AccountsPage {
   }
 
   async remove(a: Account) {
-    if (!(await this.ui.confirm('Apagar conta', `Só é possível apagar "${a.name}" se não tiver movimentos. Em alternativa, arquiva-a.`, 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar conta?', `Só é possível apagar "${a.name}" se não tiver movimentos. Em alternativa, arquiva-a.`, 'Apagar'))) return;
     try { await this.data.deleteAccount(a.id); this.ui.toast('Conta apagada.'); }
     catch (e) { this.ui.error({ message: 'A conta tem movimentos associados. Arquiva-a em vez de apagar.' }); console.error(e); }
   }

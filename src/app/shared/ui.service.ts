@@ -20,7 +20,7 @@ export class UiService {
   }
 
   async confirm(title: string, message: string, okLabel = 'Confirmar', danger = true): Promise<boolean> {
-    const ref = this.dialog.open(ConfirmDialog, { data: { title, message, okLabel, danger }, width: '380px' });
+    const ref = this.dialog.open(ConfirmDialog, { data: { title, message, okLabel, danger }, width: '400px', maxWidth: '92vw', panelClass: 'choice-dialog', autoFocus: false });
     return (await ref.afterClosed().toPromise()) === true;
   }
 

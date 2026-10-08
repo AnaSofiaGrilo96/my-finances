@@ -380,7 +380,7 @@ export class TransactionsPage implements OnDestroy {
       try { if (scope === 'one') await this.data.deleteTransaction(t.id); else await this.data.deleteAndFollowing(t); } catch (e) { this.ui.error(e); }
       return;
     }
-    if (!(await this.ui.confirm('Apagar movimento', `Apagar "${t.description || this.nameOf(t)}" de ${t.amount.toFixed(2).replace('.', ',')} €? Esta ação não pode ser anulada.`, 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar movimento?', `Tens a certeza que queres apagar o movimento "${t.description || this.nameOf(t)}"? Esta ação não pode ser anulada.`, 'Apagar movimento'))) return;
     try { await this.data.deleteTransaction(t.id); } catch (e) { this.ui.error(e); }
   }
 

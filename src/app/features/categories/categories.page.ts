@@ -202,7 +202,7 @@ export class CategoriesPage {
     const msg = hasKids
       ? `As sub-categorias de "${c.name}" passam a categorias principais e os movimentos diretos ficam sem categoria. Em alternativa, arquiva-a.`
       : `Os movimentos de "${c.name}" ficam sem categoria. Em alternativa, arquiva-a.`;
-    if (!(await this.ui.confirm('Apagar categoria', msg, 'Apagar'))) return;
+    if (!(await this.ui.confirm('Apagar categoria?', msg, 'Apagar categoria'))) return;
     try { await this.data.deleteCategory(c.id); this.data.version.update((v) => v + 1); } catch (e) { this.ui.error(e); }
   }
 }
