@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, ElementRef, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -118,7 +118,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       }
 
       @for (g of groups(); track g.date) {
-        <section class="day">
+        <section class="day" [attr.data-date]="g.date">
           <div class="day-head">
             <span>{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.label }}</span>
             @if (g.balance !== null) { <span class="muted">Saldo no dia <b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></span> }
@@ -323,12 +323,37 @@ export class TransactionsPage implements OnDestroy {
       ]);
       this.all.set(list);
       this.opening.set(opening);
+      this.scrollToRelevantDay();
     } catch (e) { this.ui.error(e); } finally { this.loading.set(false); }
   }
 
   ngOnDestroy() { document.body.classList.remove('has-bottom-bar'); }
 
   setMonth(m: string) { this.month.set(m); }
+
+  private readonly el = inject(ElementRef);
+  private scrolledFor = '';
+  /**
+   * Ao abrir o mês atual, faz scroll para o primeiro dia (até hoje) com movimentos por pagar/receber — ou, não havendo,
+   * para o dia de hoje (ou o primeiro dia seguinte com movimentos). Uma vez por carregamento do mês atual.
+   */
+  private scrollToRelevantDay() {
+    const key = this.month() + (this.range() ? '#r' : '');
+    if (this.range() || this.month() !== currentMonth() || this.scrolledFor === key) return;
+    this.scrolledFor = key;
+    const groups = this.groups();
+    const target = groups.find((g) => g.date <= this.today && g.items.some((t) => !t.paid))?.date
+      ?? groups.find((g) => g.date >= this.today)?.date;
+    if (!target) return;
+    setTimeout(() => {
+      const host = this.el.nativeElement as HTMLElement;
+      const body = host.querySelector('.fixed-body') as HTMLElement | null;
+      const sec = host.querySelector(`.day[data-date="${target}"]`) as HTMLElement | null;
+      if (!body || !sec) return;
+      const top = sec.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8;
+      body.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }, 60);
+  }
   clearFilters() { this.accountId.set(null); this.kind.set(null); this.categoryId.set(null); this.paidFilter.set(null); this.search.set(''); }
 
   add() { openTransactionDialog(this.dialog, { accountId: this.accountId() ?? undefined, kind: this.kind() ?? 'expense' }); }
