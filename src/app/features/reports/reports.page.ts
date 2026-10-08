@@ -89,9 +89,8 @@ export class RangeDialog {
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
-      </div></div>
-
-      <div class="fixed-body"><div class="inner">
+      </div>
+      <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
       @if (filtersOpen()) {
         <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
         <div class="fbar">
@@ -130,7 +129,9 @@ export class RangeDialog {
           <button mat-menu-item (click)="includeUnpaid.set(false)" [class.sel]="!includeUnpaid()"><mat-icon class="income">thumb_up</mat-icon>Só pagos / recebidos</button>
         </mat-menu>
       }
+      </div>
 
+      <div class="fixed-body"><div class="inner">
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
       <mat-tab-group mat-stretch-tabs="false" animationDuration="150ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">

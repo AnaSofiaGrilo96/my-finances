@@ -92,7 +92,7 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 }
 
 // Barra de filtros em pílulas (Movimentos e Relatórios)
-.fbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.fbar { display: flex; align-items: center; gap: 8px; margin: 8px auto 0; max-width: var(--content-max); width: 100%; box-sizing: border-box; } // vive dentro de .fixed-head, por baixo da barra do título: fica fixo como ela
 .pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); overflow-x: auto; scrollbar-width: none; }
 .pills::-webkit-scrollbar { display: none; }
 .pill { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: none; background: none; color: inherit; font: inherit; font-size: 14.5px; padding: 6px 8px 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background-color .15s, transform .12s; }

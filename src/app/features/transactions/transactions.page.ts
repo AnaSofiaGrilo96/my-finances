@@ -45,9 +45,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
-      </div></div>
-
-      <div class="fixed-body"><div class="inner">
+      </div>
+      <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
       @if (filtersOpen()) {
         <!-- Barra de filtros em pílulas (à imagem da outra aplicação de gestão de finanças): cada uma abre um menu com ícones -->
         <div class="fbar">
@@ -106,7 +105,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           <button mat-menu-item (click)="paidFilter.set('unpaid')" [class.sel]="paidFilter() === 'unpaid'"><mat-icon>thumb_down</mat-icon>Por pagar / receber</button>
         </mat-menu>
       }
+      </div>
 
+      <div class="fixed-body"><div class="inner">
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
       @if (!loading() && !groups().length) {
