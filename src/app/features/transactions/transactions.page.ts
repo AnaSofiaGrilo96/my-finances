@@ -131,11 +131,15 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
                   <div class="main">
                     <div class="title">
                       {{ t.description || nameOf(t) }}
-                      @if (t.recurrence_id) { <mat-icon class="rep" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
+                      @if (t.recurrence_id) { <mat-icon class="rep mobile-only" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
                       @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
                     </div>
                     <div class="sub mobile-only">{{ subOf(t) }}</div>
                     <div class="sub desktop-only">{{ catOf(t) }}</div>
+                  </div>
+                  <!-- Coluna da recorrência (só no computador): setas quando o movimento pertence a uma recorrência -->
+                  <div class="rep-col desktop-only">
+                    @if (t.recurrence_id) { <mat-icon class="rep-big" [matTooltip]="t.installment_no ? 'Parcela ' + t.installment_no + '/' + installmentsOf(t) : 'Movimento recorrente'">repeat</mat-icon> }
                   </div>
                   <!-- Coluna da conta (só no computador): badge + nome; nas transferências origem → destino -->
                   <div class="acc-col desktop-only">
@@ -214,7 +218,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .row { padding-top: 12px; padding-bottom: 12px; }
       /* colunas com larguras fixas para a conta e o valor ficarem alinhados em todas as linhas */
       .row .main { flex: 1 1 0; min-width: 0; }
-      .acc-col { flex: 0 0 36%; display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant); font-size: 14px; min-width: 0; }
+      .rep-col { flex: 0 0 40px; display: flex; align-items: center; justify-content: center; }
+      .rep-big { font-size: 22px; width: 22px; height: 22px; color: var(--mat-sys-on-surface-variant); }
+      .acc-col { flex: 0 0 34%; display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant); font-size: 14px; min-width: 0; }
       .row .right { flex: 0 0 150px; }
       .acc-col span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .acc-col .arrow { font-size: 16px; width: 16px; height: 16px; color: var(--mat-sys-outline); }
