@@ -321,7 +321,8 @@ export class ReportsPage {
       case 'week': { const d = fromIso(today); const dow = (d.getDay() + 6) % 7; const mon = addDays(today, -dow); return mk(mon, addDays(mon, 6)); }
       case 'month': return monthRange(m);
       case 'year': { const y = m.slice(0, 4); return mk(`${y}-01-01`, `${y}-12-31`); }
-      case '3m': case '6m': case '12m': { const n = Number(p.slice(0, -1)); const cur = currentMonth(); return mk(monthRange(shiftMonth(cur, -(n - 1))).start, monthRange(cur).end); }
+      // "Últimos N meses" = o mês atual MAIS os N anteriores (N+1 meses de calendário), como na outra aplicação de gestão de finanças — confirmado ao cêntimo a 08/10
+      case '3m': case '6m': case '12m': { const n = Number(p.slice(0, -1)); const cur = currentMonth(); return mk(monthRange(shiftMonth(cur, -n)).start, monthRange(cur).end); }
       case 'custom': { const c = this.customRange(); return c ? mk(c.start, c.end) : monthRange(m); }
     }
   });
