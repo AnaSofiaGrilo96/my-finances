@@ -327,7 +327,15 @@ export class TransactionDialog {
   dateValue: Date = fromIso(this.tx?.date ?? this.input.date ?? todayIso());
   accountId: string | null = this.src?.account_id ?? this.input.accountId ?? this.data.activeAccounts()[0]?.id ?? null;
   toAccountId: string | null = this.src?.to_account_id ?? null;
-  categoryId: string | null = this.src?.category_id ?? null;
+  categoryId: string | null = this.src?.category_id ?? this.defaultCategory(this.src?.kind ?? this.input.kind ?? 'expense');
+
+  /** Categoria por defeito num movimento novo: "Outros" (despesa) / "Outras receitas" (receita) — categoria principal com esse nome. */
+  private defaultCategory(kind: TransactionKind): string | null {
+    if (kind === 'transfer') return null;
+    const name = kind === 'income' ? 'outras receitas' : 'outros';
+    const cats = this.data.categories().filter((c) => c.kind === kind && !c.archived && c.name.trim().toLowerCase() === name);
+    return (cats.find((c) => !c.parent_id) ?? cats[0])?.id ?? null;
+  }
   paid = this.tx?.paid ?? true;
   notes = this.src?.notes ?? '';
   repeat: RepeatMode = this.input.repeat ?? 'none';
@@ -382,7 +390,7 @@ export class TransactionDialog {
   setKind(k: TransactionKind) {
     if (this.isEdit) return;
     this.kind.set(k);
-    this.categoryId = null;
+    this.categoryId = this.defaultCategory(k);
     this.suggestions.set([]);
     this.tick.update((v) => v + 1);
   }
