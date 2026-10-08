@@ -144,7 +144,7 @@ src/app/features/
 ### Convenções de UI
 - Material 3 com paleta verde (`styles.scss`), modo escuro por botão no topo (guardado em `localStorage`).
 - **Cada área é um cartão** (`.card`): fundo ligeiramente diferente do da página (`surface-container-lowest` em claro, `surface-container` em escuro), borda subtil, cantos arredondados (18px). Novas secções devem usar `.card`.
-- **Modo claro** (08/10): fundo da página `#F2F4EF`, barras de filtros/cabeçalho `rgb(242 244 239)`, cartões (e linhas, pílula do mês, totais) `#FEFDF9` — variáveis `--app-bg`, `--app-bar-bg`, `--app-card-bg` em `html:not(.dark)`; o modo escuro mantém o tema Material.
+- **Modo claro** (08/10): fundo da página `#F2F4EF`, barras de filtros e cabeçalho (título + roda) `#FEFDF9` com o mesmo contorno dos cartões, cartões (e linhas, pílula do mês, totais) `#FEFDF9` — variáveis `--app-bg`, `--app-bar-bg`, `--app-card-bg` em `html:not(.dark)`; o modo escuro mantém o tema Material.
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
 - Ícones Material Icons (fonte Google); categorias e contas têm cor + ícone, mostrados por `app-icon-badge`.
 - Diálogos normais com `width: 440–520px`, `maxWidth: 96vw`; folhas inferiores (`MatBottomSheet`) para escolhas e detalhe. Confirmar sempre antes de apagar (`UiService.confirm`).

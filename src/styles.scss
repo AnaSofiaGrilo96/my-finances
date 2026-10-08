@@ -18,7 +18,7 @@ html.dark { color-scheme: dark; }
 // fundo da página, barras de filtros e cartões; o modo escuro mantém as cores do tema Material.
 html:not(.dark) {
   --app-bg: #F2F4EF;
-  --app-bar-bg: rgb(242 244 239);
+  --app-bar-bg: #FEFDF9;          // barras de filtros e cabeçalho (título + roda de meses): iguais aos cartões, com o mesmo contorno
   --app-card-bg: #FEFDF9;
 }
 
@@ -93,17 +93,17 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 
 // Barra de filtros em pílulas (Movimentos e Relatórios)
 .fbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
-.pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); overflow-x: auto; scrollbar-width: none; }
+.pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); overflow-x: auto; scrollbar-width: none; }
 .pills::-webkit-scrollbar { display: none; }
 .pill { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: none; background: none; color: inherit; font: inherit; font-size: 14.5px; padding: 6px 8px 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background-color .15s, transform .12s; }
 .pill:hover { background: var(--mat-sys-surface-container-high); }
 .pill:active { transform: scale(.97); }
-.pill.on { background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.pill.on { background: var(--mat-sys-surface-container); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 html.dark .pill.on { background: var(--mat-sys-surface-container-highest); }
 .pill > mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--mat-sys-on-surface-variant); }
 .pill > mat-icon.lead { font-size: 20px; width: 20px; height: 20px; color: inherit; }
 .pill.clear { color: var(--mat-sys-on-surface-variant); padding-left: 8px; } .pill.clear mat-icon { color: inherit; }
-.search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); padding: 2px; transition: width .2s; }
+.search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); padding: 2px; transition: width .2s; }
 .search.open { flex: 1; min-width: 0; }
 .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .sbtn:hover { background: var(--mat-sys-surface-container-high); }
