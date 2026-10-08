@@ -220,7 +220,6 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
           <button type="button" class="sug" (click)="applySuggestion(s)">
             <app-icon-badge [icon]="iconOf(s)" [color]="colorOf(s)" [size]="36" />
             <span class="txt"><span class="t1">{{ s.description }}</span><span class="t2">{{ data.accountMap().get(s.account_id)?.name }}@if (s.category_id) { · {{ data.categoryLabel(s.category_id) }} }</span></span>
-            <span class="val">{{ fmt(s.amount) }}</span>
           </button>
         }
       </div>
@@ -291,7 +290,6 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .sug .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .sug .t1 { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sug .t2 { font-size: 13px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sug .val { font-size: 13px; color: var(--mat-sys-on-surface-variant); white-space: nowrap; }
     @media (min-width: 900px) {
       .amount { font-size: 44px; }
       .key { width: 60px; height: 60px; font-size: 24px; }
