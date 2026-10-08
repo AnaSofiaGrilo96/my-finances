@@ -199,8 +199,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .mobile-only { display: none; }
       .desktop-only { display: flex; }
       .row { padding-top: 12px; padding-bottom: 12px; }
-      .row .main { flex: 1 1 40%; }
-      .acc-col { flex: 0 0 34%; display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant); font-size: 14px; min-width: 0; }
+      /* colunas com larguras fixas para a conta e o valor ficarem alinhados em todas as linhas */
+      .row .main { flex: 1 1 0; min-width: 0; }
+      .acc-col { flex: 0 0 36%; display: flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface-variant); font-size: 14px; min-width: 0; }
+      .row .right { flex: 0 0 150px; }
       .acc-col span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .acc-col .arrow { font-size: 16px; width: 16px; height: 16px; color: var(--mat-sys-outline); }
     }
