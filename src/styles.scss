@@ -14,10 +14,18 @@ html {
 
 html.dark { color-scheme: dark; }
 
+// ---------- Paleta do modo claro (pedido da Ana, 08/10) ----------
+// fundo da página, barras de filtros e cartões; o modo escuro mantém as cores do tema Material.
+html:not(.dark) {
+  --app-bg: #F2F4EF;
+  --app-bar-bg: rgb(242 244 239);
+  --app-card-bg: #FEFDF9;
+}
+
 html, body { height: 100%; margin: 0; }
 body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: var(--mat-sys-surface-container-low, #f4f6f4);
+  background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4));
   color: var(--mat-sys-on-surface);
   -webkit-tap-highlight-color: transparent;
 }
@@ -30,7 +38,7 @@ body {
 .page-header h1 { font-size: 22px; font-weight: 500; margin: 0; flex: 1; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .spacer { flex: 1; }
-.card { min-width: 0; background: var(--mat-sys-surface-container-lowest); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; padding: 16px; }
+.card { min-width: 0; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; padding: 16px; }
 html.dark .card { background: var(--mat-sys-surface-container); border-color: color-mix(in srgb, var(--mat-sys-outline-variant) 40%, transparent); }
 .card h2 { font-size: 17px; font-weight: 500; margin: 0 0 12px; }
 .muted { color: var(--mat-sys-on-surface-variant); }
@@ -60,7 +68,7 @@ html.dark .card { background: var(--mat-sys-surface-container); border-color: co
 @media (min-width: 600px) { .fixed-page { --toolbar-h: 64px; } }
 .fixed-head { flex-shrink: 0; padding: 8px 12px 0; }
 // A faixa com fundo é o .inner: alinhada com os cartões da lista (mesma margem lateral), tudo centrado em 40px de altura
-.fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--mat-sys-surface-container-low, #f4f6f4); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; }
+.fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface-container-low, #f4f6f4)); border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent); border-radius: 18px; }
 html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low); }
 .fixed-head app-month-nav { flex: 1; min-width: 0; }
 .fixed-head h1 { display: none; }
@@ -85,17 +93,17 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 
 // Barra de filtros em pílulas (Movimentos e Relatórios)
 .fbar { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
-.pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--mat-sys-surface-container); overflow-x: auto; scrollbar-width: none; }
+.pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); overflow-x: auto; scrollbar-width: none; }
 .pills::-webkit-scrollbar { display: none; }
 .pill { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: none; background: none; color: inherit; font: inherit; font-size: 14.5px; padding: 6px 8px 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background-color .15s, transform .12s; }
 .pill:hover { background: var(--mat-sys-surface-container-high); }
 .pill:active { transform: scale(.97); }
-.pill.on { background: var(--mat-sys-surface-container-lowest); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.pill.on { background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 html.dark .pill.on { background: var(--mat-sys-surface-container-highest); }
 .pill > mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--mat-sys-on-surface-variant); }
 .pill > mat-icon.lead { font-size: 20px; width: 20px; height: 20px; color: inherit; }
 .pill.clear { color: var(--mat-sys-on-surface-variant); padding-left: 8px; } .pill.clear mat-icon { color: inherit; }
-.search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--mat-sys-surface-container); padding: 2px; transition: width .2s; }
+.search { display: flex; align-items: center; flex-shrink: 0; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); padding: 2px; transition: width .2s; }
 .search.open { flex: 1; min-width: 0; }
 .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .sbtn:hover { background: var(--mat-sys-surface-container-high); }
@@ -122,7 +130,7 @@ html.dark .pill.on { background: var(--mat-sys-surface-container-highest); }
 html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }
 
 // Fita de meses fixa no topo (abaixo da barra superior); o conteúdo faz scroll por baixo
-.sticky-top { position: sticky; top: 56px; z-index: 6; background: var(--mat-sys-surface-container-low, #f4f6f4); margin: 0 -16px 14px; padding: 6px 16px 8px; }
+.sticky-top { position: sticky; top: 56px; z-index: 6; background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4)); margin: 0 -16px 14px; padding: 6px 16px 8px; }
 @media (min-width: 700px) { .sticky-top { top: 64px; margin: 0 -24px 14px; padding: 6px 24px 8px; } }
 
 // Barra de totais fixa no fundo (acima da barra de navegação no telemóvel)
