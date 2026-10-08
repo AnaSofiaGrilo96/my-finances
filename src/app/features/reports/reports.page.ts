@@ -318,7 +318,8 @@ export class ReportsPage {
     const mk = (start: string, end: string) => ({ start, end, next: addDays(end, 1) });
     switch (p) {
       case 'today': return mk(today, today);
-      case 'week': { const d = fromIso(today); const dow = (d.getDay() + 6) % 7; const mon = addDays(today, -dow); return mk(mon, addDays(mon, 6)); }
+      // Semana de domingo a sábado, como na outra aplicação de gestão de finanças (pedido da Ana, 08/10)
+      case 'week': { const sun = addDays(today, -fromIso(today).getDay()); return mk(sun, addDays(sun, 6)); }
       case 'month': return monthRange(m);
       case 'year': { const y = m.slice(0, 4); return mk(`${y}-01-01`, `${y}-12-31`); }
       // "Últimos N meses" = o mês atual MAIS os N anteriores (N+1 meses de calendário), como na outra aplicação de gestão de finanças — confirmado ao cêntimo a 08/10
