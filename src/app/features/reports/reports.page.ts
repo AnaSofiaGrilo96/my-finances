@@ -142,7 +142,7 @@ export class RangeDialog {
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of expenseSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
+                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
@@ -152,7 +152,7 @@ export class RangeDialog {
                     </a>
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
                           <div class="main"><div class="title">{{ c.label }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
                           <span class="pct">{{ pct(c.value, s.value) }}</span>
@@ -170,7 +170,7 @@ export class RangeDialog {
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of incomeSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id === 'none' ? null : s.id, mes: month(), conta: accountId() }">
+                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                       <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                       <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
                       <div class="amount">{{ s.value | money:'plain' }}</div>
@@ -180,7 +180,7 @@ export class RangeDialog {
                     </a>
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="{ categoria: c.id || s.id, mes: month(), conta: accountId() }">
+                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
                           <div class="main"><div class="title">{{ c.label }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
                           <span class="pct">{{ pct(c.value, s.value) }}</span>
@@ -292,6 +292,13 @@ export class ReportsPage {
     }
     if (p === 'month' || p === 'year') this.month.set(currentMonth());
     this.period.set(p);
+  }
+  /** Link para Movimentos com o MESMO intervalo do relatório (mês → ?mes=; outros → ?de=&ate=) e os mesmos filtros. */
+  linkParams(categoryId: string | null) {
+    const base = { categoria: categoryId, conta: this.accountId(), estado: this.includeUnpaid() ? null : 'paid' };
+    if (this.period() === 'month') return { ...base, mes: this.month() };
+    const { start, end } = this.range();
+    return { ...base, de: start, ate: end };
   }
   /** Texto do intervalo no cabeçalho (fora de mês/ano). */
   rangeLabel() {

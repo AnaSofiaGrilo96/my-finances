@@ -33,7 +33,15 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Movimentos</h1>
-        <app-month-nav [month]="month()" (monthChange)="setMonth($event)" />
+        @if (range(); as r) {
+          <!-- Intervalo vindo dos Relatórios (ano, últimos N meses, período à escolha): substitui a roda de meses -->
+          <div class="range-head">
+            <mat-icon>date_range</mat-icon><span>{{ rangeLabel() }}</span>
+            <button type="button" class="range-close" (click)="clearRange()" matTooltip="Voltar à vista por mês" aria-label="Voltar à vista por mês"><mat-icon>close</mat-icon></button>
+          </div>
+        } @else {
+          <app-month-nav [month]="month()" (monthChange)="setMonth($event)" />
+        }
         <button matIconButton (click)="filtersOpen.set(!filtersOpen())" [matBadge]="activeFilters() || null" matBadgeSize="small" matBadgeColor="primary" matTooltip="Filtros" aria-label="Filtros" [class.on]="filtersOpen()">
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
@@ -194,6 +202,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .rep { font-size: 14px; width: 14px; height: 14px; vertical-align: -2px; color: var(--mat-sys-on-surface-variant); }
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
+    .range-head { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; font-size: 15px; font-weight: 500; min-width: 0; }
+    .range-head > mat-icon { color: var(--mat-sys-on-surface-variant); }
+    .range-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .range-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--mat-sys-surface-container-high); color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; margin-left: 4px; }
+    .range-close mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .desktop-only { display: none; }
     @media (min-width: 900px) {
       .mobile-only { display: none; }
@@ -222,10 +235,19 @@ export class TransactionsPage implements OnDestroy {
   readonly tomorrow = addDays(this.today, 1);
 
   readonly month = signal(this.route.snapshot.queryParamMap.get('mes') ?? currentMonth());
+  /** Intervalo livre (?de=&ate=), usado quando se vem de um relatório que não é mensal; null = vista por mês. */
+  readonly range = signal<{ start: string; end: string } | null>(
+    this.route.snapshot.queryParamMap.get('de') && this.route.snapshot.queryParamMap.get('ate')
+      ? { start: this.route.snapshot.queryParamMap.get('de')!, end: this.route.snapshot.queryParamMap.get('ate')! } : null);
+  rangeLabel() {
+    const r = this.range()!; const f = (iso: string) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    return r.start === r.end ? f(r.start) : `${f(r.start)} – ${f(r.end)}`;
+  }
+  clearRange() { this.range.set(null); }
   readonly accountId = signal<string | null>(this.route.snapshot.queryParamMap.get('conta'));
   readonly kind = signal<TransactionKind | null>((this.route.snapshot.queryParamMap.get('tipo') as TransactionKind) || null);
   readonly categoryId = signal<string | null>(this.route.snapshot.queryParamMap.get('categoria'));
-  readonly paidFilter = signal<'paid' | 'unpaid' | null>(null);
+  readonly paidFilter = signal<'paid' | 'unpaid' | null>((['paid', 'unpaid'].includes(this.route.snapshot.queryParamMap.get('estado') ?? '') ? this.route.snapshot.queryParamMap.get('estado') : null) as 'paid' | 'unpaid' | null);
   readonly search = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   readonly loading = signal(false);
   readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
@@ -279,20 +301,21 @@ export class TransactionsPage implements OnDestroy {
     document.body.classList.add('has-bottom-bar'); // o FAB sobe para não tapar a barra de totais
     if (this.activeFilters()) this.filtersOpen.set(true);
     effect(() => {
-      const month = this.month(), acc = this.accountId();
+      const month = this.month(), acc = this.accountId(), range = this.range();
       this.data.version();
-      untracked(() => this.load(month, acc));
+      untracked(() => this.load(month, acc, range));
     });
     effect(() => {
-      const q: Record<string, string | null> = { mes: this.month(), conta: this.accountId(), tipo: this.kind(), categoria: this.categoryId(), q: this.search() || null };
+      const r = this.range();
+      const q: Record<string, string | null> = { mes: r ? null : this.month(), de: r?.start ?? null, ate: r?.end ?? null, conta: this.accountId(), tipo: this.kind(), categoria: this.categoryId(), estado: this.paidFilter(), q: this.search() || null };
       untracked(() => this.router.navigate([], { queryParams: q, replaceUrl: true }));
     });
   }
 
-  private async load(month: string, acc: string | null) {
+  private async load(month: string, acc: string | null, range: { start: string; end: string } | null) {
     this.loading.set(true);
     try {
-      const { start, end } = monthRange(month);
+      const { start, end } = range ?? monthRange(month);
       await this.data.generateRecurrences(end);
       const [list, opening] = await Promise.all([
         this.data.listTransactions(start, end, acc),
