@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/data.service';
 import { AuthService } from '../../core/auth.service';
-import { Transaction } from '../../core/models';
+import { Transaction, isAdjustment } from '../../core/models';
 import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
@@ -244,13 +244,13 @@ export class DashboardPage {
 
   readonly totals = computed(() => {
     let income = 0, expense = 0;
-    for (const t of this.txs()) { if (t.kind === 'income') income += t.amount; else if (t.kind === 'expense') expense += t.amount; }
+    for (const t of this.txs()) { if (isAdjustment(t)) continue; if (t.kind === 'income') income += t.amount; else if (t.kind === 'expense') expense += t.amount; }
     return { income, expense };
   });
 
   readonly byCategory = computed(() => {
     const m = new Map<string, number>();
-    for (const t of this.txs()) if (t.kind === 'expense') { const id = this.data.rootOf(t.category_id)?.id ?? ''; m.set(id, (m.get(id) ?? 0) + t.amount); }
+    for (const t of this.txs()) if (t.kind === 'expense' && !isAdjustment(t)) { const id = this.data.rootOf(t.category_id)?.id ?? ''; m.set(id, (m.get(id) ?? 0) + t.amount); }
     return m;
   });
 

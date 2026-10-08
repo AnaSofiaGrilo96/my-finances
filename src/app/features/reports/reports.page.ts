@@ -11,7 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
-import { Transaction, signFor } from '../../core/models';
+import { Transaction, isAdjustment, signFor } from '../../core/models';
 import { addDays, currentMonth, eachDay, fromIso, monthRange, shiftMonth, shortMonthLabel, todayIso, toIso } from '../../core/dates';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -331,7 +331,7 @@ export class ReportsPage {
   readonly totals = computed(() => {
     let income = 0, expense = 0;
     const acc = this.accountId();
-    for (const t of this.txs()) { const s = signFor(t, acc); if (s > 0) income += t.amount; else if (s < 0) expense += t.amount; }
+    for (const t of this.txs()) { if (isAdjustment(t)) continue; const s = signFor(t, acc); if (s > 0) income += t.amount; else if (s < 0) expense += t.amount; }
     return { income, expense };
   });
 
@@ -340,7 +340,7 @@ export class ReportsPage {
     const acc = this.accountId();
     const m = new Map<string, { value: number; children: Map<string, number> }>();
     for (const t of this.txs()) {
-      if (t.kind !== kind || (acc && t.account_id !== acc)) continue;
+      if (t.kind !== kind || (acc && t.account_id !== acc) || isAdjustment(t)) continue;
       const root = this.data.rootOf(t.category_id);
       const rid = root?.id ?? '';
       const e = m.get(rid) ?? m.set(rid, { value: 0, children: new Map() }).get(rid)!;
@@ -379,15 +379,17 @@ export class ReportsPage {
     const labelOf = (key: string) => g === 'monthly' ? shortMonthLabel(key) : g === 'weekly' ? `Sem. ${DAY_FMT.format(fromIso(key))}` : DAY_FMT.format(fromIso(key));
     // Preenche todos os períodos (mesmo sem movimentos) para o gráfico ficar contínuo
     const seedKeys = g === 'daily' ? eachDay(start, end) : g === 'monthly' ? monthsBetween(start, end) : [...new Set(eachDay(start, end).map(keyOf))];
+    const adj = new Map<string, number>(); // ajustes de saldo por período (entram no saldo, não nas entradas/saídas)
     for (const k of seedKeys) buckets.set(k, { key: k, label: labelOf(k), income: 0, expense: 0, result: 0, balance: 0 });
     for (const t of this.txs()) {
       const k = keyOf(t.date);
       const b = buckets.get(k) ?? buckets.set(k, { key: k, label: labelOf(k), income: 0, expense: 0, result: 0, balance: 0 }).get(k)!;
       const s = signFor(t, acc);
+      if (isAdjustment(t)) { adj.set(k, (adj.get(k) ?? 0) + s * t.amount); continue; } // só conta para o saldo acumulado
       if (s > 0) b.income += t.amount; else if (s < 0) b.expense += t.amount;
     }
     let bal = this.opening();
-    return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key)).map((b) => { b.result = b.income - b.expense; bal += b.result; b.balance = bal; return b; });
+    return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key)).map((b) => { b.result = b.income - b.expense; bal += b.result + (adj.get(b.key) ?? 0); b.balance = bal; return b; });
   });
 
   readonly flowPoints = computed<FlowPoint[]>(() => this.flowRows().map((r) => ({ label: r.label, income: r.income, expense: r.expense, balance: r.balance })));

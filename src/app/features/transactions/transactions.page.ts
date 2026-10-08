@@ -9,7 +9,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/data.service';
-import { Transaction, TransactionKind, signFor } from '../../core/models';
+import { Transaction, TransactionKind, isAdjustment, signFor } from '../../core/models';
 import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
@@ -285,6 +285,7 @@ export class TransactionsPage implements OnDestroy {
     const acc = this.accountId();
     let income = 0, expense = 0;
     for (const t of this.filtered()) {
+      if (isAdjustment(t)) continue; // ajustes de saldo não são entradas nem saídas
       const sgn = signFor(t, acc);
       if (sgn > 0) income += t.amount; else if (sgn < 0) expense += t.amount;
     }
@@ -408,6 +409,7 @@ export class TransactionsPage implements OnDestroy {
     return [this.data.categoryLabel(t.category_id), this.acc(t.account_id)?.name].filter(Boolean).join(' · ');
   }
   stateOf(t: Transaction) {
+    if (isAdjustment(t)) return 'ajuste de saldo'; // não entra nas entradas/saídas
     if (t.kind === 'income') return t.paid ? 'recebido' : 'não recebido';
     return t.paid ? 'pago' : 'não pago';
   }

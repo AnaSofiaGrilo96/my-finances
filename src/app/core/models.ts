@@ -114,6 +114,15 @@ export const ICONS = [
 ];
 
 /** Sinal do movimento numa conta: +1 entra, -1 sai, 0 não afeta. */
+/**
+ * "Ajuste de saldo" (criado por "Acertar saldo", ou vindo da outra aplicação de gestão de finanças) é uma correção
+ * do saldo da conta, não um gasto nem um ganho: conta para os saldos (saldo da conta, saldo no dia, saldo acumulado)
+ * mas fica FORA das despesas/receitas dos relatórios, dos totais do mês e dos maiores gastos — como na outra aplicação (08/10).
+ */
+export function isAdjustment(t: Pick<Transaction, 'kind' | 'description'>): boolean {
+  return t.kind !== 'transfer' && (t.description ?? '').trim().toLowerCase() === 'ajuste de saldo';
+}
+
 export function signFor(t: Transaction, accountId?: string | null): number {
   if (t.kind === 'income') return !accountId || t.account_id === accountId ? 1 : 0;
   if (t.kind === 'expense') return !accountId || t.account_id === accountId ? -1 : 0;
