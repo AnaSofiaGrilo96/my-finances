@@ -2,7 +2,7 @@
 
 Documento de referência para quem pegar neste projeto (pessoa ou assistente de IA). Descreve o propósito, as decisões tomadas e as regras de negócio, para que alterações futuras não se desviem do que a app é. Atualizar este ficheiro sempre que uma decisão aqui descrita mudar.
 
-Última revisão: 2026-10-02 (v3). **Estado atual em §10** — ler primeiro quando se retoma o trabalho.
+Última revisão: 2026-10-08 (v4). **Estado atual em §10** — ler primeiro quando se retoma o trabalho. **§11 lista, por data, tudo o que mudou desde a v3.**
 
 ---
 
@@ -30,6 +30,7 @@ O que a app **não** é: não é multi-utilizador (cada utilizador vê só os se
 | Login | Email + password (Supabase Auth) | Google OAuth foi ponderado e descartado a 07/10 — não justifica para uma app de uma pessoa; password forte |
 | Hosting | GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`), **hash routing** (`#/…`) | Gratuito; hash routing evita 404 em refresh no Pages |
 | Mobile | PWA (manifest + `@angular/service-worker`), navegação por barra inferior + FAB | Sem lojas de apps; instala-se "Adicionar ao ecrã principal" |
+| Layout | **Barra superior verde** (`#1cbf4f`; `#178f45` em escuro) com o logótipo à esquerda, as 3 páginas **centradas** (computador) e o menu de perfil à direita; **não há menu lateral**. No telemóvel a navegação é a barra inferior | À imagem da outra aplicação de gestão de finanças (07/10) |
 | Gráficos | SVG próprio em `src/app/shared/charts.ts` (donut, barras+saldo, anel) | Sem dependência externa de charts; leve e com o tema Material |
 | Moeda | EUR, formato `€ 1.234,56` (ponto nos milhares, vírgula nos decimais) — `MoneyPipe`; **o símbolo € aparece sempre**, em todos os valores (07/10) | É o formato a que a Ana está habituada (outra aplicação de gestão de finanças) |
 | Datas | ISO `YYYY-MM-DD` em todo o lado, sem fusos horários (`src/app/core/dates.ts`) | Evita bugs de timezone em datas de movimentos |
@@ -90,14 +91,16 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 ## 4. Estrutura da aplicação
 
 ```
-src/app/core/       supabase.service, auth.service, auth.guard, data.service, models, dates, theme.service
-src/app/shared/     ui.service (toast/erro/confirm), charts, money.pipe, icon-badge, month-nav (fita de meses), confirm.dialog, picker.sheet (folha inferior de escolha), swipe-row (arrastar para revelar ações)
-src/app/layout/     shell — menu lateral (≥900px) / barra inferior + FAB (<900px), menu do utilizador
+src/app/core/       supabase.service, auth.service, auth.guard, data.service (paginado a 1.000), models (signFor), dates, theme.service
+backup/             apps-script.gs — backup mensal para o Google Drive
+supabase/           schema.sql — script único da base de dados
+src/app/shared/     ui.service (toast/erro/confirm/choose/recurrenceScope), charts (donut, FlowChart com tooltip flutuante, anel), money.pipe, icon-badge, month-nav (roda de meses), confirm.dialog, choice.dialog, picker.sheet (folha inferior de escolha), swipe-row (arrastar para revelar ações), back-button.service (botão Voltar fecha janelas)
+src/app/layout/     shell — barra superior verde (navegação centrada ≥900px) / barra inferior (<900px), FAB, menu do utilizador, aviso de nova versão
 src/app/features/
   auth/             login.page (email/password), profile.dialog ("O meu nome")
   dashboard/        visão geral
   transactions/     transactions.page (lista mensal), transaction.dialog (criar/editar; recorrências), transaction-detail.sheet (folha de detalhe)
-  reports/          relatórios: Categorias, Entradas x Saídas, Contas; exportar CSV
+  reports/          relatórios: Categorias, Entradas x Saídas; período com presets; exportar CSV
   recurrences/      lista de regras, total fixo mensal, pausar/retomar/apagar
   accounts/         contas (CRUD, ordenar, arquivar)
   categories/       categorias em árvore (CRUD, sub-categorias)
@@ -137,21 +140,23 @@ src/app/features/
   - *Apenas este* (apagar): apaga só esse. *Este e os próximos*: apaga este e os não pagos seguintes e termina a regra (`deleteAndFollowing`; os já pagos ficam). Substitui o antigo botão "Terminar a partir daqui".
   - Mudar só o estado pago/não pago nunca pergunta nada.
 
-**Relatórios (`/relatorios`)** — seletor de mês em fita sempre visível (ano a ano no modo Ano; no modo 12 meses indica "últimos 12 meses até …"); **barra de filtros em pílulas** igual à de Movimentos (estilos partilhados `.fbar/.pills/.pill` em `styles.scss`): Período com presets — Hoje, Esta semana, Este mês (**por defeito**, com a roda de meses no cabeçalho), Últimos 3/6/12 meses, Este ano (roda de anos), Escolher período (diálogo com intervalo de datas); fora de mês/ano o cabeçalho mostra o intervalo em texto. Granularidade diária/semanal/mensal ajusta-se ao tamanho do intervalo (diária até ~3 meses). **Os filtros refletem-se na URL** (`?periodo=&mes=&conta=&pagos=1&de=&ate=&vista=&separador=`, só os que diferem do defeito, com `replaceUrl`) — dá para partilhar o link e voltar ao mesmo estado, Conta (menu com badges), Estado (Todos / Só pagos), "Limpar"; o botão de Exportar CSV é a lupa-equivalente à direita (ícone download). Sempre visível no computador, atrás do botão de filtros no telemóvel. Separadores: Categorias (despesas e receitas por principal, expansível, donut) e Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`). O separador "Contas" foi removido a 07/10 por ser redundante com Entradas x Saídas filtrado por conta. Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
+**Relatórios (`/relatorios`)** — seletor de mês em fita sempre visível (ano a ano no modo Ano; no modo 12 meses indica "últimos 12 meses até …"); **barra de filtros em pílulas** igual à de Movimentos (estilos partilhados `.fbar/.pills/.pill` em `styles.scss`): Período com presets — Hoje, Esta semana, Este mês (**por defeito**, com a roda de meses no cabeçalho), Últimos 3/6/12 meses, Este ano (roda de anos), Escolher período (diálogo com intervalo de datas); fora de mês/ano o cabeçalho mostra o intervalo em texto. Granularidade diária/semanal/mensal ajusta-se ao tamanho do intervalo (diária até ~3 meses). **Os filtros refletem-se na URL** (`?periodo=&mes=&conta=&pagos=1&de=&ate=&vista=&separador=`, só os que diferem do defeito, com `replaceUrl`) — dá para partilhar o link e voltar ao mesmo estado, Conta (menu com badges), Estado (Todos / Só pagos), "Limpar"; o botão **Exportar CSV** (ícone `download`) ocupa, à direita, a mesma pílula redonda que a lupa de pesquisa tem em Movimentos (contentor `.search`, mesma cor e contorno). Sempre visível no computador, atrás do botão de filtros no telemóvel. Separadores: Categorias (despesas e receitas por principal, expansível, donut) e Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado a partir de `opening_balance`). O separador "Contas" foi removido a 07/10 por ser redundante com Entradas x Saídas filtrado por conta. Exportar CSV (`;` como separador, BOM UTF-8, para abrir direto no Excel PT).
 
 **Recorrências (`/recorrencias`)**, **Contas (`/contas`, inclui "Acertar saldo")**, **Categorias (`/categorias`)** — gestão.
 
 ### Convenções de UI
 - Material 3 com paleta verde (`styles.scss`), modo escuro por botão no topo (guardado em `localStorage`).
-- **Cada área é um cartão** (`.card`): fundo ligeiramente diferente do da página (`surface-container-lowest` em claro, `surface-container` em escuro), borda subtil, cantos arredondados (18px). Novas secções devem usar `.card`.
+- **Cada área é um cartão** (`.card`): fundo `--app-card-bg` (claro) / `surface-container` (escuro), contorno `1px solid color-mix(outline-variant 60%)`, cantos arredondados (18px). Novas secções devem usar `.card`. **Esse mesmo contorno** é usado nas barras de filtros (`.pills`, `.search`) e no cabeçalho fixo (`.fixed-head > .inner`).
 - **Modo claro** (08/10): fundo da página `#F2F4EF`, barras de filtros e cabeçalho (título + roda) `#FEFDF9` com o mesmo contorno dos cartões, cartões (e linhas, pílula do mês, totais) `#FEFDF9` — variáveis `--app-bg`, `--app-bar-bg`, `--app-card-bg` em `html:not(.dark)`; o modo escuro mantém o tema Material.
 - Verde `#1eb980` = entrada/receita, vermelho `#e5484d` = saída/despesa, cinzento = transferência. Valores com sinal (`money:'signed'`).
 - Ícones Material Icons (fonte Google); categorias e contas têm cor + ícone, mostrados por `app-icon-badge`.
 - Diálogos normais com `width: 440–520px`, `maxWidth: 96vw`; folhas inferiores (`MatBottomSheet`) para escolhas e detalhe. Confirmar sempre antes de apagar (`UiService.confirm`).
 - **Estilos por tema dentro de componentes**: usar `:host-context(html.dark)` / `:host-context(html:not(.dark))` — `html.dark .x` dentro de `styles:` de um componente NÃO funciona (encapsulamento).
 - **Service worker**: o `Shell` escuta `SwUpdate.versionUpdates` e mostra "Há uma nova versão da app — Atualizar". Sem isto, uma versão nova só se aplicava ao fechar e reabrir a PWA (confundiu a Ana uma vez).
-- Layout mobile-first: FAB "+" **redondo e grande (64px)** no telemóvel em todas as páginas **exceto Relatórios** (lá não se criam movimentos); em Movimentos sobe para ficar acima da barra de totais e a lista tem espaço extra no fim para a última linha nunca ficar debaixo dele; barra inferior com 3 entradas (Início, Movimentos, Relatórios). **Contas, Categorias, Recorrências e "O meu nome" ficam no menu do ícone de perfil** (canto superior direito), tanto no telemóvel como no computador; o menu lateral do desktop tem só as 3 páginas principais.
-- **Seletor de mês em fita** (`app-month-nav`): ‹ Setembro [Outubro] Novembro › — o mês atual numa pílula ao centro, vizinhos clicáveis; **arrastar a fita para a esquerda/direita também muda o mês** (telemóvel); fica **fixa no topo** (abaixo da barra superior) enquanto o conteúdo faz scroll (`.sticky-top`). Usado em Movimentos e Relatórios (em Relatórios com modo "Ano" navega ano a ano). Clicar na pílula volta ao mês atual.
+- Layout mobile-first: FAB "+" **redondo e grande (64px)** em todas as páginas **exceto Relatórios** (lá não se criam movimentos), **também no computador** (canto inferior direito, 28px das margens, sempre na mesma posição; `position: fixed` — por isso a animação de entrada das páginas aplica-se ao conteúdo da rota e nunca à shell, senão o FAB deslizava com o scroll); no telemóvel, em Movimentos sobe para ficar acima da barra de totais e a lista tem espaço extra no fim para a última linha nunca ficar debaixo dele; barra inferior com 3 entradas (Início, Movimentos, Relatórios). **Contas, Categorias, Recorrências, "O meu nome", modo escuro e Sair ficam no menu do ícone de perfil** (canto superior direito), tanto no telemóvel como no computador; no computador as 3 páginas principais são separadores centrados na barra superior verde (não há menu lateral).
+- **Roda de meses** (`app-month-nav`): ‹ Setembro [Outubro] Novembro › — o mês selecionado numa pílula fixa ao centro (fundo `--app-card-bg`), vizinhos clicáveis; os meses deslizam debaixo da pílula acompanhando o dedo (scroll nativo com `scroll-snap`, item 124px); vive no **cabeçalho fixo** da página (`.fixed-head`). Usado em Movimentos e Relatórios (modo `year` navega ano a ano). Clicar na pílula volta ao mês atual. **Não mexer na roda ao restilizar o cabeçalho** (pedido explícito).
+- **Layout de página fixa** (`.fixed-page/.fixed-head/.fixed-body/.fixed-foot` em `styles.scss`): cabeçalho e rodapé fixos, corpo com scroll próprio; `scrollbar-gutter: stable` em todos para o cabeçalho, os cartões e a faixa de totais ficarem **exatamente com a mesma largura** no computador. Largura de conteúdo `--content-max: min(1400px, 84vw)`, igual em todas as páginas.
+- **Menus de filtros** (`.fmenu`): itens com badge da conta/categoria a 28px, cabeçalhos com espaço reservado; o `margin-right` que o Material põe no `mat-icon` dos itens tem de ser anulado com `!important` dentro do badge, senão os ícones ficam desalinhados.
 
 ---
 
@@ -208,7 +213,7 @@ Em 30/09/2026 importou-se o histórico completo desde 2018 exportado de outra ap
 
 ---
 
-## 10. Estado atual (07/10/2026) — ler primeiro ao retomar
+## 10. Estado atual (08/10/2026) — ler primeiro ao retomar
 
 **Tudo o que está descrito neste documento está implementado e commitado.** A app está publicada em `https://anasofiagrilo96.github.io/MyFinances/` e instalada como PWA no telemóvel da Ana; o login é por email + password (o login com Google foi ponderado e descartado a 07/10). Há **um único utilizador**, sempre.
 
@@ -216,9 +221,56 @@ Em 30/09/2026 importou-se o histórico completo desde 2018 exportado de outra ap
 
 **Backup mensal**: `backup/apps-script.gs` (Google Apps Script, gatilho dia 1) grava em Backups/My Finances/AAAA-MM-DD no Drive uma CSV por conta, dumps completos com ids e `dados.json`. O restauro a partir do `dados.json` é um script SQL gerado localmente (lê o JSON, ordena categorias com principais primeiro, lotes de 1.000 movimentos, `on conflict (id) do nothing`) — foi usado a 07/10 depois de a Ana apagar o utilizador por engano (**nunca apagar o utilizador em auth.users**; mudar a password é em Authentication → Users → Reset password).
 
-**Sessões de 02/10 e 06–07/10 — feito**: aviso de nova versão; janela de movimento (cortes, teclado); polegar + nomenclatura fixa; arrastar linha; roda de meses que acompanha o dedo; FAB; folha de detalhe (centrada no computador, arrastar-para-fechar no telemóvel); pergunta "apenas este / este e os próximos" ao editar e apagar recorrentes; animações; modo escuro; botão Voltar fecha janelas; Movimentos e Relatórios com cabeçalho e totais fixos; filtros em pílulas com ícones; Início sem navegador de mês, cartões a pagar/a receber separados com "Vence hoje"/"Próximas"; aviso só de hoje; backup mensal; restauro; repositório limpo de dados e de referências a outras aplicações.
+**Sessões de 02/10, 06–07/10 e 08/10 — feito**: aviso de nova versão; janela de movimento (cortes, teclado); polegar + nomenclatura fixa; arrastar linha; roda de meses que acompanha o dedo; FAB; folha de detalhe (centrada no computador, arrastar-para-fechar no telemóvel); pergunta "apenas este / este e os próximos" ao editar e apagar recorrentes; animações; modo escuro; botão Voltar fecha janelas; Movimentos e Relatórios com cabeçalho e totais fixos; filtros em pílulas com ícones; Início sem navegador de mês, cartões a pagar/a receber separados com "Vence hoje"/"Próximas"; aviso só de hoje; backup mensal; restauro; repositório limpo de dados e de referências a outras aplicações; relatórios com presets de período, filtros na URL e paginação; € em todo o lado; colunas de recorrência e conta no computador; scroll automático; categoria por defeito; paleta do modo claro. Detalhe em §11.
 
 **Pendentes conhecidos / a confirmar com a Ana**:
 - Ela usa em paralelo outra aplicação de gestão de finanças até meados de novembro enquanto testa esta; quando decidir a data de corte haverá uma última carga de dados (modelo: `_local/supabase-dados/006_historico_set_out_2026.sql`, regra "a origem é a realidade").
 - O SQL Editor da Supabase **não mostra `raise notice`** — resumos devem ser devolvidos como resultado de um `select`.
 - A Ana pode trazer mais melhorias visuais.
+
+---
+
+## 11. Registo de alterações desde a v3 (02/10 → 08/10/2026)
+
+Resumo por tema do que foi alterado e porquê (os commits têm mensagens em português; `git log` dá o detalhe).
+
+**Layout e navegação**
+- Barra superior verde com as 3 páginas centradas no computador e menu de perfil à direita; o menu lateral desapareceu. A barra fica fixa também na Visão geral (`:host { min-height: 100dvh }` na shell).
+- FAB flutuante também no computador, sempre na mesma posição em todas as páginas (exceto Relatórios); corrigido o bug em que a animação de entrada da shell criava um *containing block* e o FAB fazia scroll com a página.
+- Movimentos e Relatórios com **cabeçalho fixo** (título no computador + roda de meses + filtros) e, em Movimentos, **faixa de totais fixa em baixo**; cabeçalho, cartões e totais exatamente com a mesma largura (espaço da barra de scroll reservado em todos).
+- Contentor de conteúdo mais largo no computador (`--content-max`, 84% até 1400px).
+- Botão Voltar do Android/navegador fecha janelas e folhas em vez de mudar de página (`BackButtonService`); corrigido o caso "fechar detalhe → editar → gravar saía para a página inicial" (espera pelo `history.back()` pendente antes de empilhar).
+- Animações suaves de entrada das páginas e das janelas; backdrop das janelas mais leve (.28 claro / .18 escuro).
+
+**Movimentos**
+- Barra de filtros em pílulas (Conta / Tipo / Categoria / Estado) com menus com ícones e cores; lupa de pesquisa à direita que abre o campo; "Limpar".
+- Computador: coluna com as setas de recorrência (antes da conta), coluna própria para a conta (34%), coluna do valor com largura fixa (150px) — tudo alinhado linha a linha.
+- Scroll automático ao abrir o mês atual (dia mais antigo com movimentos por validar; senão hoje).
+- Linha amarela (por pagar) só para data ≤ hoje (já não amanhã).
+- Janela de apagar com título "Apagar movimento?", texto com o nome e botão grande vermelho de largura total.
+- Query params `de`/`ate` para intervalos livres vindos dos relatórios (substituem a roda de meses por texto + botão para voltar ao mês).
+
+**Janela de movimento**
+- Teclado: última linha "limpar · 0 · apagar último dígito".
+- Sugestões de descrição sem o valor anterior.
+- Categoria por defeito "Outros" (despesa) / "Outras receitas" (receita) — a categoria principal com esse nome.
+- Pergunta de alcance ao editar/apagar recorrentes: "apenas este" **desliga** o movimento da recorrência; "este e os próximos" aplica às não pagas seguintes e à regra.
+
+**Relatórios**
+- Período com presets (Hoje, Esta semana, Este mês, Últimos 3/6/12 meses, Este ano, Escolher período); granularidade diária/semanal/mensal automática.
+- Filtros refletidos na URL (`periodo`, `mes`, `conta`, `pagos`, `de`, `ate`, `vista`, `separador`); clicar numa categoria abre Movimentos com exatamente o mesmo intervalo e filtros.
+- Separador "Contas" removido; tabela com mais espaço entre linhas; tooltip flutuante no gráfico Entradas x Saídas.
+- Leitura paginada (1.000 linhas por pedido na Supabase) — intervalos longos ficavam truncados.
+- Exportar CSV no botão redondo à direita da barra de filtros.
+
+**Visão geral**
+- Sem navegador de mês (mês atual sempre). Aviso só de hoje + atrasados. Cartões "Próximos movimentos a pagar" e "a receber" separados, divididos em "Vence hoje" / "Próximas", com ícone da categoria. Contas: acertar saldo com lápis.
+
+**Aspeto**
+- Símbolo € em todos os valores. Modo claro: página `#F2F4EF`, cartões/linhas/pílula do mês/totais `#FEFDF9`, barras de filtros e cabeçalho `#FEFDF9` com o contorno dos cartões (variáveis `--app-bg`, `--app-bar-bg`, `--app-card-bg`); a pílula de filtro ativa usa `surface-container` para se distinguir da barra. Modo escuro inalterado (tema Material).
+
+**Dados, backup e repositório**
+- Login só com email + password (Google OAuth removido).
+- Backup mensal automático para o Google Drive (`backup_export` + Apps Script) e restauro a partir do `dados.json` (usado a 07/10 após o utilizador ter sido apagado por engano).
+- Segunda carga de dados set–out/2026 com a regra "a origem é a realidade".
+- `supabase/schema.sql` passou a script único; scripts com dados só em `_local/`; histórico do git reescrito para remover dados e nomes de outras aplicações/projetos.
