@@ -83,9 +83,9 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
           <span class="grab"></span>
           <div class="keys">
             @for (k of ['1','2','3','4','5','6','7','8','9']; track k) { <button type="button" class="key" (click)="press(k)">{{ k }}</button> }
-            <button type="button" class="key flat" (click)="pressSign()" matTooltip="Trocar sinal / limpar"><mat-icon>backspace</mat-icon></button>
-            <button type="button" class="key" (click)="press('0')">0</button>
             <button type="button" class="key flat" (click)="press('C')" matTooltip="Limpar"><mat-icon>clear_all</mat-icon></button>
+            <button type="button" class="key" (click)="press('0')">0</button>
+            <button type="button" class="key flat" (click)="pressSign()" matTooltip="Apagar último dígito"><mat-icon>backspace</mat-icon></button>
           </div>
           <button type="button" class="confirm" (click)="confirmAmount()" [disabled]="!amount || amount <= 0" aria-label="Confirmar valor"><mat-icon>check</mat-icon></button>
         </section>
