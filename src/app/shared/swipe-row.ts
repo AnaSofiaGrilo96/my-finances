@@ -13,7 +13,7 @@ let openRow: SwipeRow | null = null;
   imports: [MatIconModule],
   template: `
     <div class="actions" [class.visible]="offset() < 0">
-      <button type="button" class="act paid" (click)="emit(togglePaid, $event)" [attr.aria-label]="paid() ? 'Marcar como não pago' : 'Marcar como pago'"><mat-icon>{{ paid() ? 'thumb_down' : 'thumb_up' }}</mat-icon></button>
+      <button type="button" class="act paid" (click)="emit(togglePaid, $event)" [attr.aria-label]="paid() ? 'Marcar como não pago' : 'Marcar como pago'"><mat-icon>{{ paid() ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
       <button type="button" class="act edit" (click)="emit(edit, $event)" aria-label="Editar"><mat-icon>edit</mat-icon></button>
       <button type="button" class="act del" (click)="emit(remove, $event)" aria-label="Apagar"><mat-icon>delete</mat-icon></button>
     </div>
