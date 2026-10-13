@@ -1,19 +1,21 @@
 /**
- * MyFinances — backup mensal para o Google Drive (Google Apps Script)
- * ------------------------------------------------------------------
- * Todos os meses vai buscar TODOS os dados à Supabase e grava em
+ * MyFinances — backup periódico para o Google Drive (Google Apps Script)
+ * ---------------------------------------------------------------------
+ * Periodicamente (ver FREQUENCIA) vai buscar TODOS os dados à Supabase e grava em
  *   Backups / My Finances / AAAA-MM-DD /
  *     <uma CSV por conta>.csv   — formato do export da outra aplicação de gestão de finanças (Data; Descrição; Categoria; Valor; Situação; Tags; Informações adicionais)
  *     movimentos.csv            — todos os movimentos, com ids (para restauro)
  *     contas.csv, categorias.csv, recorrencias.csv
  *     dados.json                — cópia integral tal como veio da base de dados
+ * Depois de gravar, apaga (para o lixo do Drive) as pastas de backup mais antigas, mantendo só as últimas MANTER_ULTIMOS.
  *
  * Instalação (uma vez):
  *   1. https://script.google.com → Novo projeto → cola este ficheiro inteiro.
  *   2. Preenche SUPABASE_URL, SUPABASE_ANON_KEY (está em src/environments/environment.prod.ts) e BACKUP_KEY
  *      (a chave mostrada pela migração 007 no Supabase).
  *   3. Executa uma vez a função `backupAgora` (o Google pede autorização ao Drive) e confirma a pasta.
- *   4. Executa a função `instalarGatilho` — cria o gatilho mensal (dia 1, de manhã). Fica a correr sozinho.
+ *   4. Executa a função `instalarGatilho` — cria o gatilho com a FREQUENCIA escolhida. Fica a correr sozinho.
+ *      (Para mudar a frequência ou o número de cópias: altera as constantes e volta a executar `instalarGatilho`.)
  */
 
 const SUPABASE_URL = 'https://XXXXXXXX.supabase.co';
@@ -21,6 +23,8 @@ const SUPABASE_ANON_KEY = 'cola-aqui-a-chave-anon';
 const BACKUP_KEY = 'cola-aqui-a-chave-de-backup';
 const FOLDER_PATH = ['Backups', 'My Finances'];   // pasta de destino no teu Drive (é criada se não existir)
 const SEP = ';';                                   // separador CSV (o Excel em português abre direto)
+const FREQUENCIA = 'semanal';                      // 'diaria' | 'semanal' (domingo) | 'mensal' (dia 1) — sempre por volta das 06:00
+const MANTER_ULTIMOS = 3;                          // nº de pastas de backup a manter; as mais antigas vão para o lixo do Drive (1 = só a última)
 
 function backupAgora() {
   const data = fetchExport();
@@ -32,12 +36,32 @@ function backupAgora() {
     folder.createFile(name, files[name], name.endsWith('.json') ? 'application/json' : 'text/csv');
   });
   Logger.log('Backup gravado em ' + folder.getUrl() + ' — ' + data.transactions.length + ' movimentos.');
+  limparAntigos(folder.getName());
+}
+
+// Mantém só as últimas MANTER_ULTIMOS pastas AAAA-MM-DD; só corre depois de um backup bem-sucedido, por isso
+// nunca apaga a única cópia boa. As pastas vão para o lixo do Drive (recuperáveis durante 30 dias).
+function limparAntigos(nomeAtual) {
+  const base = getOrCreatePath(FOLDER_PATH);
+  const pastas = [];
+  const it = base.getFolders();
+  while (it.hasNext()) { const f = it.next(); if (/^\d{4}-\d{2}-\d{2}$/.test(f.getName())) pastas.push(f); }
+  pastas.sort((a, b) => (a.getName() < b.getName() ? 1 : -1));                    // mais recente primeiro
+  pastas.slice(Math.max(MANTER_ULTIMOS, 1)).forEach((f) => {
+    if (f.getName() === nomeAtual) return;                                        // nunca apagar a de hoje
+    f.setTrashed(true);
+    Logger.log('Backup antigo removido: ' + f.getName());
+  });
 }
 
 function instalarGatilho() {
   ScriptApp.getProjectTriggers().forEach((t) => { if (t.getHandlerFunction() === 'backupAgora') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('backupAgora').timeBased().onMonthDay(1).atHour(6).inTimezone('Europe/Lisbon').create();
-  Logger.log('Gatilho mensal instalado (dia 1, ~06:00).');
+  const t = ScriptApp.newTrigger('backupAgora').timeBased().inTimezone('Europe/Lisbon').atHour(6);
+  if (FREQUENCIA === 'diaria') t.everyDays(1);
+  else if (FREQUENCIA === 'mensal') t.onMonthDay(1);
+  else t.onWeekDay(ScriptApp.WeekDay.SUNDAY);
+  t.create();
+  Logger.log('Gatilho instalado: ' + FREQUENCIA + ' (~06:00), mantendo os últimos ' + MANTER_ULTIMOS + ' backups.');
 }
 
 // ---------------------------------------------------------------- dados
