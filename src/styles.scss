@@ -14,6 +14,13 @@ html {
 
 html { color-scheme: light; background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4)); } // fundo também no <html>: é o que o Android usa para a cor da barra de botões
 html.dark { color-scheme: dark; }
+// ---------- Paleta do modo escuro (14/10: mais contraste entre cartões e fundo) ----------
+// fundo da página mais escuro do que o tema Material dá por defeito; cartões e barras dois degraus acima.
+html.dark {
+  --app-bg: color-mix(in srgb, var(--mat-sys-surface) 78%, black);
+  --app-bar-bg: var(--mat-sys-surface-container-high);
+  --app-card-bg: var(--mat-sys-surface-container-high);
+}
 
 // ---------- Paleta do modo claro (pedido da Ana, 08/10) ----------
 // fundo da página, barras de filtros e cartões; o modo escuro mantém as cores do tema Material.
@@ -44,7 +51,6 @@ body {
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .spacer { flex: 1; }
 .card { min-width: 0; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); border: none; border-radius: 8px; padding: 16px; }
-html.dark .card { background: var(--mat-sys-surface-container); }
 .card h2 { font-size: 17px; font-weight: 500; margin: 0 0 12px; }
 .muted { color: var(--mat-sys-on-surface-variant); }
 .income { color: #1eb980; }
@@ -73,7 +79,6 @@ html.dark .card { background: var(--mat-sys-surface-container); }
 .fixed-head { flex-shrink: 0; padding: 0; } // telemóvel: a barra do cabeçalho (roda de meses) vai de canto a canto, sem margens nem cantos (pedido da Ana, 14/10)
 // A faixa com fundo é o .inner: alinhada com os cartões da lista (mesma margem lateral), tudo centrado em 40px de altura
 .fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface-container-low, #f4f6f4)); border-radius: 0; }
-html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low); }
 .fixed-head app-month-nav { flex: 1; min-width: 0; }
 .fixed-head h1 { display: none; }
 .fixed-head > .inner > button { --mdc-icon-button-state-layer-size: 40px; width: 40px; height: 40px; padding: 8px; flex-shrink: 0; }

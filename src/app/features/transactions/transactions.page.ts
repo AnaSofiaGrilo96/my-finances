@@ -179,29 +179,29 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     /* barra de filtros em pílulas: estilos partilhados em styles.scss (.fbar/.pills/.pill/.search) */
     /* Totais: no telemóvel é uma faixa quadrada colada à barra de navegação */
     .summary { flex-shrink: 0; display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px calc(74px + env(safe-area-inset-bottom)); background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); } /* o fundo prolonga-se por baixo da barra de navegação para não haver falhas */
-    :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
+    :host-context(html.dark) .summary { background: var(--app-card-bg); }
     .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
     @media (min-width: 900px) {
       /* No computador mantém o aspeto de cartão redondo, sempre com folga ao fundo */
       /* .fixed-foot (styles.scss) dá-lhe exatamente a mesma largura do cabeçalho e dos cartões */
       .summary { border: none; border-radius: 8px; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 10px 12px; }
-      :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
+      :host-context(html.dark) .summary { background: var(--app-card-bg); }
     }
     .day { margin-bottom: var(--gap); }
     .day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px 6px; font-size: 13px; font-weight: 500; text-transform: capitalize; }
     .day-head .muted { text-transform: none; font-weight: 400; }
     .rows { padding: 4px 8px; }
     .row { padding-left: 6px; padding-right: 10px; border-radius: 10px; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); }
-    :host-context(html.dark) .row { background: var(--mat-sys-surface-container); }
+    :host-context(html.dark) .row { background: var(--app-card-bg); }
     app-swipe-row { margin: 2px 0; }
     .state.is-paid { color: #1eb980; }
     .row.due { background: color-mix(in srgb, #f5b301 18%, transparent); }
     .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); }
     /* Modo escuro: o fundo das linhas é mais forte, por isso o amarelo e o hover precisam de regras próprias */
-    :host-context(html.dark) .row.clickable:hover { background: var(--mat-sys-surface-container-high); }
-    :host-context(html.dark) .row.due { background: color-mix(in srgb, #f5b301 22%, var(--mat-sys-surface-container)); }
-    :host-context(html.dark) .row.due:hover { background: color-mix(in srgb, #f5b301 32%, var(--mat-sys-surface-container)); }
+    :host-context(html.dark) .row.clickable:hover { background: var(--mat-sys-surface-container-highest); }
+    :host-context(html.dark) .row.due { background: color-mix(in srgb, #f5b301 22%, var(--app-card-bg)); }
+    :host-context(html.dark) .row.due:hover { background: color-mix(in srgb, #f5b301 32%, var(--app-card-bg)); }
     :host-context(html.dark) .row.unpaid:hover { background: var(--mat-sys-surface-container-highest); }
     .row.unpaid .title, .row.unpaid .amount { opacity: .75; }
     .rep { font-size: 14px; width: 14px; height: 14px; vertical-align: -2px; color: var(--mat-sys-on-surface-variant); }
