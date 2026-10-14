@@ -143,20 +143,24 @@ export class RangeDialog {
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of expenseSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
-                      <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                      <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
-                      <div class="amount">{{ s.value | money:'plain' }}</div>
-                      @if (s.children.length) {
-                        <button matIconButton class="exp" (click)="toggle(s.id, $event)" [attr.aria-label]="expanded().has(s.id) ? 'Esconder' : 'Ver sub-categorias'"><mat-icon>{{ expanded().has(s.id) ? 'expand_less' : 'expand_more' }}</mat-icon></button>
-                      } @else { <span class="exp-gap"></span> }
-                    </a>
+                    @if (s.children.length) {
+                      <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
+                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }} · {{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                      </button>
+                    } @else {
+                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
+                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
+                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                      </a>
+                    }
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
                         <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                          <div class="main"><div class="title">{{ c.label }}</div></div>
+                          <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
-                          <span class="pct">{{ pct(c.value, s.value) }}</span>
                         </a>
                       }
                     }
@@ -171,20 +175,24 @@ export class RangeDialog {
               <div class="cat-layout">
                 <div class="rows list">
                   @for (s of incomeSlices(); track s.id) {
-                    <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
-                      <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                      <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
-                      <div class="amount">{{ s.value | money:'plain' }}</div>
-                      @if (s.children.length) {
-                        <button matIconButton class="exp" (click)="toggle(s.id, $event)" [attr.aria-label]="expanded().has(s.id) ? 'Esconder' : 'Ver sub-categorias'"><mat-icon>{{ expanded().has(s.id) ? 'expand_less' : 'expand_more' }}</mat-icon></button>
-                      } @else { <span class="exp-gap"></span> }
-                    </a>
+                    @if (s.children.length) {
+                      <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
+                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }} · {{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                      </button>
+                    } @else {
+                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
+                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
+                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                      </a>
+                    }
                     @if (expanded().has(s.id)) {
                       @for (c of s.children; track c.id) {
                         <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                          <div class="main"><div class="title">{{ c.label }}</div></div>
+                          <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
                           <div class="amount">{{ c.value | money:'plain' }}</div>
-                          <span class="pct">{{ pct(c.value, s.value) }}</span>
                         </a>
                       }
                     }
@@ -244,10 +252,10 @@ export class RangeDialog {
     .cat-layout .donut { align-self: center; }
     @media (min-width: 1100px) { .cat-layout { flex-direction: row; align-items: flex-start; } .cat-layout .list { flex: 1; } }
     a.row { text-decoration: none; color: inherit; }
+    button.row { width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; }
+    .row.parent.open { background: var(--mat-sys-surface-container-low); }
     .row.child { padding-left: 46px; min-height: 34px; background: var(--mat-sys-surface-container-low); }
     .row.child .title { font-size: 14px; }
-    .row.child .pct { font-size: 12px; color: var(--mat-sys-on-surface-variant); min-width: 52px; text-align: right; }
-    .exp-gap { width: 40px; }
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }
     .small { font-size: 13px; }
     .table-wrap { overflow-x: auto; margin-top: 12px; }
