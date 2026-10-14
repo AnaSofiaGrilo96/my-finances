@@ -238,7 +238,7 @@ export class RangeDialog {
   styles: [`
     .range-head { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; font-size: 15px; font-weight: 500; }
     .range-head mat-icon { color: var(--mat-sys-on-surface-variant); }
-    .tabbody { margin-top: 16px; }
+    .tabbody { margin-top: 25px; }
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
     .cat-layout .list { width: 100%; min-width: 0; }
     .cat-layout .donut { align-self: center; }

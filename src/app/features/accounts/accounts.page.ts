@@ -187,7 +187,7 @@ export class AdjustBalanceDialog {
   `,
   styles: [`
     .intro { margin: -4px 0 14px; font-size: 13px; } .inl { font-size: 16px; width: 16px; height: 16px; vertical-align: -3px; }
-    .total { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .total { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 25px; }
     .total b { font-size: 24px; }
     .rows { padding: 4px 12px; }
     .section { font-size: 14px; font-weight: 500; margin: 20px 4px 8px; }
