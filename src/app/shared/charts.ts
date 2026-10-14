@@ -113,7 +113,7 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
     </div>
       <!-- Tooltip flutuante junto ao cursor; sobrepõe-se ao cartão sem o esticar -->
       @if (hover() !== null) {
-        <div class="tooltip" [class.left]="tipLeft()" [style.left.px]="tipX()" [style.top.px]="tipY()">
+        <div class="tooltip" [class.left]="tipLeft()" [style.left.px]="tipX()">
           <b>{{ points()[hover()!].label }}</b>
           <span><i class="dot in"></i>Entradas <em class="in">{{ fmt(points()[hover()!].income) }}</em></span>
           <span><i class="dot out"></i>Saídas <em class="out">{{ fmt(points()[hover()!].expense) }}</em></span>
@@ -136,8 +136,8 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
     rect.out { fill: var(--color-expense); }
     .cursor { stroke: var(--mat-sys-outline); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
     .tooltip { position: absolute; pointer-events: none; z-index: 3; display: flex; flex-direction: column; gap: 4px; min-width: 150px; padding: 10px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.3;
-               background: var(--mat-sys-inverse-surface); color: var(--mat-sys-inverse-on-surface); box-shadow: 0 6px 20px rgba(0,0,0,.25); transform: translate(14px, -50%); animation: fade-in .12s ease-out; }
-    .tooltip.left { transform: translate(calc(-100% - 14px), -50%); }
+               background: var(--mat-sys-inverse-surface); color: var(--mat-sys-inverse-on-surface); box-shadow: 0 6px 20px rgba(0,0,0,.25); transform: translate(14px, 0); top: 8px; animation: fade-in .12s ease-out; } /* altura fixa no topo: só acompanha o rato na horizontal */
+    .tooltip.left { transform: translate(calc(-100% - 14px), 0); }
     .tooltip b { font-size: 13px; margin-bottom: 2px; }
     .tooltip span { display: flex; align-items: center; gap: 6px; }
     .tooltip em { font-style: normal; font-weight: 600; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
@@ -150,13 +150,12 @@ export class FlowChart {
   readonly points = input.required<FlowPoint[]>();
   readonly hover = signal<number | null>(null);
   readonly tipX = signal(0);
-  readonly tipY = signal(0);
   readonly tipLeft = signal(false);
   /** Posição do tooltip relativa ao contentor do gráfico; vira para a esquerda perto da margem direita. */
   move(ev: MouseEvent) {
     const box = (ev.currentTarget as HTMLElement).getBoundingClientRect(); // .chart não faz scroll: posição direta
-    const x = ev.clientX - box.left, y = ev.clientY - box.top;
-    this.tipX.set(x); this.tipY.set(y); this.tipLeft.set(ev.clientX - box.left > box.width * 0.65);
+    const x = ev.clientX - box.left;
+    this.tipX.set(x); this.tipLeft.set(x > box.width * 0.65);
   }
   readonly W = 1000;
   readonly H = 220;
