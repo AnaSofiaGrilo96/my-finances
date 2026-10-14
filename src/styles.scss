@@ -69,9 +69,9 @@ html.dark .card { background: var(--mat-sys-surface-container); }
 // Usado em Movimentos e Relatórios. A barra superior tem 56px no telemóvel e 64px a partir de 600px.
 .fixed-page { --toolbar-h: 56px; display: flex; flex-direction: column; height: calc(100dvh - var(--toolbar-h)); box-sizing: border-box; padding: 0; max-width: none; margin: 0; overflow: hidden; }
 @media (min-width: 600px) { .fixed-page { --toolbar-h: 64px; } }
-.fixed-head { flex-shrink: 0; padding: 8px var(--page-x) 0; }
+.fixed-head { flex-shrink: 0; padding: 0; } // telemóvel: a barra do cabeçalho (roda de meses) vai de canto a canto, sem margens nem cantos (pedido da Ana, 14/10)
 // A faixa com fundo é o .inner: alinhada com os cartões da lista (mesma margem lateral), tudo centrado em 40px de altura
-.fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface-container-low, #f4f6f4)); border-radius: 8px; }
+.fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface-container-low, #f4f6f4)); border-radius: 0; }
 html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low); }
 .fixed-head app-month-nav { flex: 1; min-width: 0; }
 .fixed-head h1 { display: none; }
@@ -84,7 +84,7 @@ html.dark .fixed-head > .inner { background: var(--mat-sys-surface-container-low
 .fixed-body .end-space { height: 88px; }
 @media (min-width: 900px) {
   .fixed-head { padding: 12px var(--page-x) 0; }
-  .fixed-head > .inner { max-width: var(--content-max); width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
+  .fixed-head > .inner { border-radius: 8px; max-width: var(--content-max); width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
   .fixed-head h1 { display: block; flex: 1; font-size: 22px; font-weight: 500; margin: 0; line-height: 40px; }
   .fixed-head app-month-nav { flex: 0 1 auto; }
   .fixed-body { padding: 8px var(--page-x) 0; }
