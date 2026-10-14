@@ -91,7 +91,7 @@ export class RangeDialog {
         </button>
       </div>
       <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
-      @if (filtersOpen()) {
+      <div class="collapse filters" [class.open]="filtersOpen()"><div>
         <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
         <div class="fbar">
           <div class="pills">
@@ -128,13 +128,13 @@ export class RangeDialog {
           <button mat-menu-item (click)="includeUnpaid.set(true)" [class.sel]="includeUnpaid()"><span class="all"><span class="ph"></span>Todos os movimentos</span></button>
           <button mat-menu-item (click)="includeUnpaid.set(false)" [class.sel]="!includeUnpaid()"><mat-icon class="income">thumb_up</mat-icon>Só pagos / recebidos</button>
         </mat-menu>
-      }
+      </div></div>
       </div>
 
       <div class="fixed-body"><div class="inner">
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
-      <mat-tab-group mat-stretch-tabs="false" animationDuration="150ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
+      <mat-tab-group mat-stretch-tabs="false" animationDuration="260ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
         <!-- ---------------- Categorias ---------------- -->
         <mat-tab label="Categorias">
           <div class="grid-2 tabbody">
@@ -156,13 +156,15 @@ export class RangeDialog {
                         <div class="amount">{{ s.value | money:'plain' }}</div>
                       </a>
                     }
-                    @if (expanded().has(s.id)) {
-                      @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                          <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
-                          <div class="amount">{{ c.value | money:'plain' }}</div>
-                        </a>
-                      }
+                    @if (s.children.length) {
+                      <div class="collapse" [class.open]="expanded().has(s.id)"><div>
+                        @for (c of s.children; track c.id) {
+                          <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
+                            <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
+                            <div class="amount">{{ c.value | money:'plain' }}</div>
+                          </a>
+                        }
+                      </div></div>
                     }
                   } @empty { <p class="empty">Sem despesas no período.</p> }
                   @if (expenseSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().expense | money:'plain' }}</div></div> }
@@ -188,13 +190,15 @@ export class RangeDialog {
                         <div class="amount">{{ s.value | money:'plain' }}</div>
                       </a>
                     }
-                    @if (expanded().has(s.id)) {
-                      @for (c of s.children; track c.id) {
-                        <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                          <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
-                          <div class="amount">{{ c.value | money:'plain' }}</div>
-                        </a>
-                      }
+                    @if (s.children.length) {
+                      <div class="collapse" [class.open]="expanded().has(s.id)"><div>
+                        @for (c of s.children; track c.id) {
+                          <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
+                            <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
+                            <div class="amount">{{ c.value | money:'plain' }}</div>
+                          </a>
+                        }
+                      </div></div>
                     }
                   } @empty { <p class="empty">Sem receitas no período.</p> }
                   @if (incomeSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().income | money:'plain' }}</div></div> }
@@ -253,7 +257,7 @@ export class RangeDialog {
     @media (min-width: 1100px) { .cat-layout { flex-direction: row; align-items: flex-start; } .cat-layout .list { flex: 1; } }
     a.row { text-decoration: none; color: inherit; }
     button.row { width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; }
-    .row.parent.open { background: var(--mat-sys-surface-container-low); }
+    .row.parent { transition: background-color .25s ease; } .row.parent.open { background: var(--mat-sys-surface-container-low); }
     .row.child { padding-left: 46px; min-height: 34px; background: var(--mat-sys-surface-container-low); }
     .row.child .title { font-size: 14px; }
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }

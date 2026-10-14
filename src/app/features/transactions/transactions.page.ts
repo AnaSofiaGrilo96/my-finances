@@ -47,7 +47,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         </button>
       </div>
       <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
-      @if (filtersOpen()) {
+      <div class="collapse filters" [class.open]="filtersOpen()"><div>
         <!-- Barra de filtros em pílulas (à imagem da outra aplicação de gestão de finanças): cada uma abre um menu com ícones -->
         <div class="fbar">
           <div class="pills">
@@ -104,7 +104,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           <button mat-menu-item (click)="paidFilter.set('paid')" [class.sel]="paidFilter() === 'paid'"><mat-icon class="income">thumb_up</mat-icon>Pagos / recebidos</button>
           <button mat-menu-item (click)="paidFilter.set('unpaid')" [class.sel]="paidFilter() === 'unpaid'"><mat-icon>thumb_down</mat-icon>Por pagar / receber</button>
         </mat-menu>
-      }
+      </div></div>
       </div>
 
       <div class="fixed-body"><div class="inner">

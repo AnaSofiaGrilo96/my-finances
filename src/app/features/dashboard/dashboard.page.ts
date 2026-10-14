@@ -40,9 +40,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <b>{{ dueTitle() }}</b>
               <span class="muted">{{ dueSubtitle() }}</span>
             </span>
-            <mat-icon>{{ dueOpen() ? 'expand_less' : 'chevron_right' }}</mat-icon>
+            <mat-icon class="chev" [class.closed]="!dueOpen()">expand_more</mat-icon>
           </button>
-          @if (dueOpen()) {
+          <div class="collapse" [class.open]="dueOpen()">
             <div class="rows">
               @for (t of due(); track t.id) {
                 <div class="row clickable" (click)="edit(t)">
@@ -56,7 +56,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                 </div>
               }
             </div>
-          }
+          </div>
         </div>
       } @else if (isSmall()) {
         <div class="card due ok">

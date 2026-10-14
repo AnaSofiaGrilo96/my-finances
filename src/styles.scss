@@ -175,11 +175,21 @@ html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-
 // Entrada de página ao navegar
 // Só as páginas dentro da shell (não a própria shell: uma animação de transform com fill-mode "both" faria o botão flutuante
 // position: fixed comportar-se como absolute e ir com o scroll)
-main.content > router-outlet + * { display: block; animation: fade-up .24s ease-out both; }
+main.content > router-outlet + * { display: block; animation: fade-up .3s cubic-bezier(.2,.8,.2,1) both; }
 // Cartões e linhas de lista aparecem a deslizar ligeiramente; cada linha com um pequeno atraso
 .card { animation: fade-up .26s ease-out both; }
 .rows > * { animation: fade-up .24s ease-out both; }
 @for $i from 1 through 12 { .rows > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 22}ms; } }
+// Expandir/recolher suave (sem Angular animations): o conteúdo fica sempre no DOM, a altura anima de 0fr a 1fr.
+// Uso: <div class="collapse" [class.open]="aberto()"><div> …conteúdo… </div></div>  (o filho direto é obrigatório)
+.collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
+.collapse.open { grid-template-rows: 1fr; opacity: 1; }
+.collapse > * { min-height: 0; overflow: hidden; }
+.collapse:not(.open) > * { pointer-events: none; }
+.collapse:not(.open) * { animation: none !important; } // as linhas só animam a entrada quando o bloco abre
+// Setas de expandir rodam em vez de trocar de ícone
+.chev { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.chev.closed { transform: rotate(-90deg); }
 // Pressão em botões redondos / chips / linhas clicáveis
 .row.clickable, .fab, .mat-mdc-icon-button { transition: background-color .18s ease, transform .15s ease; }
 .row.clickable:active { transform: scale(.985); }
