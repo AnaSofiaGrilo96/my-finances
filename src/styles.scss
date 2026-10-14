@@ -177,24 +177,43 @@ html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
 
-// Entrada de página ao navegar
-// Só as páginas dentro da shell (não a própria shell: uma animação de transform com fill-mode "both" faria o botão flutuante
-// position: fixed comportar-se como absolute e ir com o scroll)
-main.content > router-outlet + * { display: block; animation: fade-up .3s cubic-bezier(.2,.8,.2,1) both; }
-// Cartões e linhas de lista aparecem a deslizar ligeiramente; cada linha com um pequeno atraso
-.card { animation: fade-up .26s ease-out both; }
-.rows > * { animation: fade-up .24s ease-out both; }
-@for $i from 1 through 12 { .rows > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 22}ms; } }
+// Mudança de página (View Transitions API, ligada no router com withViewTransitions): a página antiga desvanece a subir e a nova
+// entra a deslizar de baixo. Só o conteúdo da rota tem view-transition-name, por isso a shell (barra verde, navegação, FAB) fica quieta.
+// Em browsers sem suporte não há transição, apenas a troca imediata.
+main.content > router-outlet + * { display: block; view-transition-name: page; }
+::view-transition-old(page) { animation: page-out .18s ease-in both; }
+::view-transition-new(page) { animation: page-in .34s cubic-bezier(.2,.8,.2,1) both; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; } // o resto (shell) não anima
+@keyframes page-out { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes page-in { from { opacity: 0; transform: translateY(24px); } }
+// Cartões e linhas de lista aparecem a deslizar ligeiramente, em cascata
+.card { animation: fade-up .34s cubic-bezier(.2,.8,.2,1) both; }
+@for $i from 1 through 8 { .page > .card:nth-of-type(#{$i}), .grid-2 > .col > .card:nth-child(#{$i}) { animation-delay: #{($i - 1) * 45}ms; } }
+.rows > * { animation: fade-up .3s cubic-bezier(.2,.8,.2,1) both; }
+@for $i from 1 through 12 { .rows > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 28}ms; } }
 // Expandir/recolher suave (sem Angular animations): o conteúdo fica sempre no DOM, a altura anima de 0fr a 1fr.
 // Uso: <div class="collapse" [class.open]="aberto()"><div> …conteúdo… </div></div>  (o filho direto é obrigatório)
-.collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; }
+.collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }
 .collapse.open { grid-template-rows: 1fr; opacity: 1; }
-.collapse > * { min-height: 0; overflow: hidden; }
+.collapse > * { min-height: 0; overflow: hidden; transform: translateY(-8px); transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.collapse.open > * { transform: none; }
 .collapse:not(.open) > * { pointer-events: none; }
 .collapse:not(.open) * { animation: none !important; } // as linhas só animam a entrada quando o bloco abre
 // Setas de expandir rodam em vez de trocar de ícone
-.chev { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.chev { transition: transform .4s cubic-bezier(.2,.8,.2,1); }
 .chev.closed { transform: rotate(-90deg); }
+// Janelas: a superfície entra com um pequeno zoom (o Material só desvanece o contentor); a janela de movimento em ecrã
+// inteiro no telemóvel sobe de baixo, como uma folha
+@keyframes dialog-in { from { opacity: 0; transform: scale(.94) translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+// (fill-mode "backwards" e não "both": no fim da animação o Material volta a mandar no transform, senão a saída deixava de animar)
+.mat-mdc-dialog-container .mat-mdc-dialog-surface { animation: dialog-in .32s cubic-bezier(.2,.8,.2,1) backwards; }
+.tx-dialog-full .mat-mdc-dialog-surface { animation: sheet-up .36s cubic-bezier(.2,.8,.2,1) backwards; }
+// Folha de detalhe no telemóvel: o conteúdo sobe de baixo (o contentor é animado pelo Material; não lhe mexer)
+.mat-bottom-sheet-container > * { display: block; animation: sheet-up .36s cubic-bezier(.2,.8,.2,1) backwards; }
+.cdk-overlay-backdrop { transition-duration: .3s !important; }
+// Menus (filtros, perfil): entram com um pequeno zoom a partir do topo
+.mat-mdc-menu-panel { animation: dialog-in .22s cubic-bezier(.2,.8,.2,1) backwards; transform-origin: top; }
 // Pressão em botões redondos / chips / linhas clicáveis
 .row.clickable, .fab, .mat-mdc-icon-button { transition: background-color .18s ease, transform .15s ease; }
 .row.clickable:active { transform: scale(.985); }

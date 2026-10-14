@@ -1,5 +1,5 @@
 import { ApplicationConfig, LOCALE_ID, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withHashLocation } from '@angular/router';
+import { provideRouter, withComponentInputBinding, withHashLocation, withViewTransitions } from '@angular/router';
 import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt-PT';
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
@@ -15,13 +15,14 @@ registerLocaleData(localePt);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withHashLocation(), withComponentInputBinding()),
+    // withViewTransitions: mudança de página com a View Transitions API (a página antiga sai e a nova entra a deslizar — CSS em styles.scss)
+    provideRouter(routes, withHashLocation(), withComponentInputBinding(), withViewTransitions({ skipInitialTransition: true })),
     provideNativeDateAdapter(),
     { provide: LOCALE_ID, useValue: 'pt-PT' },
     { provide: MAT_DATE_LOCALE, useValue: 'pt-PT' },
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
     // O botão "Voltar" é gerido pelo BackButtonService (fecha a janela em vez de mudar de página)
-    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true } },
+    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true, enterAnimationDuration: '300ms', exitAnimationDuration: '200ms' } },
     { provide: MAT_BOTTOM_SHEET_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true } },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
