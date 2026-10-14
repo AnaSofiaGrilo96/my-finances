@@ -190,7 +190,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .greet { padding: 4px 6px 14px; }
     .paid { color: #e5484d; opacity: .8; }
     .greet h1 { margin: 0; font-size: 24px; font-weight: 600; }
-    .due { padding: 6px 8px; margin-bottom: 25px; border-left: 4px solid #f5b301; }
+    .due { padding: 6px 8px; margin-bottom: var(--gap); border-left: 4px solid #f5b301; }
     .due.ok { border-left-color: #1eb980; }
     .due-head { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 8px; border-radius: 10px; }
     .due-head.static { cursor: default; }
@@ -201,13 +201,13 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .due-text b { font-size: 15px; }
     .due-text .muted { font-size: 13px; }
     .due .rows { padding: 4px 8px 6px; }
-    .hero { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 25px; }
+    .hero { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: var(--gap); }
     .kpis { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
     .kpis div { display: flex; flex-direction: column; font-size: 13px; }
     .kpis b { font-size: 20px; }
     .actions { display: flex; align-items: center; }
     .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .col { display: flex; flex-direction: column; gap: 25px; min-width: 0; }
+    .col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
     .top { display: flex; gap: 16px; align-items: center; }
     .top .list { flex: 1; min-width: 0; }
     a.row { text-decoration: none; color: inherit; }

@@ -169,7 +169,7 @@ export class CategoryDialog {
     </div>
   `,
   styles: [`
-    .rows { padding: 4px 12px; margin-top: 25px; }
+    .rows { padding: 4px 12px; margin-top: var(--gap); }
     .row.child { padding-left: 40px; min-height: 38px; }
     .row.child .title { font-size: 14px; }
   `],

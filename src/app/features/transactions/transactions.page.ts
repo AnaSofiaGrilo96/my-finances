@@ -188,7 +188,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .summary { border: none; border-radius: 8px; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); box-shadow: 0 6px 20px rgba(0,0,0,.08); padding: 10px 12px; }
       :host-context(html.dark) .summary { background: var(--mat-sys-surface-container); }
     }
-    .day { margin-bottom: 25px; }
+    .day { margin-bottom: var(--gap); }
     .day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px 6px; font-size: 13px; font-weight: 500; text-transform: capitalize; }
     .day-head .muted { text-transform: none; font-weight: 400; }
     .rows { padding: 4px 8px; }

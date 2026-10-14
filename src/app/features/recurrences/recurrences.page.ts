@@ -60,7 +60,7 @@ import { openTransactionDialog } from '../transactions/transaction.dialog';
   `,
   styles: [`
     .intro { margin: -4px 0 16px; font-size: 13.5px; }
-    .summary { display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 12px; margin-bottom: 25px; flex-wrap: wrap; }
+    .summary { display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 12px; margin-bottom: var(--gap); flex-wrap: wrap; }
     .summary div { display: flex; flex-direction: column; font-size: 13px; } .summary b { font-size: 16px; }
     .rows { padding: 4px 12px; }
     .right { display: flex; flex-direction: column; align-items: flex-end; }
