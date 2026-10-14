@@ -33,7 +33,7 @@ body {
 }
 
 // ---------- Utilitários partilhados ----------
-:root { --content-max: min(1400px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…)
+:root { --content-max: min(1100px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…) — 1100px desde 14/10 (1400 era largo demais)
 // Espaçamento: margens da página (--page-x) e espaço entre cartões (--gap). Telemóvel mais apertado, computador 25px (pedido da Ana, 14/10).
 :root { --page-x: 12px; --gap: 14px; }
 @media (min-width: 700px) { :root { --page-x: 25px; --gap: 25px; } }
