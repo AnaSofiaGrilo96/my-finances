@@ -16,8 +16,13 @@ export class ThemeService {
     } catch { /* ignore */ }
 
     effect(() => {
-      this.doc.documentElement.classList.toggle('dark', this.dark());
-      try { localStorage.setItem(KEY, this.dark() ? 'dark' : 'light'); } catch { /* ignore */ }
+      const dark = this.dark();
+      this.doc.documentElement.classList.toggle('dark', dark);
+      // Barras do sistema no Android (estado em cima, botões em baixo): o Chrome lê o theme-color e o color-scheme
+      // da página para as pintar, por isso acompanham o modo claro/escuro (cores iguais às da barra verde da app).
+      this.doc.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#178f45' : '#00a650');
+      this.doc.querySelector('meta[name="color-scheme"]')?.setAttribute('content', dark ? 'dark' : 'light');
+      try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch { /* ignore */ }
     });
   }
 }

@@ -12,6 +12,7 @@ html {
   ));
 }
 
+html { color-scheme: light; background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4)); } // fundo também no <html>: é o que o Android usa para a cor da barra de botões
 html.dark { color-scheme: dark; }
 
 // ---------- Paleta do modo claro (pedido da Ana, 08/10) ----------
