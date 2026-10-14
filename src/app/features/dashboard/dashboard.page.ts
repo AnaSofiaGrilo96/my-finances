@@ -214,7 +214,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .link-row { display: flex; justify-content: flex-end; margin-top: 8px; }
     .total { display: flex; flex-direction: column; border-left: 4px solid var(--mat-sys-primary); padding-left: 12px; margin-bottom: 16px; }
     .total b { font-size: 26px; }
-    .amount.acc { color: var(--mat-sys-primary); }
+    .amount.acc { color: var(--mat-sys-primary); } .amount.acc.expense { color: #e5484d; } /* saldo negativo a vermelho (a regra .amount.acc ganhava à .expense global) */
     .empty a { color: var(--mat-sys-primary); }
     .small { font-size: 12.5px; margin: -6px 0 8px; }
     .band { text-align: center; font-size: 14px; font-weight: 500; padding: 8px; border-radius: 10px; margin: 6px 0 2px; background: var(--mat-sys-surface-container); color: var(--mat-sys-on-surface-variant); }
