@@ -252,14 +252,14 @@ export class RangeDialog {
     .small { font-size: 13px; }
     .table-wrap { overflow-x: auto; margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
-    th { text-align: right; font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 12px 14px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
+    th { text-align: right; font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 12px 14px; }
     th:first-child { text-align: left; }
-    td { text-align: right; padding: 14px 14px; border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent); white-space: nowrap; }
+    td { text-align: right; padding: 14px 14px; white-space: nowrap; }
     td.lbl { text-align: left; color: var(--mat-sys-on-surface-variant); }
     td.bal { font-weight: 500; }
     tr.zero td { opacity: .55; }
     tr.clickable { cursor: pointer; } tr.clickable:hover td { background: var(--mat-sys-surface-container); }
-    tfoot td { font-weight: 500; border-bottom: none; }
+    tfoot td { font-weight: 500; }
     .acc { display: inline-flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface); }
   `],
 })
