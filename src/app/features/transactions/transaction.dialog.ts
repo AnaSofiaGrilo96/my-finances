@@ -467,6 +467,7 @@ export class TransactionDialog {
     if (s.kind === 'transfer') this.toAccountId = s.to_account_id;
     this.suggestions.set([]);
     this.suggestOpen.set(false);
+    (document.activeElement as HTMLElement | null)?.blur(); // fecha o teclado no telemóvel (o mousedown da lista mantém o campo focado)
     this.tick.update((v) => v + 1);
   }
   iconOf(t: Transaction) { return t.kind === 'transfer' ? 'swap_horiz' : (this.data.categoryMap().get(t.category_id ?? '')?.icon ?? 'label'); }
