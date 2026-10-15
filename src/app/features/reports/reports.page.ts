@@ -7,7 +7,6 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
@@ -73,7 +72,7 @@ export class RangeDialog {
 
 @Component({
   selector: 'app-reports-page',
-  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, MatButtonToggleModule, MatProgressBarModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
+  imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, MatButtonToggleModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
     <div class="page fixed-page">
       <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
@@ -132,7 +131,6 @@ export class RangeDialog {
       </div>
 
       <div class="fixed-body"><div class="inner">
-      @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
       <mat-tab-group mat-stretch-tabs="false" animationDuration="260ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
         <!-- ---------------- Categorias ---------------- -->

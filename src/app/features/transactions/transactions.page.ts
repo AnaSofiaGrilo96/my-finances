@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
@@ -27,7 +26,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
 
 @Component({
   selector: 'app-transactions-page',
-  imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, MatProgressBarModule, MatBadgeModule, MatMenuModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
+  imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, MatBadgeModule, MatMenuModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
   template: `
     <div class="page fixed-page">
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
@@ -108,7 +107,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       </div>
 
       <div class="fixed-body"><div class="inner">
-      @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
       @if (!loading() && !groups().length) {
         <div class="card empty">

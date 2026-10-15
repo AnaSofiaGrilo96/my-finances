@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
@@ -23,7 +22,7 @@ import { BackButtonService } from '../shared/back-button.service';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule, MatProgressBarModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
   template: `
     <!-- Barra superior verde com a navegação ao centro (computador) / só título (telemóvel); sem menu lateral -->
     <mat-toolbar class="topbar" [class.desktop]="!isSmall()">
@@ -60,9 +59,7 @@ import { BackButtonService } from '../shared/back-button.service';
     </mat-toolbar>
 
     <main class="content">
-      @if (!data.loaded()) {
-        <mat-progress-bar mode="indeterminate" />
-      } @else {
+      @if (data.loaded()) {
         <router-outlet />
       }
     </main>
