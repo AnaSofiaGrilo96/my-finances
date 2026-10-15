@@ -183,7 +183,10 @@ html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-
 main.content > router-outlet + * { display: block; view-transition-name: page; }
 ::view-transition-old(page) { animation: page-out .18s ease-in both; }
 ::view-transition-new(page) { animation: page-in .34s cubic-bezier(.2,.8,.2,1) both; }
-::view-transition-old(root), ::view-transition-new(root) { animation: none; } // o resto (shell) não anima
+::view-transition-old(root), ::view-transition-new(root) { animation: none; } // o resto não anima
+// Barra verde, navegação inferior e FAB têm grupos próprios (nomes na shell): ficam quietos e por cima da página que anima
+::view-transition-old(topbar), ::view-transition-new(topbar), ::view-transition-old(bottom-nav), ::view-transition-new(bottom-nav) { animation: none; }
+::view-transition-group(topbar), ::view-transition-group(bottom-nav), ::view-transition-group(fab) { animation-duration: 0s; }
 @keyframes page-out { to { opacity: 0; transform: translateY(-10px); } }
 @keyframes page-in { from { opacity: 0; transform: translateY(24px); } }
 // Cartões e linhas de lista aparecem a deslizar ligeiramente, em cascata

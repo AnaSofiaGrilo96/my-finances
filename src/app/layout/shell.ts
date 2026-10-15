@@ -88,6 +88,10 @@ import { BackButtonService } from '../shared/back-button.service';
     /* ---- barra superior verde ---- */
     .topbar { position: sticky; top: 0; z-index: 10; background: #1cbf4f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
     :host-context(html.dark) .topbar { background: #178f45; }
+    /* Mudança de página (View Transitions): a shell tem nomes próprios para ficar quieta e por cima enquanto só o conteúdo da rota anima */
+    .topbar { view-transition-name: topbar; }
+    .bottom-nav { view-transition-name: bottom-nav; }
+    .fab { view-transition-name: fab; }
     .brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 19px; letter-spacing: -.2px; }
     .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
     .links { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px; }
