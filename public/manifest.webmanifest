@@ -3,6 +3,10 @@
   "short_name": "MyFinances",
   "description": "Gestão de finanças pessoais: contas, categorias, lançamentos e relatórios.",
   "background_color": "#f4f6f4",
+  "user_preferences": {
+    "color_scheme_dark": { "theme_color": "#178f45", "background_color": "#121212" },
+    "color_scheme": { "dark": { "theme_color": "#178f45", "background_color": "#121212" } }
+  },
   "id": "my-finances/",
   "display": "standalone",
   "scope": "./",
