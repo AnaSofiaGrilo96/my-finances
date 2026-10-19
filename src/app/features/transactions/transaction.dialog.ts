@@ -189,9 +189,19 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
                 <mat-icon>repeat</mat-icon>
                 <div>
                   @if (r.installments) { Parcela {{ tx!.installment_no }}/{{ r.installments }} } @else { Recorrência {{ freqLabel(r.frequency).toLowerCase() }}{{ r.active ? '' : ' (terminada)' }} }
-                  <span class="hint">Ao guardar, perguntamos se a alteração é só para este ou também para os próximos.</span>
+                  <span class="hint">Ao guardar, perguntamos se a alteração é só para este ou também para os próximos. Mudar a data ou a frequência "para este e os próximos" desloca os seguintes.</span>
                 </div>
               </div>
+              @if (r.active) {
+                <div class="repeat-row">
+                  <mat-form-field class="small" subscriptSizing="dynamic">
+                    <mat-label>Frequência</mat-label>
+                    <mat-select [(ngModel)]="frequency" name="frequency">
+                      @for (f of frequencies; track f.id) { <mat-option [value]="f.id">{{ f.label }}</mat-option> }
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              }
             </div>
           }
 
@@ -340,7 +350,7 @@ export class TransactionDialog {
   paid = this.tx?.paid ?? toIso(this.dateValue) <= todayIso();
   notes = this.src?.notes ?? '';
   repeat: RepeatMode = this.input.repeat ?? 'none';
-  frequency: Frequency = 'monthly';
+  frequency: Frequency = this.data.recurrences().find((r) => r.id === this.tx?.recurrence_id)?.frequency ?? 'monthly';
   installments: number | null = 12;
   times: number | null = null;
 
@@ -512,14 +522,16 @@ export class TransactionDialog {
       const p = this.payload(date);
       if (this.isEdit) {
         const full: Transaction = { id: this.tx!.id, ...p };
-        if (this.tx!.recurrence_id && this.changedBeyondPaid(p)) {
+        const rule = this.recurrence();
+        const freqChanged = !!rule && rule.active && this.frequency !== rule.frequency;
+        if (this.tx!.recurrence_id && (this.changedBeyondPaid(p) || freqChanged)) {
           // Pertence a uma recorrência e mudou algo além do estado: perguntar o alcance (como na outra aplicação de gestão de finanças).
           this.busy.set(false);
           const scope = await this.ui.recurrenceScope('Atualizar');
           if (!scope) return;
           this.busy.set(true);
-          if (scope === 'one') await this.data.saveDetached(full);
-          else await this.data.saveAndFollowing(full);
+          if (scope === 'one') await this.data.saveDetached(full);   // (a frequência só faz sentido para a série: ignora-se)
+          else await this.data.saveAndFollowing(full, this.tx!.date, freqChanged ? this.frequency : undefined);
         } else {
           await this.data.saveTransaction(full);
         }

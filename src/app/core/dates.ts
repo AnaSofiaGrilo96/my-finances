@@ -93,3 +93,19 @@ export function occurrenceDate(start: string, frequency: 'daily' | 'weekly' | 'b
     case 'yearly': return addMonthsIso(start, 12 * n);
   }
 }
+
+/** Dias inteiros entre duas datas ISO (b - a). */
+export function diffDays(a: string, b: string): number {
+  return Math.round((fromIso(b).getTime() - fromIso(a).getTime()) / 86400000);
+}
+
+/** Inverso de `occurrenceDate`: a data de início tal que a ocorrência `n` caia em `date` (para o mensal, aproximado ao fim do mês). */
+export function startForOccurrence(date: string, frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly', n: number): string {
+  switch (frequency) {
+    case 'daily': return addDays(date, -n);
+    case 'weekly': return addDays(date, -7 * n);
+    case 'biweekly': return addDays(date, -14 * n);
+    case 'monthly': return addMonthsIso(date, -n);
+    case 'yearly': return addMonthsIso(date, -12 * n);
+  }
+}

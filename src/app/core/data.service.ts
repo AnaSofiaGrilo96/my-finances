@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Account, Category, CategoryGroup, Recurrence, Settings, Transaction, splitInstallments } from './models';
-import { addDays, addMonthsIso, occurrenceDate, todayIso } from './dates';
+import { Account, Category, CategoryGroup, Frequency, Recurrence, Settings, Transaction, splitInstallments } from './models';
+import { addDays, addMonthsIso, diffDays, occurrenceDate, startForOccurrence, todayIso } from './dates';
 
 type NewTransaction = Omit<Transaction, 'id'>;
 
@@ -205,8 +205,8 @@ export class DataService {
   }
 
   /** Garante que todas as recorrências ativas têm ocorrências criadas até `until` (YYYY-MM-DD). */
-  async generateRecurrences(until: string): Promise<void> {
-    if (until <= this.generatedUntil) return;
+  async generateRecurrences(until: string, force = false): Promise<void> {
+    if (!force && until <= this.generatedUntil) return;
     this.generatedUntil = until;
     let inserted = 0;
     for (const r of this.recurrences()) {
@@ -328,19 +328,51 @@ export class DataService {
   /**
    * "Este e os próximos": guarda o movimento e aplica os mesmos dados à regra (se existir) e às ocorrências
    * não pagas seguintes. Em parcelados o valor de cada parcela não se propaga.
+   * - Se a DATA mudou (ex.: de segunda para sábado), as ocorrências seguintes deslocam-se o mesmo número de dias
+   *   e a regra passa a contar a partir da nova data, para o ritmo se manter.
+   * - Se a FREQUÊNCIA mudou, as ocorrências não pagas seguintes são apagadas e geradas de novo a partir deste
+   *   movimento com o novo ritmo (nas parceladas a numeração das parcelas continua).
+   * `prevDate` é a data que o movimento tinha antes da edição.
    */
-  async saveAndFollowing(t: Transaction): Promise<void> {
+  async saveAndFollowing(t: Transaction, prevDate: string, newFrequency?: Frequency): Promise<void> {
     await this.saveTransaction(t);
     const id = t.recurrence_id!;
     const fields = { kind: t.kind, description: t.description, account_id: t.account_id, to_account_id: t.to_account_id, category_id: t.category_id, notes: t.notes };
     const rule = this.recurrences().find((r) => r.id === id);
+    const delta = diffDays(prevDate, t.date);
     if (rule) {
-      await this.updateRecurrence(id, rule.installments ? fields : { ...fields, amount: t.amount }, addDays(t.date, 1));
+      const patch: Partial<Recurrence> = rule.installments ? { ...fields } : { ...fields, amount: t.amount };
+      const freqChanged = !!newFrequency && newFrequency !== rule.frequency;
+      if (freqChanged) {
+        // Novo ritmo: este movimento passa a ser a referência; o que vinha depois é regenerado
+        const { error } = await this.sb.from('transactions').delete().eq('recurrence_id', id).eq('paid', false).gt('date', prevDate).neq('id', t.id);
+        if (error) throw error;
+        const n = rule.installments ? (t.installment_no ?? 1) : 1;   // ocorrências já contadas (esta inclusive)
+        Object.assign(patch, { frequency: newFrequency, start_date: startForOccurrence(t.date, newFrequency!, n - 1), generated: n });
+        await this.updateRecurrence(id, patch, addDays(prevDate, 1));
+        await this.generateRecurrences(addMonthsIso(todayIso(), 12), true);
+        return;
+      }
+      if (delta !== 0) patch.start_date = addDays(rule.start_date, delta);
+      await this.updateRecurrence(id, patch, addDays(prevDate, 1));
+      if (delta !== 0) await this.shiftFollowing(id, t, prevDate, delta);
     } else {
-      const { error } = await this.sb.from('transactions').update({ ...fields, amount: t.amount }).eq('recurrence_id', id).eq('paid', false).gt('date', t.date);
+      const { error } = await this.sb.from('transactions').update({ ...fields, amount: t.amount }).eq('recurrence_id', id).eq('paid', false).gt('date', prevDate);
       if (error) throw error;
+      if (delta !== 0) await this.shiftFollowing(id, t, prevDate, delta);
       await this.afterTxChange();
     }
+  }
+
+  /** Desloca `delta` dias todas as ocorrências não pagas da série posteriores a `prevDate` (exceto o próprio movimento). */
+  private async shiftFollowing(recurrenceId: string, t: Transaction, prevDate: string, delta: number): Promise<void> {
+    const { data, error } = await this.sb.from('transactions').select('*').eq('recurrence_id', recurrenceId).eq('paid', false).gt('date', prevDate).neq('id', t.id);
+    if (error) throw error;
+    const rows = (data ?? []) as Transaction[];
+    if (!rows.length) return;
+    const { error: e2 } = await this.sb.from('transactions').upsert(rows.map((r) => ({ ...r, date: addDays(r.date, delta) })));
+    if (e2) throw e2;
+    await this.afterTxChange();
   }
 
   /** "Apagar este e os próximos": apaga o movimento, as ocorrências não pagas seguintes e termina a regra. Os já pagos ficam. */
