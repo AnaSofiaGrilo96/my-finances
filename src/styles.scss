@@ -115,6 +115,12 @@ body {
   html:not(.dark) .card, html:not(.dark) .one-card .fixed-head > .inner { box-shadow: 0 1px 2px rgba(0,0,0,.09); }
   html:not(.dark) .one-card .fixed-body .card { box-shadow: none; }
   .fixed-page { --toolbar-h: 52px; }
+  // Larguras medidas na outra aplicação de gestão de finanças (20/10): Visão geral 1109px (duas colunas de 545px com 20px
+  // entre elas, 34px abaixo da barra verde); Movimentos e Relatórios num cartão de 920px.
+  :root { --content-max: min(1109px, calc(100vw - 50px)); --gap: 20px; }
+  .one-card { --content-max: min(920px, calc(100vw - 50px)); }
+  .page:not(.fixed-page) { padding-top: 34px; }
+  .one-card .fixed-head { padding-top: 34px !important; }
   .fixed-head h1, .page-header h1 { font-size: 18px; font-weight: 600; }
 }
 
