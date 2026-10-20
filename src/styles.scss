@@ -100,6 +100,25 @@ body {
   .fixed-body .end-space { height: 24px; }
 }
 
+// Página num só cartão (computador; Movimentos e Relatórios, 20/10 — à imagem da outra aplicação de gestão de finanças):
+// cabeçalho, filtros, corpo e totais formam um único cartão, sem faixas de fundo entre eles. Os cartões dentro do corpo
+// (dias, secções) perdem o fundo e passam a ser só blocos separados por linhas.
+@media (min-width: 900px) {
+  .one-card { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); }
+  .one-card .fixed-head { padding-top: var(--gap); }
+  .one-card .fixed-head > .inner { border-radius: 8px 8px 0 0; padding: 16px 16px 10px 28px; }
+  .one-card .fixed-head > .collapse { max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 0 24px; }
+  .one-card .fbar { margin: 0 auto; padding: 4px 0 14px; }
+  .one-card .pills, .one-card .search { background: color-mix(in srgb, var(--mat-sys-on-surface) 5%, transparent); }
+  .one-card .fixed-body { padding-top: 0; padding-bottom: 0; }
+  .one-card .fixed-body > .inner { min-height: 100%; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 8px 28px 0; }
+  .one-card.no-foot .fixed-body { padding-bottom: var(--gap); }
+  .one-card.no-foot .fixed-body > .inner { border-radius: 0 0 8px 8px; }
+  .one-card .fixed-body .card { background: transparent; border-radius: 0; padding: 0; }
+  .one-card .fixed-foot { padding-top: 0; }
+  .one-card .fixed-foot > .inner { border-radius: 0 0 8px 8px; box-shadow: none; border-top: 1px solid var(--line); }
+}
+
 // Barra de filtros em pílulas (Movimentos e Relatórios)
 .fbar { display: flex; align-items: center; gap: 8px; margin: 8px auto 0; max-width: var(--content-max); width: 100%; box-sizing: border-box; } // vive dentro de .fixed-head, por baixo da barra do título: fica fixo como ela
 .pills { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--app-bar-bg, var(--mat-sys-surface-container)); overflow-x: auto; scrollbar-width: none; }

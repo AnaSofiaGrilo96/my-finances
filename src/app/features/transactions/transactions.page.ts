@@ -28,7 +28,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
   selector: 'app-transactions-page',
   imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, MatBadgeModule, MatMenuModule, MoneyPipe, IconBadge, MonthNav, SwipeRow],
   template: `
-    <div class="page fixed-page">
+    <div class="page fixed-page one-card">
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Movimentos</h1>
@@ -120,7 +120,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         <section class="day" [attr.data-date]="g.date">
           <div class="day-head">
             <span>{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.label }}</span>
-            @if (g.balance !== null) { <span class="muted">Saldo no dia <b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></span> }
+            <i class="hline desktop-only"></i>
+            @if (g.balance !== null) { <span class="muted mobile-only">Saldo no dia <b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></span> }
           </div>
           <div class="card rows">
             @for (t of g.items; track t.id) {
@@ -158,6 +159,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
               </app-swipe-row>
             }
           </div>
+          <!-- Computador: "Saldo no dia" por baixo dos movimentos do dia, à direita -->
+          @if (g.balance !== null) { <div class="day-foot desktop-only"><span class="muted">Saldo no dia</span><b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></div> }
         </section>
       }
 
@@ -225,6 +228,23 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .acc-col .arrow { font-size: 16px; width: 16px; height: 16px; color: var(--mat-sys-outline); }
     }
     .state { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
+    /* Computador: tudo num só cartão (.one-card em styles.scss) — dias separados por uma linha com a data, linhas sem fundo próprio (20/10) */
+    @media (min-width: 900px) {
+      .day { margin: 0 0 6px; }
+      .day-head { align-items: center; gap: 12px; padding: 18px 0 4px; font-size: 12.5px; color: var(--mat-sys-on-surface-variant); }
+      .hline { flex: 1; height: 1px; background: var(--line); }
+      .rows { padding: 0; }
+      app-swipe-row { margin: 0; }
+      .row { background: transparent; padding: 10px 4px; border-radius: 6px; }
+      .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+      :host-context(html.dark) .row { background: transparent; }
+      :host-context(html.dark) .row.clickable:hover, :host-context(html.dark) .row.unpaid:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); }
+      .row .title { font-size: 14px; }
+      .acc-col { font-size: 13.5px; }
+      .day-foot { justify-content: flex-end; align-items: baseline; gap: 10px; padding: 8px 4px 10px; font-size: 13px; }
+      .day-foot b { color: #1eb980; font-weight: 600; } .day-foot b.expense { color: #e5484d; }
+      .summary { padding: 14px 12px; }
+    }
   `],
 })
 export class TransactionsPage implements OnDestroy {

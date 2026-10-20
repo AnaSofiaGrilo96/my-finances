@@ -24,12 +24,32 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
   selector: 'app-dashboard-page',
   imports: [NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule, MoneyPipe, IconBadge, DonutChart],
   template: `
-    <div class="page">
-      <!-- Saudação -->
-      <div class="greet">
-        <div class="muted">{{ greeting() }},</div>
-        <h1>{{ firstName() }}</h1>
-      </div>
+    <div class="page" [class.wide]="!isSmall()">
+      @if (isSmall()) {
+        <!-- Saudação (telemóvel) -->
+        <div class="greet">
+          <div class="muted">{{ greeting() }},</div>
+          <h1>{{ firstName() }}</h1>
+        </div>
+      } @else {
+        <!-- Computador: saudação, receita/despesa do mês e ações num só cartão (à imagem da outra aplicação de gestão de finanças, 20/10) -->
+        <div class="card hero">
+          <div class="hero-left">
+            <div class="hello">{{ greeting() }},</div>
+            <div class="name">{{ firstName() }}!</div>
+            <div class="kpis">
+              <div><span>Receita mensal</span><b class="income">{{ totals().income | money }}</b></div>
+              <div><span>Despesa mensal</span><b class="expense">{{ totals().expense | money }}</b></div>
+              <a class="sq" routerLink="/relatorios" matTooltip="Ver relatórios" aria-label="Ver relatórios"><mat-icon>bar_chart</mat-icon></a>
+            </div>
+          </div>
+          <div class="btns">
+            <button type="button" class="act" (click)="add('expense')"><mat-icon class="expense">do_not_disturb_on</mat-icon>Despesa</button>
+            <button type="button" class="act" (click)="add('income')"><mat-icon class="income">add_circle</mat-icon>Entrada</button>
+            <button type="button" class="act" (click)="add('transfer')"><mat-icon>swap_horiz</mat-icon>Transferência</button>
+          </div>
+        </div>
+      }
 
       <!-- Aviso: a pagar / a receber hoje (e atrasados) -->
       @if (due().length) {
@@ -67,24 +87,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         </div>
       }
 
-      <!-- Resumo do mês + ações (só no computador) -->
-      @if (!isSmall()) {
-        <div class="card hero">
-          <div class="kpis">
-            <div><span class="muted">Receita mensal</span><b class="income">{{ totals().income | money }}</b></div>
-            <div><span class="muted">Despesa mensal</span><b class="expense">{{ totals().expense | money }}</b></div>
-            <div><span class="muted">Resultado</span><b [class.income]="totals().income - totals().expense >= 0" [class.expense]="totals().income - totals().expense < 0">{{ totals().income - totals().expense | money }}</b></div>
-          </div>
-          <div class="actions">
-            <div class="btns">
-              <button matButton="outlined" (click)="add('expense')"><mat-icon class="expense">remove_circle</mat-icon>Despesa</button>
-              <button matButton="outlined" (click)="add('income')"><mat-icon class="income">add_circle</mat-icon>Entrada</button>
-              <button matButton="outlined" (click)="add('transfer')"><mat-icon>swap_horiz</mat-icon>Transferência</button>
-            </div>
-          </div>
-        </div>
-      }
-
       <div class="grid-2">
         @if (!isSmall()) {
           <div class="col">
@@ -92,26 +94,27 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <h2>Maiores gastos do mês atual</h2>
               @if (topCategories().length) {
                 <div class="top">
-                  <div class="rows list">
+                  <div class="rows lined list">
                     @for (s of topCategories(); track s.id) {
-                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id, mes: month() }">
-                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.value | money }}</div></div>
+                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id, mes: month() }" [matTooltip]="(s.value | money)" matTooltipPosition="left">
+                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="32" />
+                        <div class="main"><div class="title">{{ s.label }}</div></div>
                         <div class="amount">{{ pct(s.value) }}</div>
                       </a>
                     }
                   </div>
-                  <div class="donut"><app-donut-chart [slices]="slices()" [size]="190" centerLabel="Despesas" /></div>
+                  <div class="donut">
+                    <app-donut-chart [slices]="slices()" [size]="150" [stroke]="34" centerLabel="" />
+                    <a class="act ghost" routerLink="/relatorios">Ver relatório</a>
+                  </div>
                 </div>
-                <div class="link-row"><a matButton routerLink="/relatorios">Ver relatório</a></div>
               } @else {
                 <p class="empty">Sem despesas neste mês.</p>
               }
             </div>
 
             <div class="card">
-              <h2>Próximos movimentos a pagar</h2>
-              <p class="muted small">De hoje até daqui a 30 dias.</p>
+              <h2>Contas a pagar</h2>
               @if (pendingPay().length) {
                 <ng-container *ngTemplateOutlet="pendingList; context: { $implicit: pendingPay() }" />
               } @else {
@@ -122,16 +125,16 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         }
 
         <div class="col">
-          <div class="card">
+          <div class="card accounts">
             <div class="total">
               <span class="muted">Saldo geral</span>
               <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
             </div>
             <h2>Minhas contas</h2>
-            <div class="rows">
+            <div class="rows lined">
               @for (a of data.activeAccounts(); track a.id) {
                 <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }">
-                  <app-icon-badge [icon]="a.icon" [color]="a.color" />
+                  <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="isSmall() ? 40 : 44" />
                   <div class="main"><div class="title">{{ a.name }}</div></div>
                   <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ balance(a.id) | money }}</div>
                 </a>
@@ -144,8 +147,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
 
           @if (!isSmall()) {
             <div class="card">
-              <h2>Próximos movimentos a receber</h2>
-              <p class="muted small">De hoje até daqui a 30 dias.</p>
+              <h2>Contas a receber</h2>
               @if (pendingRecv().length) {
                 <ng-container *ngTemplateOutlet="pendingList; context: { $implicit: pendingRecv() }" />
               } @else {
@@ -157,36 +159,37 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       </div>
     </div>
 
-    <!-- Linha de um movimento por pagar/receber (usada nos dois cartões) -->
-    <!-- Lista dividida em "Vence hoje" (inclui atrasados) e "Próximas", como na outra aplicação de gestão de finanças -->
+    <!-- Lista de movimentos por pagar/receber (de hoje a 30 dias), dividida em "Vence hoje" (inclui atrasados) e "Próximas" -->
     <ng-template #pendingList let-list>
       @if (dueOf(list).length) {
         <div class="band today">Vence hoje</div>
-        <div class="rows">
+        <div class="rows lined">
           @for (t of dueOf(list); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
         </div>
       }
       @if (nextOf(list).length) {
         <div class="band">Próximas</div>
-        <div class="rows">
+        <div class="rows lined">
           @for (t of nextOf(list); track t.id) { <ng-container *ngTemplateOutlet="pendingRow; context: { $implicit: t }" /> }
         </div>
       }
     </ng-template>
 
     <ng-template #pendingRow let-t>
-      <div class="row clickable" (click)="edit(t)">
-        <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="34" />
+      <div class="row clickable pend" (click)="edit(t)">
+        <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="30" />
         <div class="main">
           <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
-          <div class="sub">{{ fmtDay(t.date) }} · {{ accName(t) }}</div>
+          <div class="sub">{{ fmtDay(t.date) }}</div>
         </div>
-        <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
-        <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
+        <div class="amount" [matTooltip]="accName(t)">{{ t.amount | money }}</div>
+        <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — clicar para marcar recebido' : 'Não pago — clicar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
       </div>
     </ng-template>
   `,
   styles: [`
+    :host { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); --acc-blue: #2f63d6; }
+    :host-context(html.dark) { --acc-blue: #8fb0ff; }
     .greet { padding: 4px 6px 14px; }
     .paid { color: #e5484d; opacity: .8; }
     .greet h1 { margin: 0; font-size: 24px; font-weight: 600; }
@@ -201,25 +204,69 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .due-text b { font-size: 15px; }
     .due-text .muted { font-size: 13px; }
     .due .rows { padding: 4px 8px 6px; }
-    .hero { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: var(--gap); }
-    .kpis { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
-    .kpis div { display: flex; flex-direction: column; font-size: 13px; }
-    .kpis b { font-size: 20px; }
-    .actions { display: flex; align-items: center; }
-    .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
-    .top { display: flex; gap: 16px; align-items: center; }
-    .top .list { flex: 1; min-width: 0; }
     a.row { text-decoration: none; color: inherit; }
     .link-row { display: flex; justify-content: flex-end; margin-top: 8px; }
     .total { display: flex; flex-direction: column; border-left: 4px solid var(--mat-sys-primary); padding-left: 12px; margin-bottom: 16px; }
     .total b { font-size: 26px; }
     .amount.acc { color: var(--mat-sys-primary); } .amount.acc.expense { color: #e5484d; } /* saldo negativo a vermelho (a regra .amount.acc ganhava à .expense global) */
     .empty a { color: var(--mat-sys-primary); }
-    .small { font-size: 12.5px; margin: -6px 0 8px; }
     .band { text-align: center; font-size: 14px; font-weight: 500; padding: 8px; border-radius: 10px; margin: 6px 0 2px; background: var(--mat-sys-surface-container); color: var(--mat-sys-on-surface-variant); }
     .band.today { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
+    .top { display: flex; gap: 16px; align-items: center; }
+    .top .list { flex: 1; min-width: 0; }
     @media (max-width: 899px) { .link-row { justify-content: stretch; } .manage { width: 100%; } }
+
+    /* ---------- Computador: à imagem da outra aplicação de gestão de finanças (20/10) ---------- */
+    .wide .card { padding: 26px 30px; }
+    .wide .card h2 { font-size: 16px; font-weight: 600; margin: 0 0 18px; }
+    .wide .rows.lined > .row { border-radius: 0; min-height: 0; padding: 12px 4px; }
+    .wide .rows.lined > .row + .row { border-top: 1px solid var(--line); }
+    .wide .rows.lined > .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+    .wide .rows.lined > .row:active { transform: none; }
+    /* cartão de topo: saudação + receita/despesa à esquerda, botões à direita */
+    .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: var(--gap); }
+    .wide .hero { padding: 30px; }
+    .hello { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
+    .name { font-size: 16.5px; font-weight: 600; margin: 4px 0 22px; }
+    .kpis { display: flex; gap: 22px; align-items: center; }
+    .kpis div { display: flex; flex-direction: column; gap: 6px; }
+    .kpis span { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); }
+    .kpis b { font-size: 17px; font-weight: 600; }
+    .sq { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--mat-sys-outline-variant); display: grid; place-items: center; color: var(--mat-sys-on-surface); align-self: center; transition: background-color .15s; }
+    .sq:hover { background: var(--mat-sys-surface-container); }
+    .sq mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .act { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--mat-sys-outline-variant); background: transparent; color: var(--mat-sys-on-surface); font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background-color .15s, transform .12s; }
+    .act:hover { background: var(--mat-sys-surface-container); }
+    .act:active { transform: scale(.97); }
+    .act mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .act.ghost { color: var(--mat-sys-on-surface-variant); font-weight: 400; font-size: 14px; height: 36px; }
+    /* maiores gastos: lista com percentagens + anel e "Ver relatório" por baixo */
+    .wide .top { gap: 40px; align-items: flex-start; }
+    .wide .top .row .title { font-size: 13.5px; }
+    .wide .top .row .amount { font-size: 13.5px; }
+    .wide .donut { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 8px 14px 0 0; }
+    /* saldo geral + contas */
+    .wide .accounts .total { border-left-width: 3px; padding: 2px 0 2px 14px; margin-bottom: 22px; gap: 2px; }
+    .wide .accounts .total .muted { font-size: 13px; }
+    .wide .accounts .total b { font-size: 19px; font-weight: 600; }
+    .wide .accounts h2 { border-top: 1px solid var(--line); padding-top: 22px; }
+    .wide .accounts .row { padding: 18px 4px; gap: 14px; }
+    .wide .accounts .row .title { font-size: 14.5px; font-weight: 500; }
+    .wide .amount.acc { color: var(--acc-blue); font-size: 16px; font-weight: 500; }
+    .wide .amount.acc.expense { color: #e5484d; }
+    /* contas a pagar / a receber */
+    .wide .band { font-size: 13.5px; font-weight: 400; padding: 7px; border-radius: 4px; margin: 0 0 4px; background: color-mix(in srgb, var(--mat-sys-on-surface) 5%, transparent); }
+    .wide .band.today { background: color-mix(in srgb, #e5484d 10%, transparent); }
+    .wide .rows + .band { margin-top: 14px; }
+    .wide .pend { gap: 10px; padding: 9px 4px !important; }
+    .wide .pend .title { font-size: 13.5px; }
+    .wide .pend .sub { font-size: 12px; }
+    .wide .pend .amount { font-size: 13.5px; font-weight: 400; }
+    .wide .pend .paid { --mat-icon-button-state-layer-size: 32px; width: 32px; height: 32px; padding: 6px; opacity: .55; }
+    .wide .pend .paid mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .wide .pend:hover .paid { opacity: .9; }
   `],
 })
 export class DashboardPage {

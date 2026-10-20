@@ -74,7 +74,7 @@ export class RangeDialog {
   selector: 'app-reports-page',
   imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, MatButtonToggleModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
-    <div class="page fixed-page">
+    <div class="page fixed-page one-card no-foot">
       <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Relatórios</h1>
@@ -135,7 +135,7 @@ export class RangeDialog {
       <mat-tab-group mat-stretch-tabs="false" animationDuration="260ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
         <!-- ---------------- Categorias ---------------- -->
         <mat-tab label="Categorias">
-          <div class="grid-2 tabbody">
+          <div class="tabbody cat-sections">
             <div class="card">
               <h2>Despesas</h2>
               <div class="cat-layout">
@@ -144,22 +144,22 @@ export class RangeDialog {
                     @if (s.children.length) {
                       <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }} · {{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
-                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().expense) }}</div></div>
                       </button>
                     } @else {
                       <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().expense) }}</div></div>
-                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                        <div class="main"><div class="title">{{ s.label }}</div></div>
+                        <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().expense) }}</div></div>
                       </a>
                     }
                     @if (s.children.length) {
                       <div class="collapse" [class.open]="expanded().has(s.id)"><div>
                         @for (c of s.children; track c.id) {
                           <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                            <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
-                            <div class="amount">{{ c.value | money:'plain' }}</div>
+                            <div class="main"><div class="title">{{ c.label }}</div></div>
+                            <div class="amt"><div class="amount">{{ c.value | money:'plain' }}</div><div class="pct">{{ pct(c.value, s.value) }}</div></div>
                           </a>
                         }
                       </div></div>
@@ -167,7 +167,7 @@ export class RangeDialog {
                   } @empty { <p class="empty">Sem despesas no período.</p> }
                   @if (expenseSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().expense | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [size]="200" centerLabel="Despesas" /></div>
+                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [size]="210" [stroke]="46" centerLabel="" /></div>
               </div>
             </div>
             <div class="card">
@@ -178,22 +178,22 @@ export class RangeDialog {
                     @if (s.children.length) {
                       <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }} · {{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
-                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().income) }}</div></div>
                       </button>
                     } @else {
                       <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ pct(s.value, totals().income) }}</div></div>
-                        <div class="amount">{{ s.value | money:'plain' }}</div>
+                        <div class="main"><div class="title">{{ s.label }}</div></div>
+                        <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().income) }}</div></div>
                       </a>
                     }
                     @if (s.children.length) {
                       <div class="collapse" [class.open]="expanded().has(s.id)"><div>
                         @for (c of s.children; track c.id) {
                           <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                            <div class="main"><div class="title">{{ c.label }}</div><div class="sub">{{ pct(c.value, s.value) }}</div></div>
-                            <div class="amount">{{ c.value | money:'plain' }}</div>
+                            <div class="main"><div class="title">{{ c.label }}</div></div>
+                            <div class="amt"><div class="amount">{{ c.value | money:'plain' }}</div><div class="pct">{{ pct(c.value, s.value) }}</div></div>
                           </a>
                         }
                       </div></div>
@@ -201,7 +201,7 @@ export class RangeDialog {
                   } @empty { <p class="empty">Sem receitas no período.</p> }
                   @if (incomeSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().income | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [size]="200" centerLabel="Receitas" /></div>
+                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [size]="210" [stroke]="46" centerLabel="" /></div>
               </div>
             </div>
           </div>
@@ -252,7 +252,25 @@ export class RangeDialog {
     .cat-layout { display: flex; flex-direction: column-reverse; gap: 12px; }
     .cat-layout .list { width: 100%; min-width: 0; }
     .cat-layout .donut { align-self: center; }
-    @media (min-width: 1100px) { .cat-layout { flex-direction: row; align-items: flex-start; } .cat-layout .list { flex: 1; } }
+    .cat-sections { display: flex; flex-direction: column; gap: var(--gap); }
+    .amt { display: flex; flex-direction: column; align-items: flex-end; }
+    .amt .pct { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
+    /* Computador: Despesas e Receitas uma por baixo da outra no mesmo cartão (.one-card), lista à esquerda e anel à direita (20/10) */
+    @media (min-width: 900px) {
+      .cat-sections { gap: 0; }
+      .cat-sections > .card + .card { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 28px; }
+      .cat-sections h2 { font-size: 14px; font-weight: 400; color: var(--mat-sys-on-surface-variant); margin: 0 0 10px; }
+      .cat-layout { flex-direction: row; align-items: flex-start; gap: 40px; }
+      .cat-layout .list { flex: 0 0 50%; }
+      .cat-layout .donut { flex: 1; display: flex; justify-content: center; align-self: flex-start; padding-top: 16px; }
+      .cat-layout .row { border-radius: 0; padding: 9px 4px; min-height: 0; }
+      .cat-layout .row:not(.child) + .row, .cat-layout .collapse + .row { border-top: 1px solid var(--line); }
+      .cat-layout .row .title { font-size: 14px; }
+      .cat-layout .row .amount { font-size: 14px; }
+      .row.total { border-top: 1px solid var(--line) !important; justify-content: flex-end; padding-top: 16px; }
+      .row.total .main { flex: 0 0 auto; font-size: 12.5px; font-weight: 400; color: var(--mat-sys-on-surface-variant); }
+      .row.total .amount { font-size: 16px; }
+    }
     a.row { text-decoration: none; color: inherit; }
     button.row { width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; }
     .row.parent { transition: background-color .25s ease; } .row.parent.open { background: var(--mat-sys-surface-container-low); }

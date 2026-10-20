@@ -32,7 +32,7 @@ export interface DonutSlice { id: string; label: string; value: number; color: s
           <div class="lbl">{{ a.label }}</div>
           <div class="val">{{ fmt(a.value) }}</div>
           <div class="pct">{{ pct(a.value) }}</div>
-        } @else {
+        } @else if (centerLabel()) {
           <div class="lbl">{{ centerLabel() }}</div>
           <div class="val">{{ fmt(total()) }}</div>
         }
@@ -53,7 +53,7 @@ export class DonutChart {
   readonly slices = input.required<DonutSlice[]>();
   readonly size = input(200);
   readonly stroke = input(28);
-  readonly centerLabel = input('Total');
+  readonly centerLabel = input('Total'); // '' = anel sem texto ao centro (só aparece ao passar o rato numa fatia)
   readonly sliceClick = output<string>();
   readonly active = signal<string | null>(null);
 
