@@ -130,14 +130,27 @@ body {
 @media (min-width: 900px) {
   .one-card { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); }
   .one-card .fixed-head { padding-top: var(--gap); }
-  .one-card .fixed-head > .inner { border-radius: 8px 8px 0 0; padding: 16px 16px 10px 28px; }
-  .one-card .fixed-head > .collapse { max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 0 24px; }
-  .one-card .fbar { margin: 0 auto; padding: 4px 0 14px; }
-  .one-card .pills, .one-card .search { background: color-mix(in srgb, var(--mat-sys-on-surface) 5%, transparent); }
+  .one-card .fixed-head > .inner { border-radius: 8px 8px 0 0; padding: 20px 24px 12px 30px; }
+  .one-card .fixed-head > .collapse { max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 0 30px; }
+  // Barra de filtros mais alta e com mais ar à volta (20/10, medidas da outra aplicação): faixa de 55px, lupa num círculo de 56px,
+  // 14px entre as duas e ~30px até à lista
+  .one-card .fbar { margin: 0 auto; padding: 14px 0 12px; gap: 14px; }
+  .one-card .pills { min-height: 56px; box-sizing: border-box; padding: 8px 14px; gap: 10px; }
+  .one-card .pills, .one-card .search { background: var(--app-bg); }
+  .one-card .pill { font-size: 14px; font-weight: 500; padding: 6px 10px 6px 12px; color: #454843; }
+  html.dark .one-card .pill { color: inherit; }
+  .one-card .pill:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); }
+  .one-card .search { padding: 0; min-height: 56px; }
+  .one-card .sbtn { width: 56px; height: 56px; }
+  .one-card .search.open .sbtn { width: 48px; }
   .one-card .fixed-body { padding-top: 0; padding-bottom: 0; }
   .one-card .fixed-body > .inner { min-height: 100%; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 8px 28px 0; }
   .one-card.no-foot .fixed-body { padding-bottom: var(--gap); }
   .one-card.no-foot .fixed-body > .inner { border-radius: 0 0 8px 8px; }
+  // Relatórios (20/10): no computador faz scroll a página inteira, não só o interior do cartão
+  .page-scroll.fixed-page { height: auto; overflow: visible; }
+  .page-scroll .fixed-head, .page-scroll .fixed-body { overflow: visible; scrollbar-gutter: auto; flex: none; }
+  .page-scroll.no-foot .fixed-body { padding-bottom: 40px; }
   .one-card .fixed-body .card { background: transparent; border-radius: 0; padding: 0; }
   .one-card .fixed-foot { padding-top: 0; }
   .rep-tabs > .mat-mdc-tab-header { display: none; } // Relatórios: no computador os separadores vivem no cabeçalho fixo (.htabs)

@@ -74,7 +74,7 @@ export class RangeDialog {
   selector: 'app-reports-page',
   imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, MatButtonToggleModule, MatTableModule, MatBadgeModule, MoneyPipe, IconBadge, MonthNav, DonutChart, FlowChart],
   template: `
-    <div class="page fixed-page one-card no-foot">
+    <div class="page fixed-page one-card no-foot page-scroll">
       <!-- Cabeçalho fixo: roda de meses/anos + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Relatórios</h1>
@@ -149,7 +149,7 @@ export class RangeDialog {
                     @if (s.children.length) {
                       <button type="button" class="row clickable parent" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ subCount(s.children) }} {{ subCount(s.children) === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().expense) }}</div></div>
                       </button>
                     } @else {
@@ -163,8 +163,9 @@ export class RangeDialog {
                       <div class="collapse" [class.open]="expanded().has(s.id)"><div>
                         @for (c of s.children; track c.id) {
                           <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                            <div class="main"><div class="title">{{ c.label }}</div></div>
-                            <div class="amt"><div class="amount">{{ c.value | money:'plain' }}</div><div class="pct">{{ pct(c.value, s.value) }}</div></div>
+                            <app-icon-badge [icon]="c.id ? iconOfCat(c.id, s.icon) : s.icon" [color]="c.id ? colorOfCat(c.id, s.color) : s.color" [size]="22" />
+                            <div class="main"><div class="title">{{ c.id ? c.label : s.label }}@if (!c.id) { <span class="note">(categoria principal)</span> }</div></div>
+                            <div class="amount">{{ c.value | money:'plain' }}</div>
                           </a>
                         }
                       </div></div>
@@ -183,7 +184,7 @@ export class RangeDialog {
                     @if (s.children.length) {
                       <button type="button" class="row clickable parent" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
-                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
+                        <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ subCount(s.children) }} {{ subCount(s.children) === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().income) }}</div></div>
                       </button>
                     } @else {
@@ -197,8 +198,9 @@ export class RangeDialog {
                       <div class="collapse" [class.open]="expanded().has(s.id)"><div>
                         @for (c of s.children; track c.id) {
                           <a class="row clickable child" [routerLink]="['/movimentos']" [queryParams]="linkParams(c.id || s.id)">
-                            <div class="main"><div class="title">{{ c.label }}</div></div>
-                            <div class="amt"><div class="amount">{{ c.value | money:'plain' }}</div><div class="pct">{{ pct(c.value, s.value) }}</div></div>
+                            <app-icon-badge [icon]="c.id ? iconOfCat(c.id, s.icon) : s.icon" [color]="c.id ? colorOfCat(c.id, s.color) : s.color" [size]="22" />
+                            <div class="main"><div class="title">{{ c.id ? c.label : s.label }}@if (!c.id) { <span class="note">(categoria principal)</span> }</div></div>
+                            <div class="amount">{{ c.value | money:'plain' }}</div>
                           </a>
                         }
                       </div></div>
@@ -268,6 +270,7 @@ export class RangeDialog {
       .one-card .fixed-head > .inner { border-bottom: none; }
     }
     .amt { display: flex; flex-direction: column; align-items: flex-end; }
+    .note { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); margin-left: 4px; font-weight: 400; }
     .amt .pct { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
     /* Computador: Despesas e Receitas uma por baixo da outra no mesmo cartão (.one-card), lista à esquerda e anel à direita (20/10) */
     @media (min-width: 900px) {
@@ -281,6 +284,14 @@ export class RangeDialog {
       .cat-layout .row:not(.child) + .row, .cat-layout .collapse + .row { border-top: 1px solid var(--line); }
       .cat-layout .row .title { font-size: 14px; }
       .cat-layout .row .amount { font-size: 14px; }
+      /* Sub-categorias expandidas (20/10, como na outra aplicação): a principal fica com fundo cinzento claro, as filhas com o
+         ícone pequeno, ligeiramente recuadas, separadas por linhas, só com o valor */
+      .row.parent.open { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); border-radius: 6px; }
+      .cat-layout .row.child { background: transparent; padding: 9px 4px 9px 10px; gap: 10px; min-height: 0; }
+      .cat-layout .row.child + .row.child { border-top: 1px solid var(--line); }
+      .cat-layout .row.child .title { font-size: 13px; }
+      .cat-layout .row.child:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+      .cat-layout .collapse.open { margin-bottom: 8px; }
       .row.total { border-top: 1px solid var(--line) !important; justify-content: flex-end; padding-top: 16px; }
       .row.total .main { flex: 0 0 auto; font-size: 12.5px; font-weight: 400; color: var(--mat-sys-on-surface-variant); }
       .row.total .amount { font-size: 16px; }
@@ -288,7 +299,7 @@ export class RangeDialog {
     a.row { text-decoration: none; color: inherit; }
     button.row { width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; }
     .row.parent { transition: background-color .25s ease; } .row.parent.open { background: var(--mat-sys-surface-container-low); }
-    .row.child { padding-left: 46px; min-height: 34px; background: var(--mat-sys-surface-container-low); }
+    .row.child { padding-left: 16px; min-height: 34px; background: var(--mat-sys-surface-container-low); }
     .row.child .title { font-size: 14px; }
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }
     .small { font-size: 13px; }
@@ -320,6 +331,10 @@ export class ReportsPage {
   readonly accountId = signal<string | null>(this.qp.get('conta'));
   readonly includeUnpaid = signal(this.qp.get('pagos') !== '1');
   readonly tab = signal(Number(this.qp.get('separador') ?? 0) || 0);
+  subCount(children: { id: string }[]) { return children.filter((c) => c.id).length; }
+  /** Ícone/cor da sub-categoria (as sub-categorias costumam herdar os da principal). */
+  iconOfCat(id: string, fallback: string) { return this.data.categoryMap().get(id)?.icon || fallback; }
+  colorOfCat(id: string, fallback: string) { return this.data.categoryMap().get(id)?.color || fallback; }
   /** Categoria por baixo do rato: realça a fatia no anel. */
   readonly hover = signal<string | null>(null);
   readonly loading = signal(false);
@@ -397,8 +412,8 @@ export class ReportsPage {
     return [...m.entries()].map(([id, e]) => {
       const c = this.data.categoryMap().get(id);
       const children = [...e.children.entries()]
-        .map(([cid, value]) => ({ id: cid, label: cid ? (this.data.categoryMap().get(cid)?.name ?? '?') : (e.children.size > 1 ? 'Sem sub-categoria' : ''), value }))
-        .filter((x) => x.label)
+        .map(([cid, value]) => ({ id: cid, label: cid ? (this.data.categoryMap().get(cid)?.name ?? '?') : '', value }))
+        .filter((x) => x.id || e.children.size > 1) // o que está na própria principal aparece como "Casa (categoria principal)"
         .sort((a, b) => b.value - a.value);
       return { id: id || 'none', label: c?.name ?? 'Sem categoria', value: e.value, color: c?.color ?? '#90a4ae', icon: c?.icon ?? 'label', children: children.length > 1 || (children.length === 1 && children[0].id) ? children : [] };
     }).sort((a, b) => b.value - a.value);

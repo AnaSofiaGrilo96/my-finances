@@ -97,7 +97,7 @@ import { BackButtonService } from '../shared/back-button.service';
     .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
     .topbar.desktop { height: 52px; padding: 0 20px; position: sticky; } /* 52px como na outra aplicação de gestão de finanças (20/10) */
     .topbar.desktop .brand { font-size: 20px; }
-    .topbar.desktop .links a { font-size: 14px; font-weight: 500; padding: 0 12px; }
+    .topbar.desktop .links a { font-size: 14px; font-weight: 500; padding: 0 12px; text-transform: lowercase; } /* "visão geral", "movimentos"… em minúsculas como na outra aplicação (20/10) */
     .topbar.desktop .links a.active { font-weight: 700; }
     .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; }
     .user-info { padding: 8px 16px 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); margin-bottom: 4px; }

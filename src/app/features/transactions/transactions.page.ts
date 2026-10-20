@@ -20,6 +20,7 @@ import { openTransactionDetail } from './transaction-detail.sheet';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { BackButtonService } from '../../shared/back-button.service';
 
+const SHORT_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit' });
 interface DayGroup { date: string; label: string; items: Transaction[]; balance: number | null; }
 
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' });
@@ -175,6 +176,12 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
         <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
         <div><span class="muted">Resultado</span><b [class.income]="totals().result >= 0" [class.expense]="totals().result < 0">{{ totals().result | money }}</b></div>
+        <!-- Saldo previsto no fim do período (pagos e não pagos), como o "previsto" da outra aplicação de gestão de finanças (20/10) -->
+        @if (forecast(); as f) {
+          <div class="forecast" [matTooltip]="'Saldo ' + (accSel()?.name ? 'de ' + accSel()!.name : 'de todas as contas') + ' no fim do período, contando também o que ainda não foi pago/recebido'">
+            <span class="muted">Previsto a {{ f.label }}</span><b [class.expense]="f.value < 0">{{ f.value | money }}</b>
+          </div>
+        }
       </div></div>
     </div>
   `,
@@ -186,6 +193,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     :host-context(html.dark) .summary { background: var(--app-card-bg); }
     .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
+    .forecast b { color: #3062d4; } .forecast b.expense { color: #e5484d; }
+    :host-context(html.dark) .forecast b { color: #8fb0ff; }
+    @media (max-width: 899px) { .summary { gap: 4px; padding-left: 6px; padding-right: 6px; } .summary div { font-size: 11.5px; } .summary b { font-size: 14px; } }
     @media (min-width: 900px) {
       /* No computador mantém o aspeto de cartão redondo, sempre com folga ao fundo */
       /* .fixed-foot (styles.scss) dá-lhe exatamente a mesma largura do cabeçalho e dos cartões */
@@ -326,6 +336,18 @@ export class TransactionsPage implements OnDestroy {
       if (sgn > 0) income += t.amount; else if (sgn < 0) expense += t.amount;
     }
     return { income, expense, result: income - expense };
+  });
+
+  /** Saldo previsto no último dia do período: saldo de abertura (já com os não pagos) + todos os movimentos do período,
+   *  pagos ou não, das contas visíveis. Não depende dos filtros de tipo/categoria/estado/pesquisa (é um saldo de conta). */
+  readonly forecast = computed(() => {
+    const open = this.opening();
+    if (open === null) return null;
+    const acc = this.accountId();
+    let v = open;
+    for (const t of this.all()) v += signFor(t, acc) * t.amount;
+    const end = this.range()?.end ?? monthRange(this.month()).end;
+    return { value: Math.round(v * 100) / 100, label: SHORT_FMT.format(fromIso(end)) };
   });
 
   /** Agrupado por dia. O saldo no dia só é mostrado quando não há filtros que o tornem incoerente. */
