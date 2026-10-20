@@ -151,6 +151,9 @@ body {
   .page-scroll.fixed-page { height: auto; overflow: visible; }
   .page-scroll .fixed-head, .page-scroll .fixed-body { overflow: visible; scrollbar-gutter: auto; flex: none; }
   .page-scroll.no-foot .fixed-body { padding-bottom: 40px; }
+  // o conteúdo de cada separador do mat-tab-group tem overflow:auto e criava uma barra de scroll dentro do cartão
+  .page-scroll .mat-mdc-tab-body-content { overflow: visible !important; }
+  .page-scroll .mat-mdc-tab-body.mat-mdc-tab-body-active, .page-scroll .mat-mdc-tab-body-wrapper { overflow-x: clip; overflow-y: visible; } // clip na horizontal: a animação de troca de separador não sai do cartão
   .one-card .fixed-body .card { background: transparent; border-radius: 0; padding: 0; }
   .one-card .fixed-foot { padding-top: 0; }
   .rep-tabs > .mat-mdc-tab-header { display: none; } // Relatórios: no computador os separadores vivem no cabeçalho fixo (.htabs)
