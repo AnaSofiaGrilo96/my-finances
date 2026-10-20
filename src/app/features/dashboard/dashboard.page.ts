@@ -10,7 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/data.service';
 import { AuthService } from '../../core/auth.service';
-import { Transaction, isAdjustment } from '../../core/models';
+import { ACCOUNT_TYPES, AccountType, Transaction, isAdjustment } from '../../core/models';
 import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
 import { MoneyPipe, formatMoney } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
@@ -128,14 +128,18 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           <div class="card accounts">
             <div class="total">
               <span class="muted">Saldo geral</span>
-              <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
+              @if (isSmall()) {
+                <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
+              } @else {
+                <b [class.expense]="data.totalBalance() < 0"><small>€</small>{{ num(data.totalBalance()) }}</b>
+              }
             </div>
             <h2>Minhas contas</h2>
             <div class="rows lined">
               @for (a of data.activeAccounts(); track a.id) {
                 <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }">
                   <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="isSmall() ? 40 : 44" />
-                  <div class="main"><div class="title">{{ a.name }}</div></div>
+                  <div class="main"><div class="title">{{ a.name }}</div>@if (!isSmall()) { <div class="sub">{{ typeLabel(a.type) }}</div> }</div>
                   <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ balance(a.id) | money }}</div>
                 </a>
               } @empty {
@@ -188,8 +192,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     </ng-template>
   `,
   styles: [`
-    :host { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); --acc-blue: #2f63d6; }
-    :host-context(html.dark) { --acc-blue: #8fb0ff; }
+    :host { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); --line-strong: #dbded8; --acc-blue: #3062d4; }
+    :host-context(html.dark) { --acc-blue: #8fb0ff; --line-strong: var(--mat-sys-outline-variant); }
     .greet { padding: 4px 6px 14px; }
     .paid { color: #e5484d; opacity: .8; }
     .greet h1 { margin: 0; font-size: 24px; font-weight: 600; }
@@ -218,8 +222,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     @media (max-width: 899px) { .link-row { justify-content: stretch; } .manage { width: 100%; } }
 
     /* ---------- Computador: à imagem da outra aplicação de gestão de finanças (20/10) ---------- */
-    .wide .card { padding: 26px 30px; }
-    .wide .card h2 { font-size: 16px; font-weight: 600; margin: 0 0 18px; }
+    .wide .card { padding: 25px; }
+    .wide .card h2 { font-size: 18px; font-weight: 600; margin: 0 0 20px; }
     .wide .rows.lined > .row { border-radius: 0; min-height: 0; padding: 12px 4px; }
     .wide .rows.lined > .row + .row { border-top: 1px solid var(--line); }
     .wide .rows.lined > .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
@@ -227,21 +231,21 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     /* cartão de topo: saudação + receita/despesa à esquerda, botões à direita */
     .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: var(--gap); }
     .wide .hero { padding: 30px; }
-    .hello { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
+    .hello { font-size: 14px; font-weight: 400; color: var(--ink-soft, var(--mat-sys-on-surface-variant)); }
     .name { font-size: 16.5px; font-weight: 600; margin: 4px 0 22px; }
     .kpis { display: flex; gap: 22px; align-items: center; }
     .kpis div { display: flex; flex-direction: column; gap: 6px; }
-    .kpis span { font-size: 12.5px; color: var(--mat-sys-on-surface-variant); }
+    .kpis span { font-size: 14px; font-weight: 400; color: var(--ink-soft, var(--mat-sys-on-surface-variant)); }
     .kpis b { font-size: 17px; font-weight: 600; }
     .sq { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--mat-sys-outline-variant); display: grid; place-items: center; color: var(--mat-sys-on-surface); align-self: center; transition: background-color .15s; }
     .sq:hover { background: var(--mat-sys-surface-container); }
     .sq mat-icon { font-size: 19px; width: 19px; height: 19px; }
     .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    .act { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--mat-sys-outline-variant); background: transparent; color: var(--mat-sys-on-surface); font: inherit; font-size: 14.5px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background-color .15s, transform .12s; }
+    .act { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink, var(--mat-sys-on-surface)); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background-color .15s, transform .12s; }
     .act:hover { background: var(--mat-sys-surface-container); }
     .act:active { transform: scale(.97); }
-    .act mat-icon { font-size: 19px; width: 19px; height: 19px; }
-    .act.ghost { color: var(--mat-sys-on-surface-variant); font-weight: 400; font-size: 14px; height: 36px; }
+    .act mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    .act.ghost { color: #a0a0a0; font-weight: 500; font-size: 15px; height: 40px; width: 120px; justify-content: center; padding: 0; border-radius: 6px; border-color: var(--line); }
     /* maiores gastos: lista com percentagens + anel e "Ver relatório" por baixo */
     .wide .top { gap: 40px; align-items: flex-start; }
     .wide .top .row .title { font-size: 13.5px; }
@@ -249,22 +253,24 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .wide .donut { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 8px 14px 0 0; }
     /* saldo geral + contas */
     .wide .accounts .total { border-left-width: 3px; padding: 2px 0 2px 14px; margin-bottom: 22px; gap: 2px; }
-    .wide .accounts .total .muted { font-size: 13px; }
+    .wide .accounts .total .muted { font-size: 14px; font-weight: 400; }
     .wide .accounts .total b { font-size: 19px; font-weight: 600; }
+    .wide .accounts .total small { font-size: 14px; font-weight: 400; color: var(--ink-soft); margin-right: 6px; }
     .wide .accounts h2 { border-top: 1px solid var(--line); padding-top: 22px; }
     .wide .accounts .row { padding: 18px 4px; gap: 14px; }
-    .wide .accounts .row .title { font-size: 14.5px; font-weight: 500; }
-    .wide .amount.acc { color: var(--acc-blue); font-size: 16px; font-weight: 500; }
+    .wide .accounts .row .title { font-size: 16px; font-weight: 500; }
+    .wide .accounts .row .sub { font-size: 14px; }
+    .wide .amount.acc { color: var(--acc-blue); font-size: 18px; font-weight: 600; }
     .wide .amount.acc.expense { color: #e5484d; }
     /* contas a pagar / a receber */
-    .wide .band { font-size: 13.5px; font-weight: 400; padding: 7px; border-radius: 4px; margin: 0 0 4px; background: color-mix(in srgb, var(--mat-sys-on-surface) 5%, transparent); }
+    .wide .band { font-size: 15px; font-weight: 500; padding: 0; line-height: 35px; border-radius: 6px; margin: 0 0 4px; color: var(--ink-soft); background: color-mix(in srgb, var(--mat-sys-on-surface) 3%, transparent); }
     .wide .band.today { background: color-mix(in srgb, #e5484d 10%, transparent); }
     .wide .rows + .band { margin-top: 14px; }
     .wide .pend { gap: 10px; padding: 9px 4px !important; }
     .wide .pend .title { font-size: 13.5px; }
     .wide .pend .sub { font-size: 12px; }
     .wide .pend .amount { font-size: 13.5px; font-weight: 400; }
-    .wide .pend .paid { --mat-icon-button-state-layer-size: 32px; width: 32px; height: 32px; padding: 6px; opacity: .55; }
+    .wide .pend .paid { --mat-icon-button-state-layer-size: 32px; width: 32px; height: 32px; padding: 6px; color: #b8bab5; opacity: 1; } /* polegar cinzento = não pago, como em Movimentos */
     .wide .pend .paid mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .wide .pend:hover .paid { opacity: .9; }
   `],
@@ -359,6 +365,9 @@ export class DashboardPage {
     const name = this.data.displayName() || this.auth.displayName();
     return name.includes('@') ? name.split('@')[0] : name || 'Olá';
   }
+  typeLabel(t: AccountType) { return ACCOUNT_TYPES.find((x) => x.id === t)?.label ?? ''; }
+  /** Valor sem o símbolo (o € aparece à parte, mais pequeno, no saldo geral). */
+  num(v: number) { return (v < 0 ? '-' : '') + formatMoney(Math.abs(v)).replace('€', '').trim(); }
   balance(id: string) { return this.data.balances()[id] ?? 0; }
   pct(v: number) { const t = this.totals().expense; return t ? (100 * v / t).toFixed(2).replace('.', ',') + '%' : ''; }
   fmtDay(iso: string) { return DAY_FMT.format(fromIso(iso)); }

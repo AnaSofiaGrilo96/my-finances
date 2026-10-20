@@ -135,7 +135,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
                       @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
                     </div>
                     <div class="sub mobile-only">{{ subOf(t) }}</div>
-                    <div class="sub desktop-only">{{ catOf(t) }}</div>
                   </div>
                   <!-- Coluna da recorrência (só no computador): setas quando o movimento pertence a uma recorrência -->
                   <div class="rep-col desktop-only">
@@ -144,17 +143,21 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
                   <!-- Coluna da conta (só no computador): badge + nome; nas transferências origem → destino -->
                   <div class="acc-col desktop-only">
                     @if (t.kind === 'transfer') {
-                      @if (acc(t.account_id); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="26" /> }
+                      <!-- só os ícones das duas contas (nomes na dica), como na outra aplicação de gestão de finanças -->
+                      @if (acc(t.account_id); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="24" [matTooltip]="a.name" /> }
                       <mat-icon class="arrow">arrow_forward</mat-icon>
-                      @if (acc(t.to_account_id); as b) { <app-icon-badge [icon]="b.icon" [color]="b.color" [size]="26" /><span>{{ b.name }}</span> }
+                      @if (acc(t.to_account_id); as b) { <app-icon-badge [icon]="b.icon" [color]="b.color" [size]="24" [matTooltip]="b.name" /> }
                     } @else if (acc(t.account_id); as a) {
-                      <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="26" /><span>{{ a.name }}</span>
+                      <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="24" /><span>{{ a.name }}</span>
                     }
                   </div>
                   <div class="right">
                     <div class="amount" [class]="amountClass(t)">{{ signedAmount(t) | money:'signed' }}</div>
-                    <div class="state" [class.is-paid]="t.paid">{{ stateOf(t) }}</div>
+                    <div class="state mobile-only" [class.is-paid]="t.paid">{{ stateOf(t) }}</div>
                   </div>
+                  <!-- Computador: o estado é o polegar (verde = pago/recebido); clicar alterna -->
+                  <button type="button" class="thumb desktop-only" [class.on]="t.paid" (click)="$event.stopPropagation(); togglePaid(t)"
+                          [matTooltip]="stateOf(t) + ' — clicar para alterar'" [attr.aria-label]="stateOf(t)"><mat-icon>{{ t.paid ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
                 </div>
               </app-swipe-row>
             }
@@ -239,8 +242,23 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
       :host-context(html.dark) .row { background: transparent; }
       :host-context(html.dark) .row.clickable:hover, :host-context(html.dark) .row.unpaid:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); }
-      .row .title { font-size: 14px; }
-      .acc-col { font-size: 13.5px; }
+      .row { min-height: 60px; box-sizing: border-box; padding: 6px 4px 6px 4px; gap: 10px; }
+      .row .title { font-size: 13px; }
+      .row.clickable:hover { background: #e0fae6; } /* verde-claro ao passar o rato, como na outra aplicação */
+      .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); }
+      .acc-col { font-size: 13px; color: #a0a0a0; }
+      :host-context(html.dark) .acc-col { color: var(--mat-sys-on-surface-variant); }
+      .acc-col .arrow { font-size: 14px; width: 14px; height: 14px; }
+      .rep-big { font-size: 16px; width: 16px; height: 16px; }
+      .row .right { flex: 0 0 120px; }
+      .row .amount { font-size: 13px; font-weight: 500; }
+      .row .amount.expense, .row .amount.transfer { color: var(--ink); } /* só as receitas têm cor */
+      .row.unpaid .title, .row.unpaid .amount { opacity: 1; }
+      .thumb { width: 32px; height: 32px; flex: 0 0 32px; border: none; background: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: #b8bab5; padding: 0; transition: background-color .15s, transform .12s; }
+      .thumb.on { color: #129e3f; }
+      .thumb:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent); }
+      .thumb:active { transform: scale(.9); }
+      .thumb mat-icon { font-size: 18px; width: 18px; height: 18px; }
       .day-foot { justify-content: flex-end; align-items: baseline; gap: 10px; padding: 8px 4px 10px; font-size: 13px; }
       .day-foot b { color: #1eb980; font-weight: 600; } .day-foot b.expense { color: #e5484d; }
       .summary { padding: 14px 12px; }

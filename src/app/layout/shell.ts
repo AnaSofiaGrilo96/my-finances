@@ -83,7 +83,7 @@ import { BackButtonService } from '../shared/back-button.service';
   styles: [`
     :host { display: block; min-height: 100dvh; } /* min-height (não height): senão a barra sticky sai com o fim do host nas páginas que fazem scroll */
     /* ---- barra superior verde ---- */
-    .topbar { position: sticky; top: 0; z-index: 10; background: #1cbf4f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
+    .topbar { position: sticky; top: 0; z-index: 10; background: #16c64f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
     :host-context(html.dark) .topbar { background: #178f45; }
     /* Mudança de página (View Transitions): a shell tem nomes próprios para ficar quieta e por cima enquanto só o conteúdo da rota anima */
     .topbar { view-transition-name: topbar; }
@@ -95,8 +95,10 @@ import { BackButtonService } from '../shared/back-button.service';
     .links a { display: flex; align-items: center; padding: 0 16px; color: rgba(255,255,255,.85); text-decoration: none; font-size: 16.5px; font-weight: 400; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background-color .15s; }
     .links a:hover { color: #fff; background: rgba(255,255,255,.08); }
     .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
-    .topbar.desktop { height: 64px; padding: 0 24px; position: sticky; }
-    .topbar.desktop .brand { font-size: 22px; }
+    .topbar.desktop { height: 52px; padding: 0 20px; position: sticky; } /* 52px como na outra aplicação de gestão de finanças (20/10) */
+    .topbar.desktop .brand { font-size: 20px; }
+    .topbar.desktop .links a { font-size: 14px; font-weight: 500; padding: 0 12px; }
+    .topbar.desktop .links a.active { font-weight: 700; }
     .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; }
     .user-info { padding: 8px 16px 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); margin-bottom: 4px; }
     .user-info .name { font-weight: 500; }

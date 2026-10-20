@@ -89,6 +89,11 @@ export class RangeDialog {
           <mat-icon>{{ activeFilters() ? 'filter_alt' : 'filter_list' }}</mat-icon>
         </button>
       </div>
+      <!-- Computador: separadores logo abaixo do mês, com sublinhado verde (como na outra aplicação de gestão de finanças, 20/10); no telemóvel ficam os do mat-tab-group -->
+      <nav class="htabs" role="tablist">
+        <button type="button" role="tab" [class.on]="tab() === 0" [attr.aria-selected]="tab() === 0" (click)="tab.set(0)">Categorias</button>
+        <button type="button" role="tab" [class.on]="tab() === 1" [attr.aria-selected]="tab() === 1" (click)="tab.set(1)">Entradas x Saídas</button>
+      </nav>
       <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
       <div class="collapse filters" [class.open]="filtersOpen()"><div>
         <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
@@ -132,7 +137,7 @@ export class RangeDialog {
 
       <div class="fixed-body"><div class="inner">
 
-      <mat-tab-group mat-stretch-tabs="false" animationDuration="260ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
+      <mat-tab-group class="rep-tabs" mat-stretch-tabs="false" animationDuration="260ms" [selectedIndex]="tab()" (selectedIndexChange)="tab.set($event)">
         <!-- ---------------- Categorias ---------------- -->
         <mat-tab label="Categorias">
           <div class="tabbody cat-sections">
@@ -142,13 +147,13 @@ export class RangeDialog {
                 <div class="rows list">
                   @for (s of expenseSlices(); track s.id) {
                     @if (s.children.length) {
-                      <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
+                      <button type="button" class="row clickable parent" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                         <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().expense) }}</div></div>
                       </button>
                     } @else {
-                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
+                      <a class="row clickable" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                         <div class="main"><div class="title">{{ s.label }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().expense) }}</div></div>
@@ -167,7 +172,7 @@ export class RangeDialog {
                   } @empty { <p class="empty">Sem despesas no período.</p> }
                   @if (expenseSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().expense | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [size]="210" [stroke]="46" centerLabel="" /></div>
+                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [highlight]="hover()" [size]="210" [stroke]="46" centerLabel="" /></div>
               </div>
             </div>
             <div class="card">
@@ -176,13 +181,13 @@ export class RangeDialog {
                 <div class="rows list">
                   @for (s of incomeSlices(); track s.id) {
                     @if (s.children.length) {
-                      <button type="button" class="row clickable parent" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
+                      <button type="button" class="row clickable parent" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" (click)="toggle(s.id, $event)" [class.open]="expanded().has(s.id)" [attr.aria-expanded]="expanded().has(s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                         <div class="main"><div class="title">{{ s.label }}</div><div class="sub">{{ s.children.length }} {{ s.children.length === 1 ? 'sub-categoria' : 'sub-categorias' }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().income) }}</div></div>
                       </button>
                     } @else {
-                      <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
+                      <a class="row clickable" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)" [routerLink]="['/movimentos']" [queryParams]="linkParams(s.id === 'none' ? null : s.id)">
                         <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="34" />
                         <div class="main"><div class="title">{{ s.label }}</div></div>
                         <div class="amt"><div class="amount">{{ s.value | money:'plain' }}</div><div class="pct">{{ pct(s.value, totals().income) }}</div></div>
@@ -201,7 +206,7 @@ export class RangeDialog {
                   } @empty { <p class="empty">Sem receitas no período.</p> }
                   @if (incomeSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().income | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [size]="210" [stroke]="46" centerLabel="" /></div>
+                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [highlight]="hover()" [size]="210" [stroke]="46" centerLabel="" /></div>
               </div>
             </div>
           </div>
@@ -253,6 +258,15 @@ export class RangeDialog {
     .cat-layout .list { width: 100%; min-width: 0; }
     .cat-layout .donut { align-self: center; }
     .cat-sections { display: flex; flex-direction: column; gap: var(--gap); }
+    .htabs { display: none; }
+    @media (min-width: 900px) {
+      .htabs { display: flex; gap: 30px; max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg); padding: 0 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .htabs button { border: none; background: none; font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-soft); padding: 12px 0 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; transition: color .15s, border-color .15s; }
+      .htabs button:hover { color: var(--ink); }
+      .htabs button.on { color: #129e3f; border-bottom-color: #129e3f; }
+      :host-context(html.dark) .htabs button.on { color: #4cd47a; border-bottom-color: #4cd47a; }
+      .one-card .fixed-head > .inner { border-bottom: none; }
+    }
     .amt { display: flex; flex-direction: column; align-items: flex-end; }
     .amt .pct { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); }
     /* Computador: Despesas e Receitas uma por baixo da outra no mesmo cartão (.one-card), lista à esquerda e anel à direita (20/10) */
@@ -306,6 +320,8 @@ export class ReportsPage {
   readonly accountId = signal<string | null>(this.qp.get('conta'));
   readonly includeUnpaid = signal(this.qp.get('pagos') !== '1');
   readonly tab = signal(Number(this.qp.get('separador') ?? 0) || 0);
+  /** Categoria por baixo do rato: realça a fatia no anel. */
+  readonly hover = signal<string | null>(null);
   readonly loading = signal(false);
   readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
   readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);

@@ -100,6 +100,24 @@ body {
   .fixed-body .end-space { height: 24px; }
 }
 
+// ---------- Base visual do computador (20/10, medida na outra aplicação de gestão de finanças) ----------
+// Texto base 13px/500 em #2E312D (modo claro), cartões com sombra muito leve, barra verde de 52px (na shell).
+// Só ≥ 900px: o telemóvel será revisto à parte.
+@media (min-width: 900px) {
+  :root { --ink: #2E312D; --ink-soft: #858782; }
+  html.dark { --ink: var(--mat-sys-on-surface); --ink-soft: var(--mat-sys-on-surface-variant); }
+  body { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .muted { color: var(--ink-soft); }
+  .row .title { font-size: 13px; }
+  .row .sub { font-size: 12px; font-weight: 400; color: var(--ink-soft); }
+  .row .amount { font-size: 13px; }
+  .card h2 { font-size: 18px; font-weight: 600; }
+  html:not(.dark) .card, html:not(.dark) .one-card .fixed-head > .inner { box-shadow: 0 1px 2px rgba(0,0,0,.09); }
+  html:not(.dark) .one-card .fixed-body .card { box-shadow: none; }
+  .fixed-page { --toolbar-h: 52px; }
+  .fixed-head h1, .page-header h1 { font-size: 18px; font-weight: 600; }
+}
+
 // Página num só cartão (computador; Movimentos e Relatórios, 20/10 — à imagem da outra aplicação de gestão de finanças):
 // cabeçalho, filtros, corpo e totais formam um único cartão, sem faixas de fundo entre eles. Os cartões dentro do corpo
 // (dias, secções) perdem o fundo e passam a ser só blocos separados por linhas.
@@ -116,6 +134,7 @@ body {
   .one-card.no-foot .fixed-body > .inner { border-radius: 0 0 8px 8px; }
   .one-card .fixed-body .card { background: transparent; border-radius: 0; padding: 0; }
   .one-card .fixed-foot { padding-top: 0; }
+  .rep-tabs > .mat-mdc-tab-header { display: none; } // Relatórios: no computador os separadores vivem no cabeçalho fixo (.htabs)
   .one-card .fixed-foot > .inner { border-radius: 0 0 8px 8px; box-shadow: none; border-top: 1px solid var(--line); }
 }
 

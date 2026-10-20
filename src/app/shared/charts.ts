@@ -18,10 +18,10 @@ export interface DonutSlice { id: string; label: string; value: number; color: s
             [attr.cx]="c()" [attr.cy]="c()" [attr.r]="r()"
             fill="none"
             [attr.stroke]="s.color"
-            [attr.stroke-width]="active() === s.id ? stroke() + 6 : stroke()"
+            [attr.stroke-width]="cur() === s.id ? stroke() + 8 : stroke()"
             [attr.stroke-dasharray]="s.len + ' ' + (circ() - s.len)"
             [attr.stroke-dashoffset]="-s.offset"
-            [style.opacity]="active() && active() !== s.id ? 0.35 : 1"
+            [style.opacity]="cur() && cur() !== s.id ? 0.35 : 1"
             (mouseenter)="active.set(s.id)" (mouseleave)="active.set(null)"
             (click)="sliceClick.emit(s.id)"
           />
@@ -56,6 +56,9 @@ export class DonutChart {
   readonly centerLabel = input('Total'); // '' = anel sem texto ao centro (só aparece ao passar o rato numa fatia)
   readonly sliceClick = output<string>();
   readonly active = signal<string | null>(null);
+  /** Fatia realçada de fora (ex.: rato sobre a linha da categoria na lista ao lado). */
+  readonly highlight = input<string | null>(null);
+  readonly cur = computed(() => this.active() ?? this.highlight());
 
   readonly c = computed(() => this.size() / 2);
   readonly r = computed(() => this.size() / 2 - this.stroke() / 2 - 4);
@@ -75,7 +78,7 @@ export class DonutChart {
         return a;
       });
   });
-  readonly activeSlice = computed(() => this.slices().find((s) => s.id === this.active()) ?? null);
+  readonly activeSlice = computed(() => this.slices().find((s) => s.id === this.cur()) ?? null);
   readonly ariaLabel = computed(() => this.slices().map((s) => `${s.label}: ${formatMoney(s.value)}`).join(', '));
 
   fmt(v: number) { return formatMoney(v); }
