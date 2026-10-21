@@ -475,6 +475,7 @@ export class TransactionsPage implements OnDestroy {
       this.all.set(cached);
       this.opening.set(this.data.peekOpening(start, acc, true) ?? null);
       this.openingPaid.set(this.data.peekOpening(start, acc, false) ?? null);
+      this.scrollToRelevantDay(); // vindo da memória também vai para o dia de hoje (corrigido a 21/10)
     }
     this.loading.set(!cached);
     try {
@@ -487,7 +488,7 @@ export class TransactionsPage implements OnDestroy {
       this.all.set(list);
       this.opening.set(opening);
       this.openingPaid.set(openingPaid);
-      if (!cached) this.scrollToRelevantDay();
+      this.scrollToRelevantDay(); // só faz scroll uma vez por abertura (scrolledFor)
       if (!range) this.prefetch(month, acc);
     } catch (e) { this.ui.error(e); } finally { this.loading.set(false); }
   }

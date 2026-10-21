@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogConfig, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -312,6 +312,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
 })
 export class TransactionDialog {
   readonly data = inject(DataService);
+  private readonly host = inject(ElementRef);
   private readonly ui = inject(UiService);
   private readonly ref = inject(MatDialogRef<TransactionDialog>);
   private readonly sheet = inject(MatBottomSheet);
@@ -395,6 +396,9 @@ export class TransactionDialog {
   confirmAmount() {
     if (this.amount <= 0) return;
     this.step.set(2);
+    // 21/10: sem descrição ainda, o cursor vai logo para a Descrição (no telemóvel abre o teclado — o toque no ✓ ainda conta
+    // como gesto do utilizador, por isso o Android deixa abrir)
+    if (!this.description.trim()) setTimeout(() => (this.host.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[name="description"]')?.focus());
   }
 
   // ---------- tipo ----------

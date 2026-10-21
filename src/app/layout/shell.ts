@@ -56,7 +56,6 @@ import { BackButtonService } from '../shared/back-button.service';
         </div>
         <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
         <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
-        <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
         <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
         @if (isSmall()) {
           <button mat-menu-item (click)="themeSvc.dark.set(!themeSvc.dark())"><mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>{{ themeSvc.dark() ? 'Modo claro' : 'Modo escuro' }}</button>
@@ -82,7 +81,7 @@ import { BackButtonService } from '../shared/back-button.service';
             <mat-icon>{{ item.icon }}</mat-icon>
           </a>
         }
-        <!-- Foto: abre o menu do perfil (Contas, Categorias, Recorrências, O meu nome, modo escuro, Sair) -->
+        <!-- Foto: abre o menu do perfil (Contas, Categorias, O meu nome, modo escuro, Sair) -->
         <button type="button" class="me" [matMenuTriggerFor]="userMenu" aria-label="Perfil">
           @if (auth.avatarUrl(); as url) { <img class="avatar big" [src]="url" alt="" referrerpolicy="no-referrer" /> } @else { <mat-icon>account_circle</mat-icon> }
         </button>

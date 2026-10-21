@@ -52,7 +52,7 @@ A chave só dá acesso de leitura ao export e nunca é guardada em claro (fica s
 
 ## 6. Instalar no telemóvel
 
-Abre o site no Chrome (Android) ou Safari (iPhone) e escolhe **"Adicionar ao ecrã principal"**. A app abre em ecrã inteiro, com barra inferior (Início, Movimentos, Relatórios), botão "+" para registar movimentos e menu de perfil com Contas, Categorias, Recorrências, "O meu nome" e modo escuro.
+Abre o site no Chrome (Android) ou Safari (iPhone) e escolhe **"Adicionar ao ecrã principal"**. A app abre em ecrã inteiro, com barra inferior (Início, Movimentos, Relatórios), botão "+" para registar movimentos e menu de perfil (a foto, na barra inferior) com Contas, Categorias, "O meu nome" e modo escuro.
 
 ---
 
@@ -61,7 +61,7 @@ Abre o site no Chrome (Android) ou Safari (iPhone) e escolhe **"Adicionar ao ecr
 - **Visão geral**: saudação, aviso do que há a pagar/receber hoje (e atrasados) com botão para marcar como pago, saldo geral por conta; no computador também os totais do mês, maiores gastos e os próximos movimentos a pagar/a receber ("Vence hoje" / "Próximas").
 - **Movimentos**: lista mês a mês (roda de meses no cabeçalho fixo), filtros em pílulas (conta, tipo, categoria, estado, pesquisa), agrupado por dia com "saldo no dia", totais fixos no fundo. No telemóvel arrastar a linha revela pagar/editar/apagar; tocar abre a folha de detalhe (apagar, duplicar, pago, editar). Ao abrir o mês atual faz scroll para o primeiro dia com movimentos por validar.
 - **Novo movimento**: janela com teclado numérico, descrição com sugestões (preenchem categoria e conta), categoria por defeito "Outros"/"Outras receitas", data, repetição **fixa ou parcelada** (diária, semanal, quinzenal, mensal, anual), observação.
-- **Recorrências**: a app gera as ocorrências futuras como não pagas (12 meses à frente nas mensais/anuais, 3 nas restantes); ao editar ou apagar uma ocorrência pergunta "apenas este" ou "este e os próximos". A página Recorrências mostra as regras, o total fixo mensal equivalente e permite pausar/retomar/apagar.
+- **Recorrências**: a app gera as ocorrências futuras como não pagas (12 meses à frente nas mensais/anuais, 3 nas restantes); ao editar ou apagar uma ocorrência pergunta "apenas este" ou "este e os próximos". Não há página própria: as séries gerem-se pelos movimentos (editar ou apagar "este e os próximos").
 - **Relatórios**: período com presets (hoje, semana, mês, últimos 3/6/12 meses, ano, intervalo à escolha), filtro por conta e estado; separadores Categorias (por principal, com sub-categorias) e Entradas x Saídas (gráfico + tabela diária/semanal/mensal com saldo acumulado); filtros na URL (link partilhável); exportar CSV (`;`, BOM UTF-8, abre direto no Excel PT). Clicar numa categoria abre os Movimentos com o mesmo intervalo.
 - **Contas** (CRUD, ordenar, arquivar, acertar saldo) e **Categorias** (árvore de um nível).
 - **Modo escuro**, botão Voltar do Android fecha janelas, aviso de nova versão.
