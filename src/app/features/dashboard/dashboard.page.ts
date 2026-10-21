@@ -139,7 +139,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               @for (a of data.activeAccounts(); track a.id) {
                 <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }">
                   <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="isSmall() ? 40 : 44" />
-                  <div class="main"><div class="title">{{ a.name }}</div>@if (!isSmall()) { <div class="sub">{{ typeLabel(a.type) }}</div> }</div>
+                  <div class="main"><div class="title">{{ a.name }}</div><div class="sub">{{ typeLabel(a.type) }}</div></div>
                   <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ balance(a.id) | money }}</div>
                 </a>
               } @empty {
@@ -219,7 +219,24 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .band.today { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
     .top { display: flex; gap: 16px; align-items: center; }
     .top .list { flex: 1; min-width: 0; }
-    @media (max-width: 899px) { .link-row { justify-content: stretch; } .manage { width: 100%; } }
+    @media (max-width: 899px) {
+      .link-row { justify-content: stretch; } .manage { width: 100%; }
+      /* telemóvel (21/10, como na outra aplicação): saudação maior, saldo sem a barra verde, contas com tipo por baixo e saldo a azul */
+      .greet { padding: 8px 4px 18px; }
+      .greet .muted { font-size: 17px; color: var(--mat-sys-on-surface); }
+      .greet h1 { font-size: 22px; font-weight: 700; }
+      .card { padding: 20px; border-radius: 12px; }
+      .due { border-left: none; padding: 8px; }
+      .total { border-left: none; padding-left: 0; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+      .total .muted { font-size: 15px; }
+      .total b { font-size: 22px; font-weight: 700; }
+      .accounts h2 { font-size: 17px; font-weight: 600; margin: 0 0 8px; }
+      .accounts .rows.lined > .row + .row { border-top: 1px solid var(--line); }
+      .accounts .row { padding: 14px 0; gap: 16px; border-radius: 0; }
+      .accounts .row .title { font-size: 16px; }
+      .accounts .row .sub { font-size: 14px; }
+      .amount.acc { color: var(--acc-blue); font-size: 16px; font-weight: 400; }
+    }
 
     /* ---------- Computador: à imagem da outra aplicação de gestão de finanças (20/10) ---------- */
     .wide .card { padding: 25px; }
@@ -345,18 +362,26 @@ export class DashboardPage {
   }
 
   private async load(month: string) {
+    const { start, end } = monthRange(month);
+    // Já lido antes? mostra logo e atualiza por trás (21/10)
+    const cTx = this.data.peekTransactions(start, end), cPend = this.data.peekPending('1900-01-01', addDays(this.today, 30));
+    if (cTx) this.txs.set(cTx);
+    if (cPend) this.applyPending(cPend);
     try {
-      const { start, end } = monthRange(month);
       await this.data.generateRecurrences(end);
       const [txs, pending] = await Promise.all([
         this.data.listTransactions(start, end),
         this.data.listPending('1900-01-01', addDays(this.today, 30)),
       ]);
       this.txs.set(txs);
-      const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
-      this.due.set(nonTransfer.filter((t) => t.date <= this.today));
-      this.pending.set(nonTransfer.filter((t) => t.date >= this.today));
+      this.applyPending(pending);
     } catch (e) { this.ui.error(e); }
+  }
+
+  private applyPending(pending: Transaction[]) {
+    const nonTransfer = pending.filter((t) => t.kind !== 'transfer');
+    this.due.set(nonTransfer.filter((t) => t.date <= this.today));
+    this.pending.set(nonTransfer.filter((t) => t.date >= this.today));
   }
 
   greeting() { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'; }
@@ -382,6 +407,9 @@ export class DashboardPage {
   edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
   async pay(t: Transaction, ev: Event) {
     ev.stopPropagation();
-    try { await this.data.setPaid(t.id, true); } catch (e) { this.ui.error(e); }
+    // otimista (21/10): sai logo das listas
+    this.due.update((l) => l.filter((x) => x.id !== t.id));
+    this.pending.update((l) => l.filter((x) => x.id !== t.id));
+    try { await this.data.setPaid(t.id, true, t); } catch (e) { this.ui.error(e); }
   }
 }

@@ -24,8 +24,10 @@ import { BackButtonService } from '../shared/back-button.service';
   selector: 'app-shell',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
   template: `
-    <!-- Barra superior verde com a navegação ao centro (computador) / só título (telemóvel); sem menu lateral -->
-    <mat-toolbar class="topbar" [class.desktop]="!isSmall()">
+    <!-- Barra superior verde com a navegação ao centro — só no computador. No telemóvel (21/10, como na outra aplicação de
+         gestão de finanças) não há barra: cada página tem o seu título e a navegação está toda na barra inferior. -->
+    @if (!isSmall()) {
+    <mat-toolbar class="topbar desktop">
       <a class="brand" routerLink="/"><mat-icon>account_balance_wallet</mat-icon><span>MyFinances</span></a>
       @if (!isSmall()) {
         <nav class="links">
@@ -45,6 +47,8 @@ import { BackButtonService } from '../shared/back-button.service';
           <mat-icon>account_circle</mat-icon>
         }
       </button>
+    </mat-toolbar>
+    }
       <mat-menu #userMenu="matMenu">
         <div class="user-info">
           <div class="name">{{ data.displayName() || auth.displayName() }}</div>
@@ -54,9 +58,11 @@ import { BackButtonService } from '../shared/back-button.service';
         <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
         <button mat-menu-item routerLink="/recorrencias"><mat-icon>repeat</mat-icon>Recorrências</button>
         <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
+        @if (isSmall()) {
+          <button mat-menu-item (click)="themeSvc.dark.set(!themeSvc.dark())"><mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>{{ themeSvc.dark() ? 'Modo claro' : 'Modo escuro' }}</button>
+        }
         <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
       </mat-menu>
-    </mat-toolbar>
 
     <main class="content">
       @if (data.loaded()) {
@@ -72,11 +78,14 @@ import { BackButtonService } from '../shared/back-button.service';
     @if (isSmall()) {
       <nav class="bottom-nav">
         @for (item of navItems; track item.path) {
-          <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
+          <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }" [attr.aria-label]="item.short">
             <mat-icon>{{ item.icon }}</mat-icon>
-            <span>{{ item.short }}</span>
           </a>
         }
+        <!-- Foto: abre o menu do perfil (Contas, Categorias, Recorrências, O meu nome, modo escuro, Sair) -->
+        <button type="button" class="me" [matMenuTriggerFor]="userMenu" aria-label="Perfil">
+          @if (auth.avatarUrl(); as url) { <img class="avatar big" [src]="url" alt="" referrerpolicy="no-referrer" /> } @else { <mat-icon>account_circle</mat-icon> }
+        </button>
       </nav>
     }
   `,
@@ -85,10 +94,6 @@ import { BackButtonService } from '../shared/back-button.service';
     /* ---- barra superior verde ---- */
     .topbar { position: sticky; top: 0; z-index: 10; background: #16c64f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
     :host-context(html.dark) .topbar { background: #178f45; }
-    /* Mudança de página (View Transitions): a shell tem nomes próprios para ficar quieta e por cima enquanto só o conteúdo da rota anima */
-    .topbar { view-transition-name: topbar; }
-    .bottom-nav { view-transition-name: bottom-nav; }
-    .fab { view-transition-name: fab; }
     .brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 19px; letter-spacing: -.2px; }
     .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
     .links { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px; }
@@ -106,11 +111,14 @@ import { BackButtonService } from '../shared/back-button.service';
     /* ---- conteúdo ---- */
     .content { display: block; }
     /* ---- telemóvel ---- */
-    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
-    .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 10px; font-size: 11px; color: var(--mat-sys-on-surface-variant); text-decoration: none; }
-    .bottom-nav a.active { color: var(--mat-sys-primary); }
-    .bottom-nav a mat-icon { padding: 2px 16px; border-radius: 14px; }
-    .bottom-nav a.active mat-icon { background: var(--mat-sys-secondary-container); }
+    /* barra inferior só com ícones (21/10, como na outra aplicação): o ativo fica a verde, sem pílula */
+    .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface)); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
+    .bottom-nav a, .bottom-nav .me { flex: 1; display: grid; place-items: center; color: var(--mat-sys-on-surface); text-decoration: none; border: none; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .bottom-nav a mat-icon { font-size: 28px; width: 28px; height: 28px; transition: transform .12s; }
+    .bottom-nav a:active mat-icon { transform: scale(.88); }
+    .bottom-nav a.active { color: var(--nav-active); }
+    .avatar.big { width: 32px; height: 32px; }
+    .bottom-nav .me mat-icon { font-size: 30px; width: 30px; height: 30px; color: var(--mat-sys-on-surface-variant); }
   `],
 })
 export class Shell {
@@ -130,8 +138,8 @@ export class Shell {
   readonly showFab = computed(() => !this.url().startsWith('/relatorios'));
 
   readonly navItems = [
-    { path: '/', icon: 'dashboard', label: 'Visão geral', short: 'Início' },
-    { path: '/movimentos', icon: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
+    { path: '/', icon: 'home', label: 'Visão geral', short: 'Início' },
+    { path: '/movimentos', icon: 'swap_horiz', label: 'Movimentos', short: 'Movimentos' },
     { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
   ];
 

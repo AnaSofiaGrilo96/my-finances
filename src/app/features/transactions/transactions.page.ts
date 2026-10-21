@@ -9,7 +9,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/data.service';
 import { Transaction, TransactionKind, isAdjustment, signFor } from '../../core/models';
-import { addDays, currentMonth, fromIso, monthRange, todayIso } from '../../core/dates';
+import { addDays, currentMonth, fromIso, monthRange, shiftMonth, todayIso } from '../../core/dates';
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
@@ -20,8 +20,11 @@ import { openTransactionDetail } from './transaction-detail.sheet';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { BackButtonService } from '../../shared/back-button.service';
 
+function readFlag(k: string) { try { return localStorage.getItem(k) === '1'; } catch { return false; } }
+function writeFlag(k: string, v: boolean) { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* ignore */ } }
 const SHORT_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit' });
-interface DayGroup { date: string; label: string; items: Transaction[]; balance: number | null; }
+interface DayGroup { date: string; label: string; long: string; items: Transaction[]; balance: number | null; }
+const LONG_FMT = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }); // "24 de outubro" (telemóvel)
 
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' });
 
@@ -120,19 +123,23 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       @for (g of groups(); track g.date) {
         <section class="day" [attr.data-date]="g.date">
           <div class="day-head">
-            <span>{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.label }}</span>
+            <span class="desktop-only">{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.label }}</span>
+            <span class="mobile-only">{{ g.date === today ? 'Hoje, ' + g.long : g.date === tomorrow ? 'Amanhã, ' + g.long : g.long }}</span>
             <i class="hline desktop-only"></i>
-            @if (g.balance !== null) { <span class="muted mobile-only">Saldo no dia <b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></span> }
+            
           </div>
           <div class="card rows">
             @for (t of g.items; track t.id) {
               <app-swipe-row [paid]="t.paid" (togglePaid)="togglePaid(t)" (edit)="edit(t)" (remove)="remove(t)" (tapped)="open(t)">
                 <div class="row clickable" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)">
-                  <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="38" />
+                  <span class="ic">
+                    <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="40" />
+                    <!-- telemóvel: marca pequena de recorrência sobre o ícone, como na outra aplicação -->
+                    @if (t.recurrence_id) { <span class="rmark mobile-only"><mat-icon>repeat</mat-icon></span> }
+                  </span>
                   <div class="main">
                     <div class="title">
                       {{ t.description || nameOf(t) }}
-                      @if (t.recurrence_id) { <mat-icon class="rep mobile-only" [matTooltip]="t.installment_no ? 'Parcela' : 'Recorrência'">repeat</mat-icon> }
                       @if (t.installment_no) { <span class="chip">{{ t.installment_no }}/{{ installmentsOf(t) }}</span> }
                     </div>
                     <div class="sub mobile-only">{{ subOf(t) }}</div>
@@ -173,6 +180,24 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
 
       <!-- Totais: faixa fixa em baixo (quadrada no telemóvel, cartão redondo no computador) -->
       <div class="fixed-foot"><div class="summary inner">
+        <!-- Telemóvel (21/10, como na outra aplicação): pagos em cima (entradas, saídas, saldo); a seta mostra a linha "previsto",
+             que conta também o que ainda não foi pago/recebido -->
+        <div class="sum-mob">
+          <button type="button" class="foot-toggle" (click)="toggleFoot()" [attr.aria-label]="footOpen() ? 'Esconder previsto' : 'Mostrar previsto'"><mat-icon class="fchev" [class.up]="!footOpen()">expand_more</mat-icon></button>
+          <div class="srow">
+            <div><b class="income">{{ paidTotals().income | money }}</b><span>entradas</span></div>
+            <div><b class="expense">{{ -paidTotals().expense | money }}</b><span>saídas</span></div>
+            <div><b class="bal" [class.neg]="(paidBalance() ?? 0) < 0">{{ paidBalance() ?? 0 | money }}</b><span>saldo</span></div>
+          </div>
+          <div class="collapse" [class.open]="footOpen()"><div>
+            <div class="srow">
+              <div><b class="income">{{ totals().income | money }}</b><span>previsto</span></div>
+              <div><b class="expense">{{ -totals().expense | money }}</b><span>previsto</span></div>
+              <div><b class="bal" [class.neg]="(forecast()?.value ?? 0) < 0">{{ forecast()?.value ?? 0 | money }}</b><span>previsto</span></div>
+            </div>
+          </div></div>
+        </div>
+        <div class="sum-desk">
         <div><span class="muted">Entradas</span><b class="income">{{ totals().income | money }}</b></div>
         <div><span class="muted">Saídas</span><b class="expense">{{ totals().expense | money }}</b></div>
         <div><span class="muted">Resultado</span><b [class.income]="totals().result >= 0" [class.expense]="totals().result < 0">{{ totals().result | money }}</b></div>
@@ -182,6 +207,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
             <span class="muted">Previsto a {{ f.label }}</span><b [class.expense]="f.value < 0">{{ f.value | money }}</b>
           </div>
         }
+        </div>
       </div></div>
     </div>
   `,
@@ -191,11 +217,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     /* Totais: no telemóvel é uma faixa quadrada colada à barra de navegação */
     .summary { flex-shrink: 0; display: flex; justify-content: space-around; gap: 8px; text-align: center; padding: 10px 12px calc(74px + env(safe-area-inset-bottom)); background: var(--mat-sys-surface); border-top: 1px solid var(--mat-sys-outline-variant); } /* o fundo prolonga-se por baixo da barra de navegação para não haver falhas */
     :host-context(html.dark) .summary { background: var(--app-card-bg); }
-    .summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+    .sum-desk > div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
     .summary b { font-size: 16px; }
     .forecast b { color: #3062d4; } .forecast b.expense { color: #e5484d; }
     :host-context(html.dark) .forecast b { color: #8fb0ff; }
-    @media (max-width: 899px) { .summary { gap: 4px; padding-left: 6px; padding-right: 6px; } .summary div { font-size: 11.5px; } .summary b { font-size: 14px; } }
+
     @media (min-width: 900px) {
       /* No computador mantém o aspeto de cartão redondo, sempre com folga ao fundo */
       /* .fixed-foot (styles.scss) dá-lhe exatamente a mesma largura do cabeçalho e dos cartões */
@@ -273,6 +299,44 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .day-foot b { color: #1eb980; font-weight: 600; } .day-foot b.expense { color: #e5484d; }
       .summary { padding: 14px 12px; }
     }
+    /* ---- telemóvel (21/10): no fim para ganhar às regras base acima ---- */
+    .summary .sum-desk { display: contents; }
+    .summary .sum-mob { display: none; }
+    @media (max-width: 899px) {
+      /* rodapé recolhível (21/10) */
+      .summary { display: block; padding: 0 8px calc(var(--nav-h) + 8px + env(safe-area-inset-bottom)); background: var(--app-bar-bg, var(--mat-sys-surface)); border-top: 1px solid var(--line-soft); }
+      :host-context(html.dark) .summary { background: var(--app-bar-bg); }
+      .summary .sum-desk { display: none; }
+      .summary .sum-mob { display: block; }
+      .foot-toggle { display: block; margin: 0 auto; width: 56px; height: 24px; border: none; background: none; color: var(--mat-sys-on-surface-variant); padding: 0; cursor: pointer; }
+      .fchev { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+      .fchev.up { transform: rotate(180deg); }
+      .srow { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; padding: 2px 0 8px; }
+      .srow div { display: flex; flex-direction: column; gap: 1px; }
+      .srow b { font-size: 16px; font-weight: 500; }
+      .srow span { font-size: 14px; color: var(--mat-sys-on-surface-variant); }
+      .srow b.bal { color: #3062d4; } .srow b.bal.neg { color: #e5484d; }
+      :host-context(html.dark) .srow b.bal { color: #8fa3f0; } :host-context(html.dark) .srow b.bal.neg { color: #e06666; }
+      .collapse .srow { padding-top: 6px; }
+      .fixed-body { background: var(--app-bar-bg); padding: 0 var(--page-x); }
+      /* lista sem cartões (21/10): linhas diretamente no fundo, data por extenso, só a conta por baixo */
+      .day { margin: 0; }
+      .day-head { padding: 14px 4px 4px; font-size: 14px; font-weight: 600; color: var(--mat-sys-on-surface-variant); text-transform: none; }
+      .rows { padding: 0; background: transparent !important; border-radius: 0; }
+      app-swipe-row { margin: 0; }
+      .row { background: transparent; border-radius: 0; padding: 10px 4px; min-height: 64px; box-sizing: border-box; gap: 14px; }
+      :host-context(html.dark) .row { background: transparent; }
+      .row .title { font-size: 16px; }
+      .row .sub { font-size: 14px; }
+      .row .amount { font-size: 16px; font-weight: 400; }
+      .row .amount.expense, .row .amount.transfer { color: var(--mat-sys-on-surface); }
+      .state { font-size: 14px; }
+      .state.is-paid { color: var(--mat-sys-on-surface-variant); }
+      .row.unpaid .title, .row.unpaid .amount { opacity: 1; }
+    }
+    .ic { position: relative; display: inline-flex; flex-shrink: 0; }
+    .rmark { position: absolute; right: -6px; bottom: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #222; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--app-bar-bg, #fff); }
+    .rmark mat-icon { font-size: 13px; width: 13px; height: 13px; }
   `],
 })
 export class TransactionsPage implements OnDestroy {
@@ -308,6 +372,7 @@ export class TransactionsPage implements OnDestroy {
 
   private readonly all = signal<Transaction[]>([]);
   private readonly opening = signal<number | null>(null);
+  private readonly openingPaid = signal<number | null>(null);
 
   readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
   readonly catSel = computed(() => this.categoryId() ? this.data.categoryMap().get(this.categoryId()!) : undefined);
@@ -338,6 +403,29 @@ export class TransactionsPage implements OnDestroy {
     return { income, expense, result: income - expense };
   });
 
+  /** Entradas/saídas só dos pagos (telemóvel, linha de cima do rodapé); respeitam os filtros como os totais. */
+  readonly paidTotals = computed(() => {
+    const acc = this.accountId();
+    let income = 0, expense = 0;
+    for (const t of this.filtered()) {
+      if (!t.paid || isAdjustment(t)) continue;
+      const sgn = signFor(t, acc);
+      if (sgn > 0) income += t.amount; else if (sgn < 0) expense += t.amount;
+    }
+    return { income, expense };
+  });
+  /** Saldo no fim do período só com os pagos (= saldo real das contas visíveis, se o período inclui hoje). */
+  readonly paidBalance = computed(() => {
+    const open = this.openingPaid();
+    if (open === null) return null;
+    const acc = this.accountId();
+    let v = open;
+    for (const t of this.all()) if (t.paid) v += signFor(t, acc) * t.amount;
+    return Math.round(v * 100) / 100;
+  });
+  readonly footOpen = signal(readFlag('mf-foot-open'));
+  toggleFoot() { this.footOpen.update((v) => !v); writeFlag('mf-foot-open', this.footOpen()); }
+
   /** Saldo previsto no último dia do período: saldo de abertura (já com os não pagos) + todos os movimentos do período,
    *  pagos ou não, das contas visíveis. Não depende dos filtros de tipo/categoria/estado/pesquisa (é um saldo de conta). */
   readonly forecast = computed(() => {
@@ -359,12 +447,13 @@ export class TransactionsPage implements OnDestroy {
     let running = this.opening() ?? 0;
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, items]) => {
       if (showBalance) for (const t of items) running += signFor(t, acc) * t.amount;
-      return { date, label: DAY_FMT.format(fromIso(date)), items, balance: showBalance ? running : null };
+      return { date, label: DAY_FMT.format(fromIso(date)), long: LONG_FMT.format(fromIso(date)), items, balance: showBalance ? running : null };
     });
   });
 
   constructor() {
     document.body.classList.add('has-bottom-bar'); // o FAB sobe para não tapar a barra de totais
+    effect(() => document.body.style.setProperty('--foot-h', this.footOpen() ? '138px' : '84px')); // altura do rodapé no telemóvel
     if (this.activeFilters()) this.filtersOpen.set(true);
     effect(() => {
       const month = this.month(), acc = this.accountId(), range = this.range();
@@ -379,21 +468,40 @@ export class TransactionsPage implements OnDestroy {
   }
 
   private async load(month: string, acc: string | null, range: { start: string; end: string } | null) {
-    this.loading.set(true);
+    const { start, end } = range ?? monthRange(month);
+    // Já lido antes? mostra logo (21/10) e atualiza por trás
+    const cached = this.data.peekTransactions(start, end, acc);
+    if (cached) {
+      this.all.set(cached);
+      this.opening.set(this.data.peekOpening(start, acc, true) ?? null);
+      this.openingPaid.set(this.data.peekOpening(start, acc, false) ?? null);
+    }
+    this.loading.set(!cached);
     try {
-      const { start, end } = range ?? monthRange(month);
       await this.data.generateRecurrences(end);
-      const [list, opening] = await Promise.all([
+      const [list, opening, openingPaid] = await Promise.all([
         this.data.listTransactions(start, end, acc),
         this.data.openingBalance(start, acc, true),
+        this.data.openingBalance(start, acc, false),
       ]);
       this.all.set(list);
       this.opening.set(opening);
-      this.scrollToRelevantDay();
+      this.openingPaid.set(openingPaid);
+      if (!cached) this.scrollToRelevantDay();
+      if (!range) this.prefetch(month, acc);
     } catch (e) { this.ui.error(e); } finally { this.loading.set(false); }
   }
 
-  ngOnDestroy() { document.body.classList.remove('has-bottom-bar'); }
+  /** Lê antecipadamente o mês anterior e o seguinte, para a roda de meses mudar sem espera. */
+  private prefetch(month: string, acc: string | null) {
+    for (const m of [shiftMonth(month, -1), shiftMonth(month, 1)]) {
+      const { start, end } = monthRange(m);
+      if (this.data.peekTransactions(start, end, acc)) continue;
+      Promise.all([this.data.listTransactions(start, end, acc), this.data.openingBalance(start, acc, true), this.data.openingBalance(start, acc, false)]).catch(() => {});
+    }
+  }
+
+  ngOnDestroy() { document.body.classList.remove('has-bottom-bar'); document.body.style.removeProperty('--foot-h'); }
 
   setMonth(m: string) { this.month.set(m); }
 
@@ -435,19 +543,24 @@ export class TransactionsPage implements OnDestroy {
     else if (action === 'delete') await this.remove(t);
   }
 
+  /** Otimista (21/10): a linha muda logo; a base de dados confirma por trás. */
   async togglePaid(t: Transaction) {
-    try { await this.data.setPaid(t.id, !t.paid); } catch (e) { this.ui.error(e); }
+    const paid = !t.paid;
+    this.all.update((l) => l.map((x) => (x.id === t.id ? { ...x, paid } : x)));
+    try { await this.data.setPaid(t.id, paid, t); } catch (e) { this.ui.error(e); }
   }
 
   async remove(t: Transaction) {
     if (t.recurrence_id) {
       const scope = await this.ui.recurrenceScope('Apagar');
       if (!scope) return;
-      try { if (scope === 'one') await this.data.deleteTransaction(t.id); else await this.data.deleteAndFollowing(t); } catch (e) { this.ui.error(e); }
+      if (scope === 'one') this.all.update((l) => l.filter((x) => x.id !== t.id)); // otimista
+      try { if (scope === 'one') await this.data.deleteTransaction(t.id, t); else await this.data.deleteAndFollowing(t); } catch (e) { this.ui.error(e); }
       return;
     }
     if (!(await this.ui.confirm('Apagar movimento?', `Tens a certeza que queres apagar o movimento "${t.description || this.nameOf(t)}"? Esta ação não pode ser anulada.`, 'Apagar movimento'))) return;
-    try { await this.data.deleteTransaction(t.id); } catch (e) { this.ui.error(e); }
+    this.all.update((l) => l.filter((x) => x.id !== t.id)); // otimista
+    try { await this.data.deleteTransaction(t.id, t); } catch (e) { this.ui.error(e); }
   }
 
   // ---------- Apresentação ----------
@@ -462,9 +575,10 @@ export class TransactionsPage implements OnDestroy {
   iconOf(t: Transaction) { return t.kind === 'transfer' ? 'swap_horiz' : (this.cat(t)?.icon ?? (t.kind === 'income' ? 'more_horiz' : 'label')); }
   colorOf(t: Transaction) { return t.kind === 'transfer' ? '#78909c' : (this.cat(t)?.color ?? (t.kind === 'income' ? '#1de9b6' : '#90a4ae')); }
   nameOf(t: Transaction) { return t.kind === 'transfer' ? 'Transferência' : (this.cat(t)?.name ?? (t.kind === 'income' ? 'Receita' : 'Despesa')); }
+  /** Linha de baixo no telemóvel: só a conta (21/10, como na outra aplicação); nas transferências "de X para Y". */
   subOf(t: Transaction) {
-    if (t.kind === 'transfer') return `${this.acc(t.account_id)?.name ?? '?'} → ${this.acc(t.to_account_id)?.name ?? '?'}`;
-    return [this.data.categoryLabel(t.category_id), this.acc(t.account_id)?.name].filter(Boolean).join(' · ');
+    if (t.kind === 'transfer') return `de ${this.acc(t.account_id)?.name ?? '?'} para ${this.acc(t.to_account_id)?.name ?? '?'}`;
+    return this.acc(t.account_id)?.name ?? '';
   }
   stateOf(t: Transaction) {
     if (isAdjustment(t)) return 'ajuste de saldo'; // não entra nas entradas/saídas

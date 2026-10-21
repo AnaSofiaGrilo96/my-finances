@@ -1,5 +1,5 @@
 import { ApplicationConfig, LOCALE_ID, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withHashLocation, withViewTransitions } from '@angular/router';
+import { provideRouter, withComponentInputBinding, withHashLocation } from '@angular/router';
 import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt-PT';
 import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
@@ -15,8 +15,8 @@ registerLocaleData(localePt);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // withViewTransitions: mudança de página com a View Transitions API (a página antiga sai e a nova entra a deslizar — CSS em styles.scss)
-    provideRouter(routes, withHashLocation(), withComponentInputBinding(), withViewTransitions({ skipInitialTransition: true })),
+    // Sem withViewTransitions desde 21/10: a mudança de página é instantânea (a animação fazia a app parecer mais lenta)
+    provideRouter(routes, withHashLocation(), withComponentInputBinding()),
     provideNativeDateAdapter(),
     { provide: LOCALE_ID, useValue: 'pt-PT' },
     { provide: MAT_DATE_LOCALE, useValue: 'pt-PT' },

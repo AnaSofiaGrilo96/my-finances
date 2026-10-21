@@ -111,6 +111,7 @@ export class DataService {
   }
 
   clear() {
+    this.dropCache();
     this.accounts.set([]);
     this.categories.set([]);
     this.recurrences.set([]);
@@ -404,6 +405,7 @@ export class DataService {
       all.push(...(data ?? []).map(numTx));
       if (!data || data.length < PAGE) break;
     }
+    this.txCache.set(this.txKey(start, end, accountId), all);
     return all;
   }
 
@@ -417,7 +419,9 @@ export class DataService {
       .lte('date', toIso)
       .order('date');
     if (error) throw error;
-    return (data ?? []).map(numTx);
+    const list = (data ?? []).map(numTx);
+    this.txCache.set(`pend|${fromIso}|${toIso}`, list);
+    return list;
   }
 
   async searchTransactions(text: string, limit = 200): Promise<Transaction[]> {
@@ -462,7 +466,9 @@ export class DataService {
       p_include_unpaid: includeUnpaid,
     });
     if (error) throw error;
-    return Number(data ?? 0);
+    const v = Number(data ?? 0);
+    this.numCache.set(`open|${date}|${accountId ?? ''}|${includeUnpaid}`, v);
+    return v;
   }
 
   async saveTransaction(t: Partial<Transaction>): Promise<Transaction> {
@@ -486,22 +492,55 @@ export class DataService {
     return count ?? list.length;
   }
 
-  async setPaid(id: string, paid: boolean): Promise<void> {
+  /** Marca pago/não pago. Otimista (21/10): as listas em memória e os saldos mudam logo; se a base de dados falhar,
+   *  esquece a memória, volta a ler tudo e lança o erro. */
+  async setPaid(id: string, paid: boolean, t?: Transaction): Promise<void> {
+    this.patchCached(id, (x) => ({ ...x, paid }));
+    if (t && t.paid !== paid) this.shiftBalances(t, paid ? 1 : -1);
     const { error } = await this.sb.from('transactions').update({ paid }).eq('id', id);
-    if (error) throw error;
+    if (error) { this.dropCache(); await this.afterTxChange(); throw error; }
     await this.afterTxChange();
   }
 
-  async deleteTransaction(id: string): Promise<void> {
+  async deleteTransaction(id: string, t?: Transaction): Promise<void> {
+    this.patchCached(id, () => null);
+    if (t?.paid) this.shiftBalances(t, -1);
     const { error } = await this.sb.from('transactions').delete().eq('id', id);
-    if (error) throw error;
+    if (error) { this.dropCache(); await this.afterTxChange(); throw error; }
     await this.afterTxChange();
   }
 
-
+  /** Depois de qualquer alteração: avisa as páginas logo (recarregam por trás, a partir da memória) e acerta os saldos. */
   private async afterTxChange() {
-    await this.refreshBalances();
     this.version.update((v) => v + 1);
+    await this.refreshBalances();
+  }
+
+  // ---------- Memória de leituras (21/10: páginas e meses já vistos aparecem logo e atualizam por trás) ----------
+  private readonly txCache = new Map<string, Transaction[]>();
+  private readonly numCache = new Map<string, number>();
+  private txKey(start: string, end: string, acc?: string | null) { return `${start}|${end}|${acc ?? ''}`; }
+  /** Última leitura de listTransactions para estes argumentos (ou undefined). */
+  peekTransactions(start: string, end: string, acc?: string | null) { return this.txCache.get(this.txKey(start, end, acc)); }
+  peekOpening(date: string, acc: string | null, includeUnpaid: boolean) { return this.numCache.get(`open|${date}|${acc ?? ''}|${includeUnpaid}`); }
+  peekPending(from: string, to: string) { return this.txCache.get(`pend|${from}|${to}`); }
+  /** Aplica uma alteração (ou remoção, se devolver null) a um movimento em todas as leituras guardadas. */
+  private patchCached(id: string, fn: (t: Transaction) => Transaction | null) {
+    for (const [k, list] of this.txCache) {
+      if (!list.some((x) => x.id === id)) continue;
+      const pend = k.startsWith('pend|'); // as listas de pendentes só têm não pagos
+      this.txCache.set(k, list.map((x) => (x.id === id ? fn(x) : x)).filter((x): x is Transaction => x !== null && !(pend && x.paid)));
+    }
+  }
+  private dropCache() { this.txCache.clear(); this.numCache.clear(); }
+  /** Ajusta os saldos em memória como se o movimento passasse a contar (dir = 1) ou deixasse de contar (dir = -1). */
+  private shiftBalances(t: Transaction, dir: 1 | -1) {
+    const b = { ...this.balances() };
+    const add = (acc: string | null, v: number) => { if (acc) b[acc] = Math.round(((b[acc] ?? 0) + v) * 100) / 100; };
+    if (t.kind === 'income') add(t.account_id, dir * t.amount);
+    else if (t.kind === 'expense') add(t.account_id, -dir * t.amount);
+    else { add(t.account_id, -dir * t.amount); add(t.to_account_id, dir * t.amount); }
+    this.balances.set(b);
   }
 }
 

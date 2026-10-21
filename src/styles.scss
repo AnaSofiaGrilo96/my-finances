@@ -17,9 +17,24 @@ html.dark { color-scheme: dark; }
 // ---------- Paleta do modo escuro (14/10: mais contraste entre cartões e fundo) ----------
 // fundo da página mais escuro do que o tema Material dá por defeito; cartões e barras dois degraus acima.
 html.dark {
-  --app-bg: color-mix(in srgb, var(--mat-sys-surface) 78%, black);
-  --app-bar-bg: var(--mat-sys-surface-container-high);
-  --app-card-bg: var(--mat-sys-surface-container-high);
+  // Cinzentos neutros (21/10, como na outra aplicação de gestão de finanças): sem o tom esverdeado do tema Material.
+  // Os tokens --mat-sys-* das superfícies são redefinidos para que janelas, folhas e menus usem os mesmos cinzentos.
+  --mat-sys-surface: #161616;
+  --mat-sys-surface-dim: #121212;
+  --mat-sys-surface-bright: #2c2c2c;
+  --mat-sys-surface-container-lowest: #0f0f0f;
+  --mat-sys-surface-container-low: #1a1a1a;
+  --mat-sys-surface-container: #1f1f1f;
+  --mat-sys-surface-container-high: #262626;
+  --mat-sys-surface-container-highest: #303030;
+  --mat-sys-on-surface: #ececec;
+  --mat-sys-on-surface-variant: #a3a3a3;
+  --mat-sys-outline: #6b6b6b;
+  --mat-sys-outline-variant: #3a3a3a;
+  --mat-sys-inverse-surface: #e6e6e6;
+  --app-bg: #121212;
+  --app-bar-bg: #1e1e1e;
+  --app-card-bg: #1f1f1f;
 }
 
 // ---------- Paleta do modo claro (pedido da Ana, 08/10) ----------
@@ -37,12 +52,14 @@ body {
   background: var(--app-bg, var(--mat-sys-surface-container-low, #f4f6f4));
   color: var(--mat-sys-on-surface);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; // sem atraso de duplo toque
 }
 
 // ---------- Utilitários partilhados ----------
 :root { --content-max: min(1100px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…) — 1100px desde 14/10 (1400 era largo demais)
 // Espaçamento: margens da página (--page-x) e espaço entre cartões (--gap). Telemóvel mais apertado, computador 25px (pedido da Ana, 14/10).
-:root { --page-x: 12px; --gap: 14px; }
+:root { --page-x: 16px; --gap: 14px; --nav-h: 64px; --nav-active: #1eb980; --line-soft: color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent); }
+html.dark { --nav-active: #5fc46e; }
 @media (min-width: 700px) { :root { --page-x: 25px; --gap: 25px; } }
 .page { padding: var(--page-x); max-width: var(--content-max); margin: 0 auto; padding-bottom: 96px; }
 @media (min-width: 700px) { .page { padding: var(--page-x) var(--page-x) 40px; } }
@@ -74,13 +91,22 @@ body {
 
 // Página de altura fixa: cabeçalho (roda de meses + filtros) fixo no topo, corpo com scroll próprio.
 // Usado em Movimentos e Relatórios. A barra superior tem 56px no telemóvel e 64px a partir de 600px.
-.fixed-page { --toolbar-h: 56px; display: flex; flex-direction: column; height: calc(100dvh - var(--toolbar-h)); box-sizing: border-box; padding: 0; max-width: none; margin: 0; overflow: hidden; }
-@media (min-width: 600px) { .fixed-page { --toolbar-h: 64px; } }
+.fixed-page { --toolbar-h: 0px; display: flex; flex-direction: column; height: calc(100dvh - var(--toolbar-h)); box-sizing: border-box; padding: 0; max-width: none; margin: 0; overflow: hidden; }
+
 .fixed-head { flex-shrink: 0; padding: 0; } // telemóvel: a barra do cabeçalho (roda de meses) vai de canto a canto, sem margens nem cantos (pedido da Ana, 14/10)
 // A faixa com fundo é o .inner: alinhada com os cartões da lista (mesma margem lateral), tudo centrado em 40px de altura
 .fixed-head > .inner { display: flex; align-items: center; gap: 6px; padding: 6px 8px; box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface-container-low, #f4f6f4)); border-radius: 0; }
 .fixed-head app-month-nav { flex: 1; min-width: 0; }
 .fixed-head h1 { display: none; }
+// Telemóvel (21/10, como na outra aplicação): sem barra verde — cada página tem uma linha de título centrado (fundo da página),
+// com o botão de filtros à direita, e por baixo a faixa da roda de meses
+@media (max-width: 899px) {
+  .fixed-head > .inner { flex-wrap: wrap; padding: 0; gap: 0; position: relative; border-bottom: 1px solid var(--line-soft); }
+  .fixed-head, .fixed-body, .fixed-foot { scrollbar-gutter: auto; } // no telemóvel as barras de scroll são sobrepostas: as faixas vão de canto a canto
+  .fixed-head h1 { display: block; flex: 0 0 100%; order: -1; margin: 0; text-align: center; font-size: 18px; font-weight: 700; line-height: 56px; background: var(--app-bg); }
+  .fixed-head > .inner > button { position: absolute; top: 8px; right: 8px; }
+  .fixed-head app-month-nav, .fixed-head .range-head { padding: 8px 8px; }
+}
 .fixed-head > .inner > button { --mdc-icon-button-state-layer-size: 40px; width: 40px; height: 40px; padding: 8px; flex-shrink: 0; }
 .fixed-head > .inner > button.on { background: var(--mat-sys-secondary-container); } // só o botão de filtros, não os meses da roda
 .fixed-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px var(--page-x) 0; overscroll-behavior: contain; scrollbar-gutter: stable; }
@@ -208,8 +234,10 @@ html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }
 
 // FAB no telemóvel fica acima da barra inferior
 .fab { position: fixed !important; right: 16px; bottom: 16px; z-index: 20; width: 64px !important; height: 64px !important; border-radius: 50% !important; box-shadow: 0 6px 18px rgba(0,0,0,.25) !important; }
+// Telemóvel (21/10): botão + vermelho e um pouco mais pequeno, como na outra aplicação
+@media (max-width: 899px) { .fab { width: 56px !important; height: 56px !important; --mat-fab-container-color: #d65c5c; --mat-fab-foreground-color: #fff; background: #d65c5c !important; color: #fff !important; } html.dark .fab { background: #c95555 !important; } }
 .fab mat-icon { font-size: 30px; width: 30px; height: 30px; }
-@media (max-width: 899px) { .fab { bottom: calc(80px + env(safe-area-inset-bottom)) !important; } body.has-bottom-bar .fab { bottom: calc(150px + env(safe-area-inset-bottom)) !important; } }
+@media (max-width: 899px) { .fab { bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)) !important; } body.has-bottom-bar .fab { bottom: calc(var(--nav-h) + var(--foot-h, 72px) + 14px + env(safe-area-inset-bottom)) !important; } }
 // No computador também é flutuante, sempre na mesma posição em todas as páginas
 @media (min-width: 900px) { .fab { right: 28px; bottom: 28px !important; } }
 
@@ -237,23 +265,10 @@ html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
 
-// Mudança de página (View Transitions API, ligada no router com withViewTransitions): a página antiga desvanece a subir e a nova
-// entra a deslizar de baixo. Só o conteúdo da rota tem view-transition-name, por isso a shell (barra verde, navegação, FAB) fica quieta.
-// Em browsers sem suporte não há transição, apenas a troca imediata.
-main.content > router-outlet + * { display: block; view-transition-name: page; }
-::view-transition-old(page) { animation: page-out .18s ease-in both; }
-::view-transition-new(page) { animation: page-in .34s cubic-bezier(.2,.8,.2,1) both; }
-::view-transition-old(root), ::view-transition-new(root) { animation: none; } // o resto não anima
-// Barra verde, navegação inferior e FAB têm grupos próprios (nomes na shell): ficam quietos e por cima da página que anima
-::view-transition-old(topbar), ::view-transition-new(topbar), ::view-transition-old(bottom-nav), ::view-transition-new(bottom-nav) { animation: none; }
-::view-transition-group(topbar), ::view-transition-group(bottom-nav), ::view-transition-group(fab) { animation-duration: 0s; }
-@keyframes page-out { to { opacity: 0; transform: translateY(-10px); } }
-@keyframes page-in { from { opacity: 0; transform: translateY(24px); } }
-// Cartões e linhas de lista aparecem a deslizar ligeiramente, em cascata
-.card { animation: fade-up .34s cubic-bezier(.2,.8,.2,1) both; }
-@for $i from 1 through 8 { .page > .card:nth-of-type(#{$i}), .grid-2 > .col > .card:nth-child(#{$i}) { animation-delay: #{($i - 1) * 45}ms; } }
-.rows > * { animation: fade-up .3s cubic-bezier(.2,.8,.2,1) both; }
-@for $i from 1 through 12 { .rows > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 28}ms; } }
+// Mudança de página: instantânea desde 21/10 (antes View Transitions + cartões e linhas em cascata; a Ana achou que tornavam a app
+// menos fluida). Ficam só as animações de janelas, folhas, menus e expandir/recolher.
+main.content > router-outlet + * { display: block; }
+
 // Expandir/recolher suave (sem Angular animations): o conteúdo fica sempre no DOM, a altura anima de 0fr a 1fr.
 // Uso: <div class="collapse" [class.open]="aberto()"><div> …conteúdo… </div></div>  (o filho direto é obrigatório)
 .collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }

@@ -490,7 +490,10 @@ export class ReportsPage {
   }
 
   private async load(start: string, end: string, acc: string | null, unpaid: boolean) {
-    this.loading.set(true);
+    // Já lido antes (aqui ou em Movimentos)? mostra logo e atualiza por trás (21/10)
+    const cached = this.data.peekTransactions(start, end, acc);
+    if (cached) { this.raw.set(cached); this.opening.set(this.data.peekOpening(start, acc, unpaid) ?? this.opening()); }
+    this.loading.set(!cached);
     try {
       const [list, opening] = await Promise.all([this.data.listTransactions(start, end, acc), this.data.openingBalance(start, acc, unpaid)]);
       this.raw.set(list);
