@@ -23,12 +23,13 @@ let openRow: SwipeRow | null = null;
     </div>
   `,
   styles: [`
-    :host { display: block; position: relative; overflow: hidden; border-radius: 10px; }
+    :host { display: block; position: relative; overflow: hidden; }
     .actions { position: absolute; inset: 0 0 0 auto; display: flex; width: 192px; opacity: 0; pointer-events: none; }
     .actions.visible { opacity: 1; pointer-events: auto; }
     .act { flex: 1; border: none; color: #fff; display: grid; place-items: center; cursor: pointer; }
     .act.paid { background: #8a8f95; } .act.edit { background: #5f6b67; } .act.del { background: #d9534f; }
-    .content { position: relative; background: inherit; transition: transform .18s ease-out; touch-action: pan-y; will-change: transform; }
+    /* fundo opaco (21/10): as linhas deixaram de ter fundo próprio no telemóvel e as ações viam-se através do texto */
+    .content { position: relative; background: var(--swipe-bg, var(--app-bar-bg, var(--mat-sys-surface))); transition: transform .18s ease-out; touch-action: pan-y; will-change: transform; }
     .content.dragging { transition: none; }
   `],
 })
