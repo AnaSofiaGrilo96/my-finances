@@ -85,7 +85,7 @@ Todas as tabelas têm `user_id default auth.uid()` e política RLS `user_id = au
 - `seed_default_categories()`: categorias sugeridas para um utilizador novo (não usada na conta da Ana, que tem as da outra aplicação de gestão de finanças).
 
 ### Esquema
-`supabase/schema.sql` é um **script único e idempotente** que cria a base de dados de raiz (tabelas, RLS, vista `account_balances`, `opening_balance`, `seed_default_categories`, esquema `private` com `backup_keys` e a função `backup_export`, e a geração da chave de backup). **Qualquer alteração ao esquema edita este ficheiro** e entrega-se à Ana o excerto a correr no SQL Editor. Não existe pasta de migrações. Scripts com dados (importações, recorrências iniciais, restauros) ficam **fora do repositório**, em `_local/supabase-dados/` (gitignored) — o repositório é público.
+`supabase/schema.sql` é um **script único e idempotente** que cria a base de dados de raiz (tabelas, RLS, vista `account_balances`, `opening_balance`, `seed_default_categories`, esquema `private` com `backup_keys` e a função `backup_export`, e a geração da chave de backup). **Qualquer alteração ao esquema edita este ficheiro** e entrega-se à Ana o excerto a correr no SQL Editor. Não existe pasta de migrações. Inclui os `grant` da Data API para `authenticated`/`service_role` (tabelas, vista e funções) — obrigatórios desde 30/10/2026, quando a Supabase deixou de os dar automaticamente a tabelas novas; o projeto atual já os tinha. Scripts com dados (importações, recorrências iniciais, restauros) ficam **fora do repositório**, em `_local/supabase-dados/` (gitignored) — o repositório é público.
 
 ---
 

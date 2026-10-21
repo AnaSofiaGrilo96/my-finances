@@ -178,6 +178,21 @@ begin
 end $$;
 
 -- ============================================================
+-- Permissões da Data API (necessário desde 30/10/2026: a Supabase deixou de as dar automaticamente a tabelas
+-- novas em "public"; sem isto a app recebe "permission denied" numa base criada de raiz). Idempotente.
+-- Sem `anon` de propósito: a app só lê dados depois de entrar; o backup usa a função backup_export, com a sua própria permissão.
+-- ============================================================
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on public.accounts     to authenticated, service_role;
+grant select, insert, update, delete on public.categories   to authenticated, service_role;
+grant select, insert, update, delete on public.transactions to authenticated, service_role;
+grant select, insert, update, delete on public.recurrences  to authenticated, service_role;
+grant select, insert, update, delete on public.settings     to authenticated, service_role;
+grant select on public.account_balances to authenticated, service_role;
+grant execute on function public.opening_balance(date, uuid, boolean) to authenticated, service_role;
+grant execute on function public.seed_default_categories() to authenticated, service_role;
+
+-- ============================================================
 -- Backup mensal (Google Apps Script em backup/apps-script.gs)
 -- Função que devolve TODOS os dados em JSON, chamada por HTTP (/rest/v1/rpc/backup_export) com a chave anon
 -- + uma chave de backup secreta cujo hash fica em private.backup_keys. Sem a chave certa devolve erro.
