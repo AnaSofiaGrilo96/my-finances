@@ -266,12 +266,12 @@ html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }
 .tx-dialog-full .mat-mdc-dialog-container, .tx-dialog .mat-mdc-dialog-container { --mdc-dialog-container-shape: 0; }
 
 // Detalhe do movimento: folha inferior no telemóvel, janela centrada no computador
-.detail-sheet { border-radius: 24px 24px 0 0 !important; max-height: 85dvh; }
+.detail-sheet .mat-bottom-sheet-container { border-radius: 24px 24px 0 0 !important; max-height: 85dvh; } // (o panelClass fica no painel do overlay, não na folha: fundo e cantos vão para a folha, que é o que anima)
 .detail-dialog .mat-mdc-dialog-surface { border-radius: 24px; padding: 0; }
 // Pergunta com opções empilhadas
 .choice-dialog .mat-mdc-dialog-surface { border-radius: 22px; padding: 0; }
 // Modo escuro: janelas e folhas destacam-se do fundo (fundo mais claro, contorno e sombra)
-html.dark .detail-sheet, html.dark .mat-bottom-sheet-container { background: var(--mat-sys-surface-container-high); border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 55%, transparent); border-bottom: none; box-shadow: 0 -10px 40px rgba(0,0,0,.6); }
+html.dark .mat-bottom-sheet-container { background: var(--mat-sys-surface-container-high); border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 55%, transparent); border-bottom: none; box-shadow: 0 -10px 40px rgba(0,0,0,.6); }
 html.dark .detail-dialog .mat-mdc-dialog-surface, html.dark .choice-dialog .mat-mdc-dialog-surface, html.dark .tx-dialog .mat-mdc-dialog-surface { background: var(--mat-sys-surface-container-high); border: 1px solid color-mix(in srgb, var(--mat-sys-outline) 55%, transparent); box-shadow: 0 16px 48px rgba(0,0,0,.65); }
 html.dark .detail-dialog .act, html.dark .detail-sheet .act { background: color-mix(in srgb, var(--mat-sys-on-surface) 12%, var(--mat-sys-surface-container-high)); }
 
@@ -302,8 +302,11 @@ main.content > router-outlet + * { display: block; }
 // (fill-mode "backwards" e não "both": no fim da animação o Material volta a mandar no transform, senão a saída deixava de animar)
 .mat-mdc-dialog-container .mat-mdc-dialog-surface { animation: dialog-in .32s cubic-bezier(.2,.8,.2,1) backwards; }
 .tx-dialog-full .mat-mdc-dialog-surface { animation: sheet-up .36s cubic-bezier(.2,.8,.2,1) backwards; }
-// Folha de detalhe no telemóvel: o conteúdo sobe de baixo (o contentor é animado pelo Material; não lhe mexer)
-.mat-bottom-sheet-container > * { display: block; animation: sheet-up .36s cubic-bezier(.2,.8,.2,1) backwards; }
+// Folhas inferiores (detalhe, escolher categoria/conta): a folha inteira sobe de baixo (22/10). Antes animava-se só o conteúdo
+// dentro da folha, que aparecia vazia por um instante — era o "flicker" ao abrir o detalhe.
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+.mat-bottom-sheet-container { animation: sheet-in .3s cubic-bezier(.2,.8,.2,1) backwards; }
+.mat-bottom-sheet-container > * { display: block; }
 .cdk-overlay-backdrop { transition-duration: .3s !important; }
 // Menus (filtros, perfil): entram com um pequeno zoom a partir do topo
 .mat-mdc-menu-panel { animation: dialog-in .22s cubic-bezier(.2,.8,.2,1) backwards; transform-origin: top; }
@@ -314,7 +317,6 @@ main.content > router-outlet + * { display: block; }
 // Ícone do polegar e estado mudam com uma pequena transição
 .state, .amount { transition: color .2s ease, opacity .2s ease; }
 // Conteúdo da folha de detalhe e do teclado
-.detail-sheet app-icon-badge, .detail-dialog app-icon-badge { animation: pop-in .28s cubic-bezier(.2,.8,.2,1) both; }
 .detail-sheet .act, .detail-dialog .act, .tx-dialog .key, .tx-dialog-full .key, .tx-dialog .chip, .tx-dialog-full .chip, .tx-dialog .confirm, .tx-dialog-full .confirm,
 .mat-bottom-sheet-container .item { transition: transform .12s ease, background-color .18s ease, color .18s ease, filter .15s ease; }
 .detail-sheet .act:active, .detail-dialog .act:active, .tx-dialog .key:active, .tx-dialog-full .key:active, .tx-dialog .chip:active, .tx-dialog-full .chip:active,

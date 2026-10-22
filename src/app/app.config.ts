@@ -23,7 +23,7 @@ export const appConfig: ApplicationConfig = {
     { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } },
     // O botão "Voltar" é gerido pelo BackButtonService (fecha a janela em vez de mudar de página)
     { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true, enterAnimationDuration: '300ms', exitAnimationDuration: '200ms' } },
-    { provide: MAT_BOTTOM_SHEET_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true } },
+    { provide: MAT_BOTTOM_SHEET_DEFAULT_OPTIONS, useValue: { closeOnNavigation: false, hasBackdrop: true, autoFocus: 'dialog' } }, // foco na folha e não no 1.º botão (aparecia um anel no caixote do detalhe)
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
