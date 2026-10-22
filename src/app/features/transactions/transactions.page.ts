@@ -13,6 +13,7 @@ import { addDays, currentMonth, fromIso, monthRange, shiftMonth, todayIso } from
 import { MoneyPipe } from '../../shared/money.pipe';
 import { IconBadge } from '../../shared/icon-badge';
 import { MonthNav } from '../../shared/month-nav';
+import { PERIODS, Period, RangeDialog, periodRange } from '../../shared/periods';
 import { SwipeRow } from '../../shared/swipe-row';
 import { UiService } from '../../shared/ui.service';
 import { openTransactionDialog } from './transaction.dialog';
@@ -54,6 +55,10 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         <!-- Barra de filtros em pílulas (à imagem da outra aplicação de gestão de finanças): cada uma abre um menu com ícones -->
         <div class="fbar">
           <div class="pills">
+            <!-- Período (22/10): os mesmos períodos rápidos dos Relatórios; "Este mês" volta à roda de meses -->
+            <button type="button" class="pill" [class.on]="periodSel() !== 'month'" [matMenuTriggerFor]="periodMenu">
+              <mat-icon class="lead">date_range</mat-icon>{{ periodLabel() }}<mat-icon>expand_more</mat-icon>
+            </button>
             <button type="button" class="pill" [class.on]="accountId()" [matMenuTriggerFor]="accMenu">
               @if (accSel(); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="22" />{{ a.name }} } @else { Conta }
               <mat-icon>expand_more</mat-icon>
@@ -81,6 +86,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           </div>
         </div>
 
+        <mat-menu #periodMenu="matMenu" class="fmenu">
+          @for (p of periods; track p.id) {
+            <button mat-menu-item (click)="choosePeriod(p.id)" [class.sel]="periodSel() === p.id"><mat-icon>{{ p.icon }}</mat-icon>{{ p.label }}</button>
+          }
+        </mat-menu>
         <mat-menu #accMenu="matMenu" class="fmenu">
           <button mat-menu-item (click)="accountId.set(null)" [class.sel]="!accountId()"><span class="all"><span class="ph"></span>Todas as contas</span></button>
           @for (a of data.accounts(); track a.id) {
@@ -363,9 +373,28 @@ export class TransactionsPage implements OnDestroy {
       ? { start: this.route.snapshot.queryParamMap.get('de')!, end: this.route.snapshot.queryParamMap.get('ate')! } : null);
   rangeLabel() {
     const r = this.range()!; const f = (iso: string) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
-    return r.start === r.end ? f(r.start) : `${f(r.start)} – ${f(r.end)}`;
+    const dates = r.start === r.end ? f(r.start) : `${f(r.start)} – ${f(r.end)}`;
+    const p = this.periodSel(); // período rápido: o nome antes das datas ("Esta semana · 18/10/2026 – 24/10/2026")
+    return p !== 'custom' && p !== 'month' ? `${this.periodLabel()} · ${dates}` : dates;
   }
-  clearRange() { this.range.set(null); }
+  clearRange() { this.range.set(null); this.periodSel.set('month'); }
+  readonly periods = PERIODS;
+  /** Período escolhido na pílula; um intervalo vindo dos Relatórios (?de=&ate=) conta como "Escolher período". */
+  readonly periodSel = signal<Period>(this.range() ? 'custom' : 'month');
+  periodLabel() { return PERIODS.find((p) => p.id === this.periodSel())?.label ?? ''; }
+  async choosePeriod(p: Period) {
+    if (p === 'month') { this.range.set(null); this.month.set(currentMonth()); this.periodSel.set('month'); return; }
+    if (p === 'custom') {
+      const cur = this.range() ?? monthRange(this.month());
+      const r = await this.dialog.open(RangeDialog, { data: { start: cur.start, end: cur.end }, width: '360px', autoFocus: false }).afterClosed().toPromise();
+      if (!r) return;
+      this.range.set(r);
+    } else {
+      const { start, end } = periodRange(p, currentMonth(), null);
+      this.range.set({ start, end });
+    }
+    this.periodSel.set(p);
+  }
   readonly accountId = signal<string | null>(this.route.snapshot.queryParamMap.get('conta'));
   readonly kind = signal<TransactionKind | null>((this.route.snapshot.queryParamMap.get('tipo') as TransactionKind) || null);
   readonly categoryId = signal<string | null>(this.route.snapshot.queryParamMap.get('categoria'));
@@ -384,7 +413,7 @@ export class TransactionsPage implements OnDestroy {
   kindIcon(k: TransactionKind) { return k === 'expense' ? 'remove_circle' : k === 'income' ? 'add_circle' : 'swap_horiz'; }
   kindLabel(k: TransactionKind) { return k === 'expense' ? 'Despesas' : k === 'income' ? 'Receitas' : 'Transferências'; }
   toggleSearch() { this.searchOpen.update((v) => !v); if (this.searchOpen()) setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus()); }
-  readonly activeFilters = computed(() => [this.accountId(), this.kind(), this.categoryId(), this.paidFilter(), this.search()].filter(Boolean).length);
+  readonly activeFilters = computed(() => [this.periodSel() !== 'month', this.accountId(), this.kind(), this.categoryId(), this.paidFilter(), this.search()].filter(Boolean).length);
 
   readonly filtered = computed(() => {
     const k = this.kind(), c = this.categoryId(), s = this.search().trim().toLowerCase(), pf = this.paidFilter();
@@ -558,7 +587,7 @@ export class TransactionsPage implements OnDestroy {
       body.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
     }, 60);
   }
-  clearFilters() { this.accountId.set(null); this.kind.set(null); this.categoryId.set(null); this.paidFilter.set(null); this.search.set(''); }
+  clearFilters() { this.clearRange(); this.accountId.set(null); this.kind.set(null); this.categoryId.set(null); this.paidFilter.set(null); this.search.set(''); }
 
   add() { openTransactionDialog(this.dialog, { accountId: this.accountId() ?? undefined, kind: this.kind() ?? 'expense' }); }
   edit(t: Transaction) { openTransactionDialog(this.dialog, { transaction: t }); }
