@@ -340,6 +340,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .ic { position: relative; display: inline-flex; flex-shrink: 0; }
     .rmark { position: absolute; right: -6px; bottom: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #222; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--app-bar-bg, #fff); }
     .rmark mat-icon { font-size: 13px; width: 13px; height: 13px; }
+    /* no computador a recorrência tem coluna própria: a marca sobre o ícone é só do telemóvel (a regra .rmark ganhava ao .mobile-only) */
+    @media (min-width: 900px) { .rmark { display: none; } }
   `],
 })
 export class TransactionsPage implements OnDestroy {
