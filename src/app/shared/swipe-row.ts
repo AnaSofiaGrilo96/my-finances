@@ -76,7 +76,8 @@ export class SwipeRow {
     this.tapped.emit();
   }
   close() { this.offset.set(0); if (openRow === this) openRow = null; }
-  emit(out: { emit(v: void): void }, ev: Event) { ev.stopPropagation(); out.emit(); if (out !== this.togglePaid) this.close(); }
+  /** Qualquer ação fecha a linha — incluindo o polegar (22/10, pedido da Ana). */
+  emit(out: { emit(v: void): void }, ev: Event) { ev.stopPropagation(); out.emit(); this.close(); }
 
   @HostListener('document:pointerdown', ['$event'])
   onDocDown(ev: PointerEvent) {

@@ -69,11 +69,13 @@ const VIEW_KEY = 'mf-picker-view';
     }
   `,
   styles: [`
-    :host { display: block; }
-    .head { position: sticky; top: 0; z-index: 1; background: inherit; padding: 6px 16px 10px; text-align: center; }
+    /* o cabeçalho fixo herda o fundo da folha (o :host também tem de herdar, senão ficava transparente e as categorias viam-se por baixo, 22/10) */
+    :host { display: block; background: inherit; }
+    /* a folha do Material tem 8px 16px de margem interior: o cabeçalho estica-se por cima dela para nada passar por cima/ao lado */
+    .head { position: sticky; top: -8px; z-index: 2; background: inherit; margin: -8px -16px 0; padding: 14px 32px 10px; text-align: center; }
     .grab { display: block; width: 44px; height: 4px; border-radius: 2px; background: var(--mat-sys-outline-variant); margin: 0 auto 14px; }
     h3 { margin: 0; font-size: 17px; font-weight: 500; line-height: 32px; padding: 0 40px; }
-    .x { position: absolute; right: 8px; top: 22px; width: 40px; height: 40px; border: none; background: none; color: inherit; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+    .x { position: absolute; right: 24px; top: 30px; width: 40px; height: 40px; border: none; background: none; color: inherit; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
     .tools { display: flex; align-items: center; gap: 4px; margin-top: 14px; }
     .search { flex: 1; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px; border: 1px solid var(--mat-sys-outline-variant); border-radius: 10px; }
     .search input { flex: 1; min-width: 0; border: none; background: none; outline: none; font: inherit; font-size: 16px; color: inherit; }
