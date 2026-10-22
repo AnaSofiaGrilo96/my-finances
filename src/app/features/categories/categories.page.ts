@@ -102,11 +102,11 @@ export class CategoryDialog {
   async save() {
     this.busy.set(true);
     try {
-      await this.data.saveCategory({
+      const saved = await this.data.saveCategory({
         id: this.category?.id, name: this.name.trim(), kind: this.kind, icon: this.icon, color: this.color, archived: this.archived,
         parent_id: this.parentId, sort_order: this.category?.sort_order ?? this.data.categories().length,
       });
-      this.ref.close(true);
+      this.ref.close(saved); // devolve a categoria gravada (a janela de movimento escolhe-a logo, 22/10)
     } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
 }

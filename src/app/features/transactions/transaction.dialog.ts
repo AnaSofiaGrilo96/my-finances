@@ -15,7 +15,8 @@ import { FREQUENCIES, Frequency, Transaction, TransactionKind, splitInstallments
 import { addDays, fromIso, occurrenceDate, todayIso, toIso } from '../../core/dates';
 import { UiService } from '../../shared/ui.service';
 import { IconBadge } from '../../shared/icon-badge';
-import { PickerData, PickerItem, PickerSheet } from '../../shared/picker.sheet';
+import { PICKER_CREATE, PickerData, PickerItem, PickerSheet } from '../../shared/picker.sheet';
+import { CategoryDialog } from '../categories/categories.page';
 import { BackButtonService } from '../../shared/back-button.service';
 import { formatMoney } from '../../shared/money.pipe';
 
@@ -316,6 +317,7 @@ export class TransactionDialog {
   private readonly ui = inject(UiService);
   private readonly ref = inject(MatDialogRef<TransactionDialog>);
   private readonly sheet = inject(MatBottomSheet);
+  private readonly dialogs = inject(MatDialog);
   private readonly back = inject(BackButtonService);
   private readonly input = inject<TransactionDialogData>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
@@ -429,7 +431,14 @@ export class TransactionDialog {
       if (!g.parent.archived) items.push({ id: g.parent.id, label: g.parent.name, icon: g.parent.icon, color: g.parent.color });
       for (const c of g.children) items.push({ id: c.id, label: c.name, icon: c.icon, color: c.color, sub: true });
     }
-    const picked = await this.openPicker({ title: 'Categoria', items, selected: this.categoryId });
+    const picked = await this.openPicker({ title: 'Selecionar uma categoria', items, selected: this.categoryId, grid: true, createLabel: 'Criar categoria' });
+    if (picked?.id === PICKER_CREATE) {
+      // nova categoria do tipo do movimento; ao gravar fica logo escolhida
+      const ref = this.dialogs.open(CategoryDialog, { width: '460px', maxWidth: '96vw', data: { kind: this.kind() === 'income' ? 'income' : 'expense' } });
+      const created = await ref.afterClosed().toPromise();
+      if (created && typeof created === 'object' && 'id' in created) { this.categoryId = (created as { id: string }).id; this.tick.update((v) => v + 1); }
+      return;
+    }
     if (picked !== undefined) { this.categoryId = picked.id; this.tick.update((v) => v + 1); }
   }
 
