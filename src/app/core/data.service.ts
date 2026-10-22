@@ -72,6 +72,8 @@ export class DataService {
 
   /** Incrementa sempre que os movimentos mudam; as páginas usam-no para recarregar. */
   readonly version = signal(0);
+  /** Último movimento criado (22/10): Movimentos vai até ele e destaca-o. */
+  readonly lastCreated = signal<{ id: string; date: string } | null>(null);
 
   private loading?: Promise<void>;
 
@@ -303,8 +305,9 @@ export class DataService {
     const first: Omit<Transaction, 'id'> = { date: rec.start_date, kind: rec.kind, amount: firstAmount, description: rec.description, account_id: rec.account_id,
       to_account_id: rec.to_account_id, category_id: rec.category_id, paid: firstPaid, notes: rec.notes, tags: rec.tags, recurrence_id: rec.id,
       installment_no: rec.installments ? 1 : null };
-    const ins = await this.sb.from('transactions').insert(first);
+    const ins = await this.sb.from('transactions').insert(first).select('id, date').single();
     if (ins.error) throw ins.error;
+    this.lastCreated.set({ id: ins.data.id, date: ins.data.date });
     const upd = await this.sb.from('recurrences').update({ generated: 1 }).eq('id', rec.id).select().single();
     if (upd.error) throw upd.error;
     this.recurrences.update((l) => [...l, numRec(upd.data)]);
@@ -539,6 +542,7 @@ export class DataService {
       : this.sb.from('transactions').insert(payload);
     const { data, error } = await q.select().single();
     if (error) throw error;
+    if (!t.id) this.lastCreated.set({ id: data.id, date: data.date });
     await this.afterTxChange();
     return numTx(data);
   }

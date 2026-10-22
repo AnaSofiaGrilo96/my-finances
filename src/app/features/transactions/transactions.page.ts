@@ -131,7 +131,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
           <div class="card rows">
             @for (t of g.items; track t.id) {
               <app-swipe-row [paid]="t.paid" (togglePaid)="togglePaid(t)" (edit)="edit(t)" (remove)="remove(t)" (tapped)="open(t)">
-                <div class="row clickable" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)">
+                <div class="row clickable" [attr.data-tx]="t.id" [class.due]="isDue(t)" [class.unpaid]="!t.paid && !isDue(t)">
                   <span class="ic">
                     <app-icon-badge [icon]="iconOf(t)" [color]="colorOf(t)" [size]="40" />
                     <!-- telemóvel: marca pequena de recorrência sobre o ícone, como na outra aplicação -->
@@ -299,6 +299,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .day-foot b { color: #1eb980; font-weight: 600; } .day-foot b.expense { color: #e5484d; }
       .summary { padding: 14px 12px; }
     }
+    /* movimento acabado de criar: destaque que desvanece (22/10) */
+    @keyframes flash-row { 0%, 35% { background: color-mix(in srgb, #1eb980 26%, transparent); } 100% { background: transparent; } }
+    .row.flash { animation: flash-row 1.8s ease-out; }
     /* ---- telemóvel (21/10): no fim para ganhar às regras base acima ---- */
     .summary .sum-desk { display: contents; }
     .summary .sum-mob { display: none; }
@@ -461,6 +464,12 @@ export class TransactionsPage implements OnDestroy {
       untracked(() => this.load(month, acc, range));
     });
     effect(() => {
+      const c = this.data.lastCreated();
+      if (!c || this.range()) return;
+      const m = c.date.slice(0, 7);
+      untracked(() => { if (m !== this.month()) this.setMonth(m); else this.focusCreated(); });
+    });
+    effect(() => {
       const r = this.range();
       const q: Record<string, string | null> = { mes: r ? null : this.month(), de: r?.start ?? null, ate: r?.end ?? null, conta: this.accountId(), tipo: this.kind(), categoria: this.categoryId(), estado: this.paidFilter(), q: this.search() || null };
       untracked(() => this.router.navigate([], { queryParams: q, replaceUrl: true }));
@@ -489,8 +498,26 @@ export class TransactionsPage implements OnDestroy {
       this.opening.set(opening);
       this.openingPaid.set(openingPaid);
       this.scrollToRelevantDay(); // só faz scroll uma vez por abertura (scrolledFor)
+      this.focusCreated();
       if (!range) this.prefetch(month, acc);
     } catch (e) { this.ui.error(e); } finally { this.loading.set(false); }
+  }
+
+  /** Depois de criar um movimento (22/10): vai para o mês dele, faz scroll até à linha e destaca-a por um instante. */
+  private focusCreated() {
+    const c = this.data.lastCreated();
+    if (!c || this.range()) return;
+    const host = this.el.nativeElement as HTMLElement;
+    setTimeout(() => {
+      const row = host.querySelector(`[data-tx="${c.id}"]`) as HTMLElement | null;
+      const body = host.querySelector('.fixed-body') as HTMLElement | null;
+      if (!row || !body) return;
+      this.data.lastCreated.set(null);
+      const top = row.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - body.clientHeight / 3;
+      body.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+      setTimeout(() => row.classList.remove('flash'), 1800);
+    }, 120);
   }
 
   /** Lê antecipadamente o mês anterior e o seguinte, para a roda de meses mudar sem espera. */
