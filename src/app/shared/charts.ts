@@ -104,8 +104,8 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
         <path [attr.d]="linePath()" class="line" />
         @for (p of bars(); track $index) {
           <g (mouseenter)="hover.set($index)">
-            <rect [attr.x]="p.x - p.w" [attr.y]="p.yIn" [attr.width]="p.w" [attr.height]="p.hIn" class="in" />
-            <rect [attr.x]="p.x" [attr.y]="p.yOut" [attr.width]="p.w" [attr.height]="p.hOut" class="out" />
+            @if (p.hIn > 0) { <rect [attr.x]="p.hOut > 0 ? p.x - p.w - 1 : p.x - p.w / 2" [attr.y]="p.yIn" [attr.width]="p.w" [attr.height]="p.hIn" rx="2" class="in" /> }
+            @if (p.hOut > 0) { <rect [attr.x]="p.hIn > 0 ? p.x + 1 : p.x - p.w / 2" [attr.y]="p.yOut" [attr.width]="p.w" [attr.height]="p.hOut" rx="2" class="out" /> }
             <rect [attr.x]="p.x - p.slot / 2" y="0" [attr.width]="p.slot" [attr.height]="H" fill="transparent" />
           </g>
         }
@@ -126,15 +126,16 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
     </div>
   `,
   styles: [`
-    :host { display: block; --color-income: #1eb980; --color-expense: #e5484d; }
-    .legend { display: flex; gap: 16px; justify-content: flex-end; font-size: 12px; color: var(--mat-sys-on-surface-variant); margin-bottom: 4px; }
-    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
-    .legend i.area { background: color-mix(in srgb, var(--mat-sys-primary) 25%, transparent); }
+    :host { display: block; --color-income: #16c64f; --color-expense: #dc2b3d; --area: #e7edf8; --area-line: #c9d6ee; }
+    :host-context(html.dark) { --area: color-mix(in srgb, #8fa3f0 16%, transparent); --area-line: color-mix(in srgb, #8fa3f0 40%, transparent); }
+    .legend { display: flex; gap: 22px; justify-content: flex-end; font-size: 13.5px; color: var(--mat-sys-on-surface-variant); margin-bottom: 22px; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+    .legend i.area { height: 4px; width: 16px; border-radius: 2px; vertical-align: 3px; background: var(--area-line); }
     .chart { position: relative; }
     .scroll { overflow-x: auto; overflow-y: hidden; }
-    svg { width: 100%; height: 220px; display: block; }
-    .area { fill: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent); }
-    .line { fill: none; stroke: var(--mat-sys-primary); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+    svg { width: 100%; height: 240px; display: block; overflow: visible; }
+    .area { fill: var(--area); }
+    .line { fill: none; stroke: var(--area-line); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
     rect.in { fill: var(--color-income); }
     rect.out { fill: var(--color-expense); }
     .cursor { stroke: var(--mat-sys-outline); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
@@ -146,7 +147,7 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
     .tooltip em { font-style: normal; font-weight: 600; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
     .tooltip em.in { color: #4ad99a; } .tooltip em.out { color: #ff7b80; }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot.in { background: var(--color-income); } .dot.out { background: var(--color-expense); } .dot.bal { background: var(--mat-sys-primary); }
+    .dot.in { background: var(--color-income); } .dot.out { background: var(--color-expense); } .dot.bal { background: var(--area-line); }
   `],
 })
 export class FlowChart {
@@ -161,52 +162,53 @@ export class FlowChart {
     this.tipX.set(x); this.tipLeft.set(x > box.width * 0.65);
   }
   readonly W = 1000;
-  readonly H = 220;
+  readonly H = 240;
 
   readonly minWidth = computed(() => Math.max(0, this.points().length * 18));
 
-  private readonly maxBar = computed(() => Math.max(1, ...this.points().map((p) => Math.max(p.income, p.expense))));
-  private readonly balRange = computed(() => {
-    const b = this.points().map((p) => p.balance);
-    const lo = Math.min(...b), hi = Math.max(...b);
-    const pad = Math.max(1, (hi - lo) * 0.15);
-    const min = lo - pad, max = hi + pad;
-    return { min, max: max === min ? min + 1 : max };
+  /** Escala comum (22/10, como na outra aplicação): barras e saldo partilham o mesmo eixo, a partir de 0 (ou do saldo mais baixo, se negativo). */
+  private readonly scale = computed(() => {
+    const pts = this.points();
+    const hi = Math.max(1, ...pts.map((p) => Math.max(p.income, p.expense, p.balance)));
+    const lo = Math.min(0, ...pts.map((p) => p.balance));
+    return { lo, hi: hi + (hi - lo) * 0.08 };
   });
+  private y(v: number) { const { lo, hi } = this.scale(); return this.H - ((v - lo) / (hi - lo)) * (this.H - 6); }
+  private readonly zeroY = computed(() => this.y(0));
 
   readonly bars = computed(() => {
     const n = this.points().length;
     if (!n) return [];
     const slot = this.W / n;
-    const w = Math.min(14, slot * 0.28);
-    const barArea = this.H * 0.45; // barras ocupam a metade inferior
+    const w = Math.max(3, Math.min(8, slot * 0.22));
+    const z = this.zeroY();
     return this.points().map((p, i) => {
       const x = slot * i + slot / 2;
-      const hIn = (p.income / this.maxBar()) * barArea;
-      const hOut = (p.expense / this.maxBar()) * barArea;
-      return { x, w, slot, hIn, hOut, yIn: this.H - hIn, yOut: this.H - hOut };
+      const yIn = this.y(p.income), yOut = this.y(p.expense);
+      return { x, w, slot, hIn: Math.max(0, z - yIn), hOut: Math.max(0, z - yOut), yIn, yOut };
     });
   });
 
-  private yBal(v: number) {
-    const { min, max } = this.balRange();
-    const top = 10, bottom = this.H * 0.6;
-    return top + (1 - (v - min) / (max - min)) * (bottom - top);
-  }
-
+  /** Curva suave do saldo (Catmull-Rom → Bézier), de ponta a ponta. */
   readonly linePath = computed(() => {
     const pts = this.points();
     if (!pts.length) return '';
     const slot = this.W / pts.length;
-    return pts.map((p, i) => `${i ? 'L' : 'M'}${(slot * i + slot / 2).toFixed(1)},${this.yBal(p.balance).toFixed(1)}`).join(' ');
+    const xy = pts.map((p, i) => [i === 0 ? 0 : i === pts.length - 1 ? this.W : slot * i + slot / 2, this.y(p.balance)] as [number, number]);
+    if (xy.length === 1) return `M0,${xy[0][1].toFixed(1)} L${this.W},${xy[0][1].toFixed(1)}`;
+    let d = `M${xy[0][0].toFixed(1)},${xy[0][1].toFixed(1)}`;
+    for (let i = 0; i < xy.length - 1; i++) {
+      const p0 = xy[i - 1] ?? xy[i], p1 = xy[i], p2 = xy[i + 1], p3 = xy[i + 2] ?? p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
   });
 
   readonly areaPath = computed(() => {
-    const pts = this.points();
-    if (!pts.length) return '';
-    const slot = this.W / pts.length;
-    const first = slot / 2, last = slot * (pts.length - 1) + slot / 2;
-    return `${this.linePath()} L${last.toFixed(1)},${this.H} L${first.toFixed(1)},${this.H} Z`;
+    if (!this.points().length) return '';
+    const z = this.zeroY().toFixed(1);
+    return `${this.linePath()} L${this.W},${z} L0,${z} Z`;
   });
 
   fmt(v: number) { return formatMoney(v); }

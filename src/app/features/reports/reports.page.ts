@@ -11,7 +11,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatBadgeModule } from '@angular/material/badge';
 import { DataService } from '../../core/data.service';
 import { Transaction, isAdjustment, signFor } from '../../core/models';
-import { addDays, currentMonth, eachDay, fromIso, monthRange, shiftMonth, shortMonthLabel, todayIso, toIso } from '../../core/dates';
+import { addDays, currentMonth, eachDay, fromIso, monthRange, monthLabel, shiftMonth, shortMonthLabel, todayIso, toIso } from '../../core/dates';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -33,6 +33,14 @@ const PERIODS: { id: Period; label: string; icon: string }[] = [
   { id: 'year', label: 'Este ano', icon: 'calendar_today' },
   { id: 'custom', label: 'Escolher período', icon: 'edit_calendar' },
 ];
+const FULL_DAY = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const MON3 = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+function weekLabel(mondayIso: string) {
+  const a = fromIso(mondayIso), b = fromIso(mondayIso); b.setDate(b.getDate() + 6);
+  const f = (d: Date) => `${String(d.getDate()).padStart(2, '0')} ${MON3[d.getMonth()]}`;
+  return `${f(a)} à ${f(b)}`;
+}
+function monthLabelCap(month: string) { const l = monthLabel(month); return l.charAt(0).toUpperCase() + l.slice(1); }
 type Granularity = 'daily' | 'weekly' | 'monthly';
 interface FlowRow { key: string; label: string; income: number; expense: number; result: number; balance: number; }
 
@@ -216,32 +224,37 @@ export class RangeDialog {
 
         <!-- ---------------- Entradas x Saídas ---------------- -->
         <mat-tab label="Entradas x Saídas">
-          <div class="card tabbody">
-            <div class="toolbar">
-              <mat-button-toggle-group [value]="granularity()" (change)="granularity.set($event.value)" hideSingleSelectionIndicator>
-                <mat-button-toggle value="daily" [disabled]="rangeDays() > 93">diário</mat-button-toggle>
-                <mat-button-toggle value="weekly" [disabled]="rangeDays() < 8">semanal</mat-button-toggle>
-                <mat-button-toggle value="monthly" [disabled]="rangeDays() < 45">mensal</mat-button-toggle>
-              </mat-button-toggle-group>
-              <span class="spacer"></span>
-              <div class="muted small">Saldo inicial do período: <b>{{ opening() | money }}</b></div>
+          <!-- Entradas x Saídas (22/10, à imagem da outra aplicação de gestão de finanças): granularidade em links de texto, caixa
+               para contar os não pagos, gráfico com área do saldo suave e barras finas, tabela com linhas separadoras -->
+          <div class="card tabbody flow">
+            <div class="flow-tools">
+              <div class="gran" role="tablist" aria-label="Agrupar por">
+                <button type="button" [class.on]="granularity() === 'daily'" [disabled]="rangeDays() > 93" (click)="granularity.set('daily')">diário</button>
+                <button type="button" [class.on]="granularity() === 'weekly'" [disabled]="rangeDays() < 8" (click)="granularity.set('weekly')">semanal</button>
+                <button type="button" [class.on]="granularity() === 'monthly'" [disabled]="rangeDays() < 45" (click)="granularity.set('monthly')">mensal</button>
+              </div>
+              <label class="unpaid">
+                <input type="checkbox" [checked]="includeUnpaid()" (change)="includeUnpaid.set($any($event.target).checked)" />
+                <span class="box"><mat-icon>check</mat-icon></span>
+                Considerar movimentações não pagas
+              </label>
             </div>
             <app-flow-chart [points]="flowPoints()" />
             <div class="table-wrap">
-              <table>
+              <table class="ftable">
                 <thead><tr><th></th><th>Entradas</th><th>Saídas</th><th>Resultado</th><th>Saldo</th></tr></thead>
                 <tbody>
                   @for (r of flowRows(); track r.key) {
                     <tr [class.zero]="!r.income && !r.expense">
                       <td class="lbl">{{ r.label }}</td>
-                      <td class="income">{{ r.income ? (r.income | money:'plain') : '€ 0,00' }}</td>
-                      <td class="expense">{{ r.expense ? '-' + (r.expense | money:'plain') : '€ 0,00' }}</td>
-                      <td [class.income]="r.result > 0" [class.expense]="r.result < 0">{{ r.result | money:'signed' }}</td>
-                      <td class="bal" [class.expense]="r.balance < 0">{{ r.balance | money:'plain' }}</td>
+                      <td [class.income]="r.income > 0" [class.nil]="!r.income">{{ r.income | money }}</td>
+                      <td [class.expense]="r.expense > 0" [class.nil]="!r.expense">{{ -r.expense | money }}</td>
+                      <td [class.income]="r.result > 0" [class.expense]="r.result < 0" [class.nil]="!r.result">{{ r.result | money:'signed' }}</td>
+                      <td class="bal" [class.neg]="r.balance < 0">{{ r.balance | money }}</td>
                     </tr>
                   }
                 </tbody>
-                <tfoot><tr><td>Total</td><td class="income">{{ totals().income | money:'plain' }}</td><td class="expense">-{{ totals().expense | money:'plain' }}</td><td [class.income]="totals().income - totals().expense >= 0" [class.expense]="totals().income - totals().expense < 0">{{ totals().income - totals().expense | money:'signed' }}</td><td></td></tr></tfoot>
+                <tfoot><tr><td class="lbl">Total</td><td class="income">{{ totals().income | money }}</td><td class="expense">{{ -totals().expense | money }}</td><td [class.income]="totals().income - totals().expense >= 0" [class.expense]="totals().income - totals().expense < 0">{{ totals().income - totals().expense | money:'signed' }}</td><td></td></tr></tfoot>
               </table>
             </div>
           </div>
@@ -303,6 +316,31 @@ export class RangeDialog {
     .row.child .title { font-size: 14px; }
     .row.total { font-weight: 500; border-top: 2px solid var(--mat-sys-outline-variant); }
     .small { font-size: 13px; }
+    /* Entradas x Saídas (22/10) */
+    .flow-tools { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; margin: 4px 0 18px; }
+    .gran { display: flex; gap: 14px; }
+    .gran button { position: relative; border: none; background: none; padding: 4px 0 8px; font: inherit; font-size: 14px; font-weight: 500; color: var(--mat-sys-on-surface-variant); cursor: pointer; }
+    .gran button.on { color: #129e3f; }
+    .gran button.on::after { content: ''; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); border: 4px solid transparent; border-top-color: #129e3f; border-bottom: 0; }
+    .gran button:disabled { color: color-mix(in srgb, var(--mat-sys-on-surface-variant) 45%, transparent); cursor: default; }
+    :host-context(html.dark) .gran button.on { color: #4cd47a; } :host-context(html.dark) .gran button.on::after { border-top-color: #4cd47a; }
+    .unpaid { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--mat-sys-on-surface-variant); cursor: pointer; user-select: none; }
+    .unpaid input { position: absolute; opacity: 0; pointer-events: none; }
+    .unpaid .box { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--mat-sys-outline); display: grid; place-items: center; transition: background-color .15s, border-color .15s; }
+    .unpaid .box mat-icon { font-size: 14px; width: 14px; height: 14px; color: #fff; opacity: 0; }
+    .unpaid input:checked + .box { background: #1eb980; border-color: #1eb980; } .unpaid input:checked + .box mat-icon { opacity: 1; }
+    .unpaid input:focus-visible + .box { outline: 2px solid #1eb980; outline-offset: 2px; }
+    .ftable { margin-top: 18px; font-size: 14px; }
+    .ftable th { font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 14px 4px; border-bottom: 1px solid var(--line, var(--mat-sys-outline-variant)); }
+    .ftable td { padding: 14px 4px; border-bottom: 1px solid var(--line, var(--mat-sys-outline-variant)); color: var(--mat-sys-on-surface-variant); }
+    .ftable td.lbl { padding-left: 16px; color: var(--mat-sys-on-surface-variant); }
+    .ftable td.income { color: #129e3f; } .ftable td.expense { color: #e5484d; }
+    :host-context(html.dark) .ftable td.income { color: #4cd47a; }
+    .ftable td.bal { font-weight: 600; color: #129e3f; } .ftable td.bal.neg { color: #e5484d; }
+    :host-context(html.dark) .ftable td.bal { color: #4cd47a; } :host-context(html.dark) .ftable td.bal.neg { color: #ff6b70; }
+    .ftable td.nil, .ftable tr.zero td:not(.bal):not(.lbl) { color: color-mix(in srgb, var(--mat-sys-on-surface-variant) 60%, transparent); }
+    .ftable tr.zero td { opacity: 1; }
+    .ftable tfoot td { font-weight: 600; border-bottom: none; }
     .table-wrap { overflow-x: auto; margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
     th { text-align: right; font-weight: 500; color: var(--mat-sys-on-surface-variant); padding: 12px 14px; }
@@ -437,7 +475,7 @@ export class ReportsPage {
       const d = fromIso(iso); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); // segunda-feira
       return toIso(d);
     };
-    const labelOf = (key: string) => g === 'monthly' ? shortMonthLabel(key) : g === 'weekly' ? `Sem. ${DAY_FMT.format(fromIso(key))}` : DAY_FMT.format(fromIso(key));
+    const labelOf = (key: string) => g === 'monthly' ? monthLabelCap(key) : g === 'weekly' ? weekLabel(key) : FULL_DAY.format(fromIso(key)); // como na outra aplicação: 01/11/2026, "28 Set à 04 Out", "Novembro 2026"
     // Preenche todos os períodos (mesmo sem movimentos) para o gráfico ficar contínuo
     const seedKeys = g === 'daily' ? eachDay(start, end) : g === 'monthly' ? monthsBetween(start, end) : [...new Set(eachDay(start, end).map(keyOf))];
     const adj = new Map<string, number>(); // ajustes de saldo por período (entram no saldo, não nas entradas/saídas)
