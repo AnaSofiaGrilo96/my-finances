@@ -38,6 +38,8 @@ import { AuthService } from '../../core/auth.service';
     .form { display: flex; flex-direction: column; gap: 4px; margin-top: 20px; text-align: left; }
     .submit { height: 46px; margin-top: 4px; }
     .error { color: var(--mat-sys-error); font-size: 13px; }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .error { font-size: 12px; } }
   `],
 })
 export class LoginPage {

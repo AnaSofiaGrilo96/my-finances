@@ -70,6 +70,8 @@ import { UiService } from '../../shared/ui.service';
     .icons { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; max-height: 160px; overflow: auto; }
     .ic { width: 40px; height: 40px; border-radius: 10px; border: none; background: none; cursor: pointer; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; }
     .ic.sel { background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .preview { font-size: 16px; } .label { font-size: 11px; } }
   `],
 })
 export class CategoryDialog {

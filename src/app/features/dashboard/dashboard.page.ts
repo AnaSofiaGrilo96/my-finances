@@ -290,6 +290,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .wide .pend .paid { --mat-icon-button-state-layer-size: 32px; width: 32px; height: 32px; padding: 6px; color: #b8bab5; opacity: 1; } /* polegar cinzento = não pago, como em Movimentos */
     .wide .pend .paid mat-icon { font-size: 18px; width: 18px; height: 18px; }
     @media (hover: hover) { .wide .pend:hover .paid { opacity: .9; } }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .greet h1 { font-size: 20px; } .due-text b { font-size: 13px; } .due-text .muted { font-size: 12px; } .total b { font-size: 20px; } .band { font-size: 13px; } .greet .muted { font-size: 15px; } .total .muted { font-size: 13px; } .accounts h2 { font-size: 15px; } .accounts .row .title { font-size: 14px; } .accounts .row .sub { font-size: 13px; } .amount.acc { font-size: 14px; } .wide .card h2 { font-size: 16px; } .hello { font-size: 13px; } .name { font-size: 14.5px; } .kpis span { font-size: 13px; } .kpis b { font-size: 15px; } .act { font-size: 14px; } .act.ghost { font-size: 13px; } .wide .top .row .title { font-size: 12.5px; } .wide .top .row .amount { font-size: 12.5px; } .wide .accounts .total .muted { font-size: 13px; } .wide .accounts .total b { font-size: 17px; } .wide .accounts .total small { font-size: 13px; } .wide .accounts .row .title { font-size: 14px; } .wide .accounts .row .sub { font-size: 13px; } .wide .amount.acc { font-size: 16px; } .wide .band { font-size: 13px; } .wide .pend .title { font-size: 12.5px; } .wide .pend .sub { font-size: 11px; } .wide .pend .amount { font-size: 12.5px; } }
   `],
 })
 export class DashboardPage {

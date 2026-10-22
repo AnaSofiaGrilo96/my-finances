@@ -49,6 +49,8 @@ interface Item { key: string; label: string; sub: string | null; }
     .item.on { color: var(--mat-sys-on-surface); font-weight: 600; opacity: 1; }
     .item.on .lbl { font-size: 16px; }
     @media (min-width: 900px) { .wheel { width: 460px; max-width: 100%; } }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .item .lbl { font-size: 13px; } .item small { font-size: 10px; } .item.on .lbl { font-size: 14px; } }
   `],
 })
 export class MonthNav implements AfterViewInit, OnDestroy {

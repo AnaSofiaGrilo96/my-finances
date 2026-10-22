@@ -70,6 +70,7 @@ body {
 }
 html, body { overscroll-behavior-y: none; }
 
+
 // ---------- Utilitários partilhados ----------
 :root { --content-max: min(1100px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…) — 1100px desde 14/10 (1400 era largo demais)
 // Espaçamento: margens da página (--page-x) e espaço entre cartões (--gap). Telemóvel mais apertado, computador 25px (pedido da Ana, 14/10).
@@ -325,4 +326,21 @@ main.content > router-outlet + * { display: block; }
 // Menos movimento se o sistema o pedir
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
+}
+
+// Telemóvel (22/10, pedido da Ana): letra 1–2px mais pequena em toda a app. Os componentes têm o seu próprio bloco
+// "letra 1–2px mais pequena"; aqui as regras globais e a tipografia do Material (menus, campos, botões, separadores).
+@media (max-width: 899px) {
+  html {
+    --mat-sys-body-large-size: 15px; --mat-sys-body-medium-size: 13px; --mat-sys-body-small-size: 11px;
+    --mat-sys-title-medium-size: 15px; --mat-sys-title-small-size: 13px; --mat-sys-title-large-size: 20px;
+    --mat-sys-label-large-size: 13px; --mat-sys-label-medium-size: 11px;
+  }
+  .page-header h1 { font-size: 20px; }
+  .card h2 { font-size: 15px; }
+  .row .title { font-size: 14px; }
+  .row .sub { font-size: 12px; }
+  .fixed-head h1 { font-size: 17px; }
+  .pill, .search input { font-size: 13.5px; }
+  .fmenu .mat-mdc-menu-item.child .mat-mdc-menu-item-text { font-size: 13px; }
 }

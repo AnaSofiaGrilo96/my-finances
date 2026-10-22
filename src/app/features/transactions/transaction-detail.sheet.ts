@@ -88,6 +88,8 @@ export async function openTransactionDetail(dialog: MatDialog, sheet: MatBottomS
     .k { font-size: 15px; color: var(--mat-sys-on-surface-variant); }
     .v { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
     .link { background: none; border: none; padding: 0; text-align: left; color: var(--mat-sys-primary); font: inherit; font-size: 17px; font-weight: 500; cursor: pointer; }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .hero h2 { font-size: 20px; } .amount { font-size: 20px; } .k { font-size: 13px; } .v { font-size: 15px; } .link { font-size: 15px; } }
   `],
 })
 export class TransactionDetailSheet {

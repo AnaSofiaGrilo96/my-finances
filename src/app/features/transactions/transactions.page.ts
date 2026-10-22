@@ -352,6 +352,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .rmark mat-icon { font-size: 13px; width: 13px; height: 13px; }
     /* no computador a recorrência tem coluna própria: a marca sobre o ícone é só do telemóvel (a regra .rmark ganhava ao .mobile-only) */
     @media (min-width: 900px) { .rmark { display: none; } }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .sum-desk > div { font-size: 12px; } .summary b { font-size: 14px; } .day-head { font-size: 13px; } .rep { font-size: 13px; } .chip { font-size: 10px; } .range-head { font-size: 13px; } .state { font-size: 13px; } .srow b { font-size: 14px; } .srow span { font-size: 13px; } .row .title { font-size: 14px; } .row .sub { font-size: 13px; } .row .amount { font-size: 14px; } }
   `],
 })
 export class TransactionsPage implements OnDestroy {

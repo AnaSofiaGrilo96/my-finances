@@ -118,6 +118,8 @@ import { BackButtonService } from '../shared/back-button.service';
     .bottom-nav a.active { color: var(--nav-active); }
     .avatar.big { width: 32px; height: 32px; }
     .bottom-nav .me mat-icon { font-size: 30px; width: 30px; height: 30px; color: var(--mat-sys-on-surface-variant); }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .brand { font-size: 17px; } .links a { font-size: 14.5px; } .topbar.desktop .brand { font-size: 18px; } .topbar.desktop .links a { font-size: 13px; } .user-info .muted { font-size: 11px; } }
   `],
 })
 export class Shell {

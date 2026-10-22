@@ -310,6 +310,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     tr.clickable { cursor: pointer; } @media (hover: hover) { tr.clickable:hover td { background: var(--mat-sys-surface-container); } }
     tfoot td { font-weight: 500; }
     .acc { display: inline-flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface); }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .range-head { font-size: 13px; } .note { font-size: 10.5px; } .amt .pct { font-size: 10.5px; } .row.child .title { font-size: 13px; } .small { font-size: 12px; } .gran button { font-size: 13px; } .unpaid { font-size: 13px; } .ftable { font-size: 13px; } table { font-size: 13px; } }
   `],
 })
 export class ReportsPage {

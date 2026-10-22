@@ -31,6 +31,8 @@ export interface ChoiceData<T = string> { title: string; message?: string; optio
     .opt.primary { background: var(--mat-sys-primary); color: var(--mat-sys-on-primary); }
     .opt.danger { background: var(--mat-sys-error); color: var(--mat-sys-on-error); }
     .opt.cancel { background: none; border: 1.5px solid var(--mat-sys-outline-variant); color: var(--mat-sys-on-surface); font-weight: 500; width: auto; align-self: center; padding: 14px 56px; margin-top: 4px; }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { h2 { font-size: 17px; } p { font-size: 13px; } .opt { font-size: 15px; } }
   `],
 })
 export class ChoiceDialog<T = string> {

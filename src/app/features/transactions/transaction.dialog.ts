@@ -309,6 +309,8 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
       .more { font-size: 16px; padding: 12px; }
       .spacer-bottom { height: 96px; }
     }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .tab { font-size: 14px; } .amount small { font-size: 12px; } .field label { font-size: 16px; } .inline { font-size: 15px; } .inline input { font-size: 15px; } .chip { font-size: 13px; } .hint { font-size: 11.5px; } .rec-box { font-size: 13px; } .more { font-size: 18px; } .key { font-size: 28px; } .sug .t1 { font-size: 14px; } .sug .t2 { font-size: 12px; } }
   `],
 })
 export class TransactionDialog {

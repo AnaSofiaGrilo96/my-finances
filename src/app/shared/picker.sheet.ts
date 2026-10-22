@@ -99,6 +99,8 @@ const VIEW_KEY = 'mf-picker-view';
     .item.sub { padding-left: 36px; }
     .label { flex: 1; font-size: 15px; } .label small { color: var(--mat-sys-on-surface-variant); margin-left: 6px; }
     .none { grid-column: 1 / -1; text-align: center; color: var(--mat-sys-on-surface-variant); padding: 24px 0; }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { h3 { font-size: 15px; } .search input { font-size: 14px; } .name { font-size: 13px; } .label { font-size: 13px; } }
   `],
 })
 export class PickerSheet {

@@ -23,6 +23,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
     @media (hover: hover) { .ok:hover { filter: brightness(1.06); } } .ok:active { transform: scale(.97); }
     .cancel { margin-top: 10px; border: none; background: none; padding: 14px; font: inherit; font-size: 17px; font-weight: 500; color: var(--mat-sys-on-surface-variant); cursor: pointer; border-radius: 12px; }
     @media (hover: hover) { .cancel:hover { background: var(--mat-sys-surface-container); } }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { h2 { font-size: 19px; } p { font-size: 13px; } .ok { font-size: 15px; } .cancel { font-size: 15px; } }
   `],
 })
 export class ConfirmDialog {

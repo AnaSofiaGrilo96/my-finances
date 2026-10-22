@@ -56,6 +56,8 @@ import { UiService } from '../../shared/ui.service';
     .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
     .swatch { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; padding: 0; }
     .swatch.sel { border-color: var(--mat-sys-on-surface); }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .preview { font-size: 16px; } .label { font-size: 11px; } }
   `],
 })
 export class AccountDialog {

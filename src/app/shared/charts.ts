@@ -47,6 +47,8 @@ export interface DonutSlice { id: string; label: string; value: number; color: s
     .lbl { font-size: 12px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .val { font-size: 18px; font-weight: 500; }
     .pct { font-size: 12px; color: var(--mat-sys-on-surface-variant); }
+    /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
+    @media (max-width: 899px) { .lbl { font-size: 11px; } .val { font-size: 16px; } .pct { font-size: 11px; } }
   `],
 })
 export class DonutChart {
