@@ -94,7 +94,7 @@ const VIEW_KEY = 'mf-picker-view';
     .create .name, .create .label { color: var(--mat-sys-on-surface-variant); }
     .list { padding: 0 8px 12px; }
     .item { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; padding: 10px 12px; border-radius: 12px; cursor: pointer; min-height: 48px; }
-    .item:hover { background: var(--mat-sys-surface-container-high); }
+    @media (hover: hover) { .item:hover { background: var(--mat-sys-surface-container-high); } }
     .item.sel { background: var(--mat-sys-secondary-container); }
     .item.sub { padding-left: 36px; }
     .label { flex: 1; font-size: 15px; } .label small { color: var(--mat-sys-on-surface-variant); margin-left: 6px; }

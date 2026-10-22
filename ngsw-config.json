@@ -11,7 +11,8 @@
           "/index.csr.html",
           "/index.html",
           "/*.css",
-          "/*.js"
+          "/*.js",
+          "/fonts/*.woff2"
         ]
       }
     },

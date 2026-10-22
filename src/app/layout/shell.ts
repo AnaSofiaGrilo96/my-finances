@@ -97,7 +97,7 @@ import { BackButtonService } from '../shared/back-button.service';
     .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
     .links { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px; }
     .links a { display: flex; align-items: center; padding: 0 16px; color: rgba(255,255,255,.85); text-decoration: none; font-size: 16.5px; font-weight: 400; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background-color .15s; }
-    .links a:hover { color: #fff; background: rgba(255,255,255,.08); }
+    @media (hover: hover) { .links a:hover { color: #fff; background: rgba(255,255,255,.08); } }
     .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
     .topbar.desktop { height: 52px; padding: 0 20px; position: sticky; } /* 52px como na outra aplicação de gestão de finanças (20/10) */
     .topbar.desktop .brand { font-size: 20px; }

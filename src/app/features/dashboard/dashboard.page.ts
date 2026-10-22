@@ -201,7 +201,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .due.ok { border-left-color: #1eb980; }
     .due-head { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 8px; border-radius: 10px; }
     .due-head.static { cursor: default; }
-    .due-head:not(.static):hover { background: var(--mat-sys-surface-container); }
+    @media (hover: hover) { .due-head:not(.static):hover { background: var(--mat-sys-surface-container); } }
     .due-icon { width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, #f5b301 22%, transparent); color: #b17f00; display: grid; place-items: center; flex-shrink: 0; }
     .due-icon.ok { background: color-mix(in srgb, #1eb980 18%, transparent); color: #1eb980; }
     .due-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -243,7 +243,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .wide .card h2 { font-size: 18px; font-weight: 600; margin: 0 0 20px; }
     .wide .rows.lined > .row { border-radius: 0; min-height: 0; padding: 12px 4px; }
     .wide .rows.lined > .row + .row { border-top: 1px solid var(--line); }
-    .wide .rows.lined > .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+    @media (hover: hover) { .wide .rows.lined > .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); } }
     .wide .rows.lined > .row:active { transform: none; }
     /* cartão de topo: saudação + receita/despesa à esquerda, botões à direita */
     .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: var(--gap); }
@@ -255,11 +255,11 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .kpis span { font-size: 14px; font-weight: 400; color: var(--ink-soft, var(--mat-sys-on-surface-variant)); }
     .kpis b { font-size: 17px; font-weight: 600; }
     .sq { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--mat-sys-outline-variant); display: grid; place-items: center; color: var(--mat-sys-on-surface); align-self: center; transition: background-color .15s; }
-    .sq:hover { background: var(--mat-sys-surface-container); }
+    @media (hover: hover) { .sq:hover { background: var(--mat-sys-surface-container); } }
     .sq mat-icon { font-size: 19px; width: 19px; height: 19px; }
     .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
     .act { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink, var(--mat-sys-on-surface)); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background-color .15s, transform .12s; }
-    .act:hover { background: var(--mat-sys-surface-container); }
+    @media (hover: hover) { .act:hover { background: var(--mat-sys-surface-container); } }
     .act:active { transform: scale(.97); }
     .act mat-icon { font-size: 20px; width: 20px; height: 20px; }
     .act.ghost { color: #a0a0a0; font-weight: 500; font-size: 15px; height: 40px; width: 120px; justify-content: center; padding: 0; border-radius: 6px; border-color: var(--line); }
@@ -289,7 +289,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .wide .pend .amount { font-size: 13.5px; font-weight: 400; }
     .wide .pend .paid { --mat-icon-button-state-layer-size: 32px; width: 32px; height: 32px; padding: 6px; color: #b8bab5; opacity: 1; } /* polegar cinzento = não pago, como em Movimentos */
     .wide .pend .paid mat-icon { font-size: 18px; width: 18px; height: 18px; }
-    .wide .pend:hover .paid { opacity: .9; }
+    @media (hover: hover) { .wide .pend:hover .paid { opacity: .9; } }
   `],
 })
 export class DashboardPage {

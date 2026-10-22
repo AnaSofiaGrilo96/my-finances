@@ -264,7 +264,7 @@ export class RangeDialog {
     @media (min-width: 900px) {
       .htabs { display: flex; gap: 30px; max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg); padding: 0 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
       .htabs button { border: none; background: none; font: inherit; font-size: 13px; font-weight: 500; color: var(--ink-soft); padding: 12px 0 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; transition: color .15s, border-color .15s; }
-      .htabs button:hover { color: var(--ink); }
+      @media (hover: hover) { .htabs button:hover { color: var(--ink); } }
       .htabs button.on { color: #129e3f; border-bottom-color: #129e3f; }
       :host-context(html.dark) .htabs button.on { color: #4cd47a; border-bottom-color: #4cd47a; }
       .one-card .fixed-head > .inner { border-bottom: none; }
@@ -290,7 +290,7 @@ export class RangeDialog {
       .cat-layout .row.child { background: transparent; padding: 9px 4px 9px 10px; gap: 10px; min-height: 0; }
       .cat-layout .row.child + .row.child { border-top: 1px solid var(--line); }
       .cat-layout .row.child .title { font-size: 13px; }
-      .cat-layout .row.child:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+      @media (hover: hover) { .cat-layout .row.child:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); } }
       .cat-layout .collapse.open { margin-bottom: 8px; }
       .row.total { border-top: 1px solid var(--line) !important; justify-content: flex-end; padding-top: 16px; }
       .row.total .main { flex: 0 0 auto; font-size: 12.5px; font-weight: 400; color: var(--mat-sys-on-surface-variant); }
@@ -311,7 +311,7 @@ export class RangeDialog {
     td.lbl { text-align: left; color: var(--mat-sys-on-surface-variant); }
     td.bal { font-weight: 500; }
     tr.zero td { opacity: .55; }
-    tr.clickable { cursor: pointer; } tr.clickable:hover td { background: var(--mat-sys-surface-container); }
+    tr.clickable { cursor: pointer; } @media (hover: hover) { tr.clickable:hover td { background: var(--mat-sys-surface-container); } }
     tfoot td { font-weight: 500; }
     .acc { display: inline-flex; align-items: center; gap: 8px; color: var(--mat-sys-on-surface); }
   `],

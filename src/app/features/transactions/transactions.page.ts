@@ -237,12 +237,12 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     app-swipe-row { margin: 2px 0; }
     .state.is-paid { color: #1eb980; }
     .row.due { background: color-mix(in srgb, #f5b301 18%, transparent); }
-    .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); }
+    @media (hover: hover) { .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); } }
     /* Modo escuro: o fundo das linhas é mais forte, por isso o amarelo e o hover precisam de regras próprias */
-    :host-context(html.dark) .row.clickable:hover { background: var(--mat-sys-surface-container-highest); }
+    @media (hover: hover) { :host-context(html.dark) .row.clickable:hover { background: var(--mat-sys-surface-container-highest); } }
     :host-context(html.dark) .row.due { background: color-mix(in srgb, #f5b301 22%, var(--app-card-bg)); }
-    :host-context(html.dark) .row.due:hover { background: color-mix(in srgb, #f5b301 32%, var(--app-card-bg)); }
-    :host-context(html.dark) .row.unpaid:hover { background: var(--mat-sys-surface-container-highest); }
+    @media (hover: hover) { :host-context(html.dark) .row.due:hover { background: color-mix(in srgb, #f5b301 32%, var(--app-card-bg)); } }
+    @media (hover: hover) { :host-context(html.dark) .row.unpaid:hover { background: var(--mat-sys-surface-container-highest); } }
     .row.unpaid .title, .row.unpaid .amount { opacity: .75; }
     .rep { font-size: 14px; width: 14px; height: 14px; vertical-align: -2px; color: var(--mat-sys-on-surface-variant); }
     .chip { font-size: 11px; background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); border-radius: 8px; padding: 1px 6px; margin-left: 4px; vertical-align: 1px; }
@@ -275,13 +275,13 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .rows { padding: 0; }
       app-swipe-row { margin: 0; }
       .row { background: transparent; padding: 10px 4px; border-radius: 6px; }
-      .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); }
+      @media (hover: hover) { .row.clickable:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 4%, transparent); } }
       :host-context(html.dark) .row { background: transparent; }
-      :host-context(html.dark) .row.clickable:hover, :host-context(html.dark) .row.unpaid:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); }
+      @media (hover: hover) { :host-context(html.dark) .row.clickable:hover, :host-context(html.dark) .row.unpaid:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); } }
       .row { min-height: 60px; box-sizing: border-box; padding: 6px 4px 6px 4px; gap: 10px; }
       .row .title { font-size: 13px; }
-      .row.clickable:hover { background: #e0fae6; } /* verde-claro ao passar o rato, como na outra aplicação */
-      .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); }
+      @media (hover: hover) { .row.clickable:hover { background: #e0fae6; } } /* verde-claro ao passar o rato, como na outra aplicação */
+      @media (hover: hover) { .row.due:hover { background: color-mix(in srgb, #f5b301 28%, transparent); } }
       .acc-col { font-size: 13px; color: #a0a0a0; }
       :host-context(html.dark) .acc-col { color: var(--mat-sys-on-surface-variant); }
       .acc-col .arrow { font-size: 14px; width: 14px; height: 14px; }
@@ -292,7 +292,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .row.unpaid .title, .row.unpaid .amount { opacity: 1; }
       .thumb { width: 32px; height: 32px; flex: 0 0 32px; border: none; background: none; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: #b8bab5; padding: 0; transition: background-color .15s, transform .12s; }
       .thumb.on { color: #129e3f; }
-      .thumb:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent); }
+      @media (hover: hover) { .thumb:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent); } }
       .thumb:active { transform: scale(.9); }
       .thumb mat-icon { font-size: 18px; width: 18px; height: 18px; }
       .day-foot { justify-content: flex-end; align-items: baseline; gap: 10px; padding: 8px 4px 10px; font-size: 13px; }

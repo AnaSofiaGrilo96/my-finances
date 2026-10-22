@@ -261,7 +261,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     .body.scroll { flex: 1; overflow: auto; min-height: 0; }
     .body.step1 { flex: 0 1 auto; }
     .field { display: block; width: 100%; box-sizing: border-box; padding: 14px 20px; border-bottom: 1px solid var(--mat-sys-outline-variant); position: relative; text-align: left; background: none; border-left: none; border-right: none; border-top: none; color: inherit; font: inherit; }
-    .field.row { cursor: pointer; } .field.row:hover { background: var(--mat-sys-surface-container); }
+    .field.row { cursor: pointer; } @media (hover: hover) { .field.row:hover { background: var(--mat-sys-surface-container); } }
     .field label { display: block; font-size: 18px; font-weight: 500; margin-bottom: 10px; }
     .inline { display: flex; align-items: center; gap: 14px; font-size: 17px; min-height: 40px; }
     .inline > mat-icon { color: var(--mat-sys-on-surface-variant); }
@@ -297,7 +297,7 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
     /* ---- sugestões ---- */
     .suggest { margin: 10px 0 0; background: var(--mat-sys-surface-container); border-radius: 14px; overflow: hidden; max-height: 280px; overflow-y: auto; }
     .sug { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; border-bottom: 1px solid var(--mat-sys-outline-variant); color: inherit; font: inherit; text-align: left; padding: 10px 14px; cursor: pointer; }
-    .sug:last-child { border-bottom: none; } .sug:hover { background: var(--mat-sys-surface-container-high); }
+    .sug:last-child { border-bottom: none; } @media (hover: hover) { .sug:hover { background: var(--mat-sys-surface-container-high); } } .sug:active { background: var(--mat-sys-surface-container-high); }
     .sug .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .sug .t1 { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sug .t2 { font-size: 13px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

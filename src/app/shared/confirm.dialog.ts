@@ -20,9 +20,9 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
     .ok { margin-top: 24px; border: none; border-radius: 14px; padding: 16px; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
           background: var(--mat-sys-primary); color: var(--mat-sys-on-primary); transition: transform .12s ease, filter .15s ease; }
     .ok.danger { background: #e5484d; color: #fff; }
-    .ok:hover { filter: brightness(1.06); } .ok:active { transform: scale(.97); }
+    @media (hover: hover) { .ok:hover { filter: brightness(1.06); } } .ok:active { transform: scale(.97); }
     .cancel { margin-top: 10px; border: none; background: none; padding: 14px; font: inherit; font-size: 17px; font-weight: 500; color: var(--mat-sys-on-surface-variant); cursor: pointer; border-radius: 12px; }
-    .cancel:hover { background: var(--mat-sys-surface-container); }
+    @media (hover: hover) { .cancel:hover { background: var(--mat-sys-surface-container); } }
   `],
 })
 export class ConfirmDialog {

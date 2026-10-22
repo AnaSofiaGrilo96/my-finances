@@ -76,9 +76,16 @@ export class DataService {
   private loading?: Promise<void>;
 
   // ---------- Carregamento inicial ----------
+  /**
+   * Arranque (22/10): se houver uma cópia da última sessão guardada no aparelho, a app abre logo com ela e só depois
+   * vai buscar os dados frescos (por trás). Sem cópia, espera pela base de dados como antes.
+   */
   async ensureLoaded(): Promise<void> {
     if (this.loaded()) return;
-    if (!this.loading) this.loading = this.reloadAll();
+    if (!this.loading) {
+      this.loading = this.reloadAll();
+      if (this.restoreSnapshot()) { this.loading.catch(() => {}); return; }
+    }
     await this.loading;
   }
 
@@ -97,9 +104,51 @@ export class DataService {
     this.categories.set(cat.data ?? []);
     if (set.data) this.settings.set(set.data as Settings);
     this.recurrences.set((rec.data ?? []).map(numRec));
-    await this.generateRecurrences(addMonthsIso(todayIso(), 12));
+    await this.generateNow(addMonthsIso(todayIso(), 12));
     await this.refreshBalances();
+    this.fresh = true;
     this.loaded.set(true);
+    if (this.restored) this.version.update((v) => v + 1); // as páginas abertas com a cópia guardada voltam a ler
+    this.saveSnapshot();
+  }
+
+  // ---------- Cópia local da última sessão (22/10) ----------
+  private static readonly SNAP = 'mf-snapshot-v1';
+  /** true depois de os dados frescos chegarem da base de dados nesta sessão. */
+  private fresh = false;
+  private restored = false;
+  private snapTimer?: ReturnType<typeof setTimeout>;
+  private restoreSnapshot(): boolean {
+    try {
+      const raw = localStorage.getItem(DataService.SNAP);
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      this.accounts.set(s.accounts ?? []);
+      this.categories.set(s.categories ?? []);
+      if (s.settings) this.settings.set(s.settings);
+      this.recurrences.set(s.recurrences ?? []);
+      this.balances.set(s.balances ?? {});
+      for (const [k, v] of s.tx ?? []) this.txCache.set(k, v);
+      for (const [k, v] of s.num ?? []) this.numCache.set(k, v);
+      this.restored = true;
+      this.loaded.set(true);
+      return true;
+    } catch { return false; }
+  }
+  /** Guarda (com um pequeno atraso, para juntar alterações seguidas) o essencial para a próxima abertura. */
+  private saveSnapshot() {
+    if (!this.fresh) return; // nunca gravar por cima com dados que ainda não foram confirmados
+    clearTimeout(this.snapTimer);
+    this.snapTimer = setTimeout(() => {
+      try {
+        const tx = [...this.txCache.entries()].slice(-10);
+        const num = [...this.numCache.entries()].slice(-30);
+        localStorage.setItem(DataService.SNAP, JSON.stringify({
+          accounts: this.accounts(), categories: this.categories(), settings: this.settings(), recurrences: this.recurrences(),
+          balances: this.balances(), tx, num,
+        }));
+      } catch { /* sem espaço ou sem acesso: fica só sem a abertura rápida */ }
+    }, 800);
   }
 
   async refreshBalances(): Promise<void> {
@@ -108,10 +157,13 @@ export class DataService {
     const map: Record<string, number> = {};
     for (const row of data ?? []) map[row.account_id] = Number(row.balance);
     this.balances.set(map);
+    this.saveSnapshot();
   }
 
   clear() {
     this.dropCache();
+    try { localStorage.removeItem(DataService.SNAP); } catch { /* ignore */ }
+    this.fresh = false; this.restored = false;
     this.accounts.set([]);
     this.categories.set([]);
     this.recurrences.set([]);
@@ -206,7 +258,14 @@ export class DataService {
   }
 
   /** Garante que todas as recorrências ativas têm ocorrências criadas até `until` (YYYY-MM-DD). */
+  /** Gera as ocorrências em falta até `until`. Enquanto a app estiver a usar a cópia guardada espera pelos dados frescos
+   *  (gerar a partir de uma cópia antiga podia duplicar movimentos). */
   async generateRecurrences(until: string, force = false): Promise<void> {
+    if (!this.fresh && this.loading) { try { await this.loading; } catch { return; } }
+    return this.generateNow(until, force);
+  }
+
+  private async generateNow(until: string, force = false): Promise<void> {
     if (!force && until <= this.generatedUntil) return;
     this.generatedUntil = until;
     let inserted = 0;
@@ -406,6 +465,7 @@ export class DataService {
       if (!data || data.length < PAGE) break;
     }
     this.txCache.set(this.txKey(start, end, accountId), all);
+    this.saveSnapshot();
     return all;
   }
 

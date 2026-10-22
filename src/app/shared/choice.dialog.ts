@@ -27,7 +27,7 @@ export interface ChoiceData<T = string> { title: string; message?: string; optio
     .opts { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
     .opt { width: 100%; border: none; border-radius: 14px; padding: 16px; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
            background: var(--mat-sys-surface-container-highest); color: var(--mat-sys-primary); transition: transform .12s ease, filter .15s ease; }
-    .opt:hover { filter: brightness(1.06); } .opt:active { transform: scale(.97); }
+    @media (hover: hover) { .opt:hover { filter: brightness(1.06); } } .opt:active { transform: scale(.97); }
     .opt.primary { background: var(--mat-sys-primary); color: var(--mat-sys-on-primary); }
     .opt.danger { background: var(--mat-sys-error); color: var(--mat-sys-on-error); }
     .opt.cancel { background: none; border: 1.5px solid var(--mat-sys-outline-variant); color: var(--mat-sys-on-surface); font-weight: 500; width: auto; align-self: center; padding: 14px 56px; margin-top: 4px; }

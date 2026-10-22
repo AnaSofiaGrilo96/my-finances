@@ -37,7 +37,7 @@ interface Item { key: string; label: string; sub: string | null; }
     :host { display: block; user-select: none; }
     .wheel { display: flex; align-items: center; gap: 2px; width: 100%; }
     .arrow { background: none; border: none; color: var(--mat-sys-on-surface-variant); cursor: pointer; padding: 0; width: 36px; height: 40px; border-radius: 999px; display: grid; place-items: center; flex-shrink: 0; transition: background-color .15s; }
-    .arrow:hover { background: var(--mat-sys-surface-container-high); }
+    @media (hover: hover) { .arrow:hover { background: var(--mat-sys-surface-container-high); } }
     .viewport { position: relative; flex: 1; min-width: 0; height: 40px; }
     .pill { position: absolute; left: 50%; top: 0; width: 124px; height: 40px; box-sizing: border-box; transform: translateX(-50%); border-radius: 999px; border: 1.5px solid var(--mat-sys-outline-variant); background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); pointer-events: none; }
     :host-context(html.dark) .pill { background: var(--mat-sys-surface-container-high); border-color: color-mix(in srgb, var(--mat-sys-outline) 60%, transparent); }
