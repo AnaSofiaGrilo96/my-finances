@@ -11,6 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
   styles: [`
     :host { display: inline-flex; flex-shrink: 0; }
     .badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; }
+    /* os menus do Material pintam os mat-icon com a cor de texto do item (ícones pretos nos filtros, 22/10) — no badge é sempre branco */
+    .badge .mat-icon { color: #fff !important; }
   `],
 })
 export class IconBadge {
