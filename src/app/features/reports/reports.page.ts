@@ -60,7 +60,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         <button type="button" role="tab" [class.on]="tab() === 0" [attr.aria-selected]="tab() === 0" (click)="tab.set(0)">Categorias</button>
         <button type="button" role="tab" [class.on]="tab() === 1" [attr.aria-selected]="tab() === 1" (click)="tab.set(1)">Entradas x Saídas</button>
       </nav>
-      <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista) -->
+      <!-- Painel de filtros: fica no cabeçalho fixo (não faz scroll com a lista). Sem filtro de estado (23/10): os não pagos
+           controlam-se só pela caixa «Considerar movimentações não pagas» em Entradas x Saídas -->
       <div class="collapse filters" [class.open]="filtersOpen()"><div>
         <!-- Barra de filtros em pílulas (igual à de Movimentos) -->
         <div class="fbar">
@@ -70,10 +71,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             </button>
             <button type="button" class="pill" [class.on]="accountId()" [matMenuTriggerFor]="accMenu">
               @if (accSel(); as a) { <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="22" />{{ a.name }} } @else { Conta }
-              <mat-icon>expand_more</mat-icon>
-            </button>
-            <button type="button" class="pill" [class.on]="!includeUnpaid()" [matMenuTriggerFor]="stateMenu">
-              @if (!includeUnpaid()) { <mat-icon class="lead income">thumb_up</mat-icon>Só pagos } @else { Estado }
               <mat-icon>expand_more</mat-icon>
             </button>
             @if (activeFilters()) { <button type="button" class="pill clear" (click)="clearFilters()"><mat-icon>close</mat-icon>Limpar</button> }
@@ -93,10 +90,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           @for (a of data.accounts(); track a.id) {
             <button mat-menu-item (click)="accountId.set(a.id)" [class.sel]="accountId() === a.id"><app-icon-badge [icon]="a.icon" [color]="a.color" [size]="28" />{{ a.name }}</button>
           }
-        </mat-menu>
-        <mat-menu #stateMenu="matMenu" class="fmenu">
-          <button mat-menu-item (click)="includeUnpaid.set(true)" [class.sel]="includeUnpaid()"><span class="all"><span class="ph"></span>Todos os movimentos</span></button>
-          <button mat-menu-item (click)="includeUnpaid.set(false)" [class.sel]="!includeUnpaid()"><mat-icon class="income">thumb_up</mat-icon>Só pagos / recebidos</button>
         </mat-menu>
       </div></div>
       </div>
@@ -341,7 +334,7 @@ export class ReportsPage {
   readonly periods = PERIODS;
   readonly customRange = signal<{ start: string; end: string } | null>(this.qp.get('de') && this.qp.get('ate') ? { start: this.qp.get('de')!, end: this.qp.get('ate')! } : null);
   periodLabel() { return PERIODS.find((p) => p.id === this.period())?.label ?? ''; }
-  clearFilters() { this.period.set('month'); this.month.set(currentMonth()); this.accountId.set(null); this.includeUnpaid.set(true); }
+  clearFilters() { this.period.set('month'); this.month.set(currentMonth()); this.accountId.set(null); }
   async choosePeriod(p: Period) {
     if (p === 'custom') {
       const r = await this.dialog.open(RangeDialog, { data: this.customRange() ?? this.range(), width: '360px', autoFocus: false }).afterClosed().toPromise();
@@ -365,7 +358,7 @@ export class ReportsPage {
     return start === end ? f(start) : `${f(start)} – ${f(end)}`;
   }
   readonly rangeDays = computed(() => Math.round((fromIso(this.range().end).getTime() - fromIso(this.range().start).getTime()) / 86400000) + 1);
-  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.includeUnpaid() ? 0 : 1) + (this.period() !== 'month' || this.month() !== currentMonth() ? 1 : 0));
+  readonly activeFilters = computed(() => (this.accountId() ? 1 : 0) + (this.period() !== 'month' || this.month() !== currentMonth() ? 1 : 0));
 
   private readonly raw = signal<Transaction[]>([]);
   readonly opening = signal(0);
