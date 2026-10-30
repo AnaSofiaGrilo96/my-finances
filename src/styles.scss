@@ -77,6 +77,8 @@ html, body { overscroll-behavior-y: none; }
 :root { --page-x: 16px; --gap: 14px; --nav-h: 64px; --nav-active: #1eb980; --line-soft: color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent); }
 html.dark { --nav-active: #5fc46e; }
 @media (min-width: 700px) { :root { --page-x: 25px; --gap: 25px; } }
+// Telemóvel (29/10): sem largura máxima — os 84vw deixavam a barra de filtros encolhida e desalinhada
+@media (max-width: 899px) { :root { --content-max: none; } }
 .page { padding: var(--page-x); max-width: var(--content-max); margin: 0 auto; padding-bottom: 96px; }
 @media (min-width: 700px) { .page { padding: var(--page-x) var(--page-x) 40px; } }
 .page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: var(--gap); }
@@ -219,7 +221,12 @@ html.dark .pill.on { background: var(--mat-sys-surface-container-highest); }
 .sbtn { width: 44px; height: 44px; border-radius: 50%; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 @media (hover: hover) { .sbtn:hover { background: var(--mat-sys-surface-container-high); } }
 .search input { flex: 1; min-width: 60px; border: none; background: none; outline: none; font: inherit; font-size: 14.5px; color: inherit; }
-@media (max-width: 899px) { .search.open { position: absolute; left: 12px; right: 12px; z-index: 2; } .fbar { position: relative; } }
+// Telemóvel (29/10): barra com margem lateral; com a pesquisa aberta as pílulas escondem-se e o campo ocupa a barra toda
+// (antes ficava por cima delas, em posição absoluta, e via-se o resto das pílulas a espreitar)
+@media (max-width: 899px) {
+  .fbar { padding: 0 var(--page-x); margin-bottom: 8px; }
+  .fbar:has(.search.open) .pills { display: none; }
+}
 
 // Menus da barra de filtros (Movimentos e Relatórios): ícones das contas/categorias, sub-categorias indentadas, seleção marcada
 .fmenu.mat-mdc-menu-panel { border-radius: 16px !important; min-width: 240px; }
