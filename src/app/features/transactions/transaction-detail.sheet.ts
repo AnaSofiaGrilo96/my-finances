@@ -135,7 +135,7 @@ export class TransactionDetailSheet {
   signed() { return (this.t().kind === 'expense' ? -1 : 1) * this.t().amount; }
   acc(id: string | null) { return id ? (this.data.accountMap().get(id)?.name ?? '—') : '—'; }
   readonly installments = computed(() => this.data.recurrences().find((r) => r.id === this.t().recurrence_id)?.installments ?? null);
-  paidLabel() { return this.t().kind === 'income' ? (this.t().paid ? 'Recebido' : 'Não recebido') : (this.t().paid ? 'Pago' : 'Não pago'); }
+  paidLabel() { return this.t().kind !== 'expense' ? (this.t().paid ? 'Recebido' : 'Não recebido') : (this.t().paid ? 'Pago' : 'Não pago'); }
   dateLabel() {
     const iso = this.t().date, today = todayIso();
     if (iso === today) return 'hoje';

@@ -72,7 +72,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                     <div class="sub">{{ dueLabel(t.date) }} · {{ accName(t) }}</div>
                   </div>
                   <div class="amount" [class]="t.kind">{{ (t.kind === 'income' ? 1 : -1) * t.amount | money:'signed' }}</div>
-                  <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
+                  <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind !== 'expense' ? 'Não recebido — tocar para marcar recebido' : 'Não pago — tocar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
                 </div>
               }
             </div>
@@ -187,7 +187,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           <div class="sub">{{ fmtDay(t.date) }}</div>
         </div>
         <div class="amount" [matTooltip]="accName(t)">{{ t.amount | money }}</div>
-        <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind === 'income' ? 'Não recebido — clicar para marcar recebido' : 'Não pago — clicar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
+        <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind !== 'expense' ? 'Não recebido — clicar para marcar recebido' : 'Não pago — clicar para marcar pago'"><mat-icon>thumb_down</mat-icon></button>
       </div>
     </ng-template>
   `,

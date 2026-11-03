@@ -643,7 +643,7 @@ export class TransactionsPage implements OnDestroy {
   }
   stateOf(t: Transaction) {
     if (isAdjustment(t)) return 'ajuste de saldo'; // não entra nas entradas/saídas
-    if (t.kind === 'income') return t.paid ? 'recebido' : 'não recebido';
+    if (t.kind !== 'expense') return t.paid ? 'recebido' : 'não recebido';
     return t.paid ? 'pago' : 'não pago';
   }
   signedAmount(t: Transaction) {

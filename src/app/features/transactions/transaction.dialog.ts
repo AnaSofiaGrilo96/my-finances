@@ -416,7 +416,7 @@ export class TransactionDialog {
 
   paidLabel() {
     const k = this.kind();
-    if (k === 'income') return this.paid ? 'Recebido' : 'Não recebido';
+    if (k !== 'expense') return this.paid ? 'Recebido' : 'Não recebido';
     return this.paid ? 'Pago' : 'Não pago';
   }
 
