@@ -148,6 +148,7 @@ export interface FlowPoint { label: string; income: number; expense: number; bal
     .chart { position: relative; }
     .scroll { overflow-x: auto; overflow-y: hidden; }
     svg { width: 100%; height: 240px; display: block; overflow: visible; }
+    @media (min-width: 900px) { svg { height: 340px; } } /* computador: gráfico mais alto (10/11) */
     .area { fill: var(--area); }
     .line { fill: none; stroke: var(--area-line); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
     rect.in { fill: var(--color-income); }

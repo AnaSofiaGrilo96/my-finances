@@ -132,7 +132,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                   } @empty { <p class="empty">Sem despesas no período.</p> }
                   @if (expenseSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().expense | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [highlight]="hover()" [size]="210" [stroke]="46" centerLabel="" /></div>
+                <div class="donut"><app-donut-chart [slices]="expenseSlices()" [highlight]="hover()" [size]="wide ? 340 : 210" [stroke]="wide ? 76 : 46" centerLabel="" /></div>
               </div>
             </div>
             <div class="card">
@@ -167,7 +167,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
                   } @empty { <p class="empty">Sem receitas no período.</p> }
                   @if (incomeSlices().length) { <div class="row total"><div class="main">Total</div><div class="amount">{{ totals().income | money:'plain' }}</div></div> }
                 </div>
-                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [highlight]="hover()" [size]="210" [stroke]="46" centerLabel="" /></div>
+                <div class="donut"><app-donut-chart [slices]="incomeSlices()" [highlight]="hover()" [size]="wide ? 340 : 210" [stroke]="wide ? 76 : 46" centerLabel="" /></div>
               </div>
             </div>
           </div>
@@ -343,6 +343,8 @@ export class ReportsPage {
   /** Categoria por baixo do rato: realça a fatia no anel. */
   readonly hover = signal<string | null>(null);
   readonly loading = signal(false);
+  /** Computador: anéis maiores (340px em vez de 210px; pedido da Ana, 10/11). */
+  readonly wide = window.matchMedia('(min-width: 900px)').matches;
   readonly filtersOpen = signal(window.matchMedia('(min-width: 900px)').matches); // no computador a barra está sempre visível
   readonly accSel = computed(() => this.accountId() ? this.data.accountMap().get(this.accountId()!) : undefined);
   readonly periods = PERIODS;
