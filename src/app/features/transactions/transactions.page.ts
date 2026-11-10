@@ -24,7 +24,7 @@ import { BackButtonService } from '../../shared/back-button.service';
 function readFlag(k: string) { try { return localStorage.getItem(k) === '1'; } catch { return false; } }
 function writeFlag(k: string, v: boolean) { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* ignore */ } }
 const SHORT_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit' });
-interface DayGroup { date: string; label: string; long: string; items: Transaction[]; balance: number | null; }
+interface DayGroup { date: string; label: string; long: string; short: string; items: Transaction[]; balance: number | null; }
 const LONG_FMT = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }); // "24 de outubro" (telemóvel)
 
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' });
@@ -37,6 +37,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
         <h1>Movimentos</h1>
+        <!-- Computador (10/11): botão escuro "+ Movimento" à esquerda, no lugar do título (como a nova versão da outra aplicação) -->
+        <button type="button" class="create" (click)="add()"><mat-icon>add</mat-icon>Movimento</button>
         @if (range(); as r) {
           <!-- Intervalo vindo dos Relatórios (ano, últimos N meses, período à escolha): substitui a roda de meses -->
           <div class="range-head">
@@ -133,7 +135,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       @for (g of groups(); track g.date) {
         <section class="day" [attr.data-date]="g.date">
           <div class="day-head">
-            <span class="desktop-only">{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.label }}</span>
+            <span class="desktop-only">{{ g.short }}</span>
             <span class="mobile-only">{{ g.date === today ? 'Hoje, ' + g.long : g.date === tomorrow ? 'Amanhã, ' + g.long : g.long }}</span>
             <i class="hline desktop-only"></i>
             
@@ -263,6 +265,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .range-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--mat-sys-surface-container-high); color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; cursor: pointer; margin-left: 4px; }
     .range-close mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .desktop-only { display: none; }
+    .create { display: none; }
     @media (min-width: 900px) {
       .mobile-only { display: none; }
       .desktop-only { display: flex; }
@@ -308,6 +311,30 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .day-foot { justify-content: flex-end; align-items: baseline; gap: 10px; padding: 8px 4px 10px; font-size: 13px; }
       .day-foot b { color: #1eb980; font-weight: 600; } .day-foot b.expense { color: #e5484d; }
       .summary { padding: 14px 12px; }
+      /* 10/11 — nova versão da outra aplicação de gestão de finanças: botão de criar no cabeçalho, data dd/mm/aa, linhas de 60px
+         com descrição e valor a 15px, conta a cinzento, saldo do dia a verde */
+      .fixed-head h1 { display: none; }
+      .inner > .create { display: inline-flex; align-items: center; gap: 6px; justify-self: start; width: auto; height: 40px; padding: 0 16px 0 12px; border: none; border-radius: 15px; background: var(--btn-dark); color: var(--btn-dark-ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform .12s, filter .15s; }
+      .create mat-icon { font-size: 22px; width: 22px; height: 22px; }
+      @media (hover: hover) { .create:hover { filter: brightness(1.25); } }
+      .create:active { transform: scale(.97); }
+      .day-head { font-size: 14px; font-weight: 500; color: var(--ink-soft); padding: 22px 0 8px; text-transform: none; }
+      .hline { background: var(--line-strong); opacity: .6; }
+      .row .title { font-size: 15px; font-weight: 500; color: var(--ink); }
+      .row .amount { font-size: 15px; font-weight: 500; }
+      .row .amount.income { color: var(--pos); }
+      .acc-col { font-size: 15px; color: var(--ink-soft); }
+      :host-context(html.dark) .acc-col { color: var(--ink-soft); }
+      .rep-big { color: var(--ink-soft); }
+      .thumb { color: var(--line-strong); }
+      .thumb.on { color: var(--pos); }
+      @media (hover: hover) { .row.clickable:hover { background: color-mix(in srgb, var(--pos) 9%, transparent); } }
+      .day-foot { font-size: 14px; padding: 12px 4px 18px; }
+      .day-foot .muted { color: var(--ink-soft); }
+      .day-foot b { font-size: 15px; color: var(--pos); } .day-foot b.expense { color: var(--neg); }
+      .summary b.income { color: var(--pos); } .summary b.expense { color: var(--neg); }
+      .forecast b { color: var(--bal); } .forecast b.expense { color: var(--neg); }
+      :host-context(html.dark) .forecast b { color: var(--bal); }
     }
     /* movimento acabado de criar: destaque que desvanece (22/10) */
     @keyframes flash-row { 0%, 35% { background: color-mix(in srgb, #1eb980 26%, transparent); } 100% { background: transparent; } }
@@ -483,7 +510,7 @@ export class TransactionsPage implements OnDestroy {
     let running = this.opening() ?? 0;
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, items]) => {
       if (showBalance) for (const t of items) running += signFor(t, acc) * t.amount;
-      return { date, label: DAY_FMT.format(fromIso(date)), long: LONG_FMT.format(fromIso(date)), items, balance: showBalance ? running : null };
+      return { date, label: DAY_FMT.format(fromIso(date)), short: `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(2, 4)}`, long: LONG_FMT.format(fromIso(date)), items, balance: showBalance ? running : null };
     });
   });
 

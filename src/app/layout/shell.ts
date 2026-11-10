@@ -3,7 +3,6 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -22,32 +21,37 @@ import { BackButtonService } from '../shared/back-button.service';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatToolbarModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
   template: `
-    <!-- Barra superior verde com a navegação ao centro — só no computador. No telemóvel (21/10, como na outra aplicação de
-         gestão de finanças) não há barra: cada página tem o seu título e a navegação está toda na barra inferior. -->
+    <!-- Computador (10/11, como a nova versão da outra aplicação de gestão de finanças): barra lateral fixa à esquerda, num
+         cartão de cantos redondos, com a navegação e o perfil em baixo. No telemóvel (21/10) não há barra: cada página tem o seu
+         título e a navegação está toda na barra inferior. -->
     @if (!isSmall()) {
-    <mat-toolbar class="topbar desktop">
-      <a class="brand" routerLink="/"><mat-icon>account_balance_wallet</mat-icon><span>MyFinances</span></a>
-      @if (!isSmall()) {
-        <nav class="links">
+    <aside class="side">
+      <a class="brand" routerLink="/"><span class="logo"><mat-icon>account_balance_wallet</mat-icon></span><span>MyFinances</span></a>
+      <nav class="side-body">
+        <div class="grp">
           @for (item of navItems; track item.path) {
-            <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">{{ item.label }}</a>
+            <a class="lnk" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
+              <mat-icon fontSet="material-icons-outlined">{{ item.side }}</mat-icon><span>{{ item.label }}</span>
+            </a>
           }
-        </nav>
-      }
-      <span class="spacer"></span>
-      <button matIconButton (click)="themeSvc.dark.set(!themeSvc.dark())" [matTooltip]="themeSvc.dark() ? 'Modo claro' : 'Modo escuro'">
-        <mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </div>
+        <div class="grp">
+          <a class="lnk" routerLink="/contas" routerLinkActive="active">
+            <mat-icon fontSet="material-icons-outlined">account_balance</mat-icon><span>Contas</span>
+            <span class="count">{{ data.activeAccounts().length }}</span>
+          </a>
+          <a class="lnk" routerLink="/categorias" routerLinkActive="active">
+            <mat-icon fontSet="material-icons-outlined">category</mat-icon><span>Categorias</span>
+          </a>
+        </div>
+      </nav>
+      <button type="button" class="user" [matMenuTriggerFor]="userMenu" aria-label="Perfil">
+        @if (auth.avatarUrl(); as url) { <img class="avatar" [src]="url" alt="" referrerpolicy="no-referrer" /> } @else { <span class="avatar ph"><mat-icon>person</mat-icon></span> }
+        <span class="who"><b>{{ data.displayName() || auth.displayName() }}</b><small>{{ auth.user()?.email }}</small></span>
       </button>
-      <button matIconButton [matMenuTriggerFor]="userMenu" aria-label="Conta">
-        @if (auth.avatarUrl(); as url) {
-          <img class="avatar" [src]="url" alt="" referrerpolicy="no-referrer" />
-        } @else {
-          <mat-icon>account_circle</mat-icon>
-        }
-      </button>
-    </mat-toolbar>
+    </aside>
     }
       <mat-menu #userMenu="matMenu">
         <div class="user-info">
@@ -57,19 +61,17 @@ import { BackButtonService } from '../shared/back-button.service';
         <button mat-menu-item routerLink="/contas"><mat-icon>account_balance</mat-icon>Contas</button>
         <button mat-menu-item routerLink="/categorias"><mat-icon>category</mat-icon>Categorias</button>
         <button mat-menu-item (click)="editProfile()"><mat-icon>badge</mat-icon>O meu nome</button>
-        @if (isSmall()) {
-          <button mat-menu-item (click)="themeSvc.dark.set(!themeSvc.dark())"><mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>{{ themeSvc.dark() ? 'Modo claro' : 'Modo escuro' }}</button>
-        }
+        <button mat-menu-item (click)="themeSvc.dark.set(!themeSvc.dark())"><mat-icon>{{ themeSvc.dark() ? 'light_mode' : 'dark_mode' }}</mat-icon>{{ themeSvc.dark() ? 'Modo claro' : 'Modo escuro' }}</button>
         <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon>Sair</button>
       </mat-menu>
 
-    <main class="content">
+    <main class="content" [class.with-side]="!isSmall()">
       @if (data.loaded()) {
         <router-outlet />
       }
     </main>
 
-    <!-- Botão flutuante redondo em todos os ecrãs (exceto Relatórios) -->
+    <!-- Botão flutuante redondo: só no telemóvel (exceto Relatórios). No computador (10/11) cria-se pelo "+" da Visão geral e pelo botão "Movimento" de Movimentos -->
     @if (showFab()) {
       <button matFab class="fab" (click)="newTransaction()" aria-label="Novo movimento" matTooltip="Novo movimento"><mat-icon>add</mat-icon></button>
     }
@@ -90,25 +92,34 @@ import { BackButtonService } from '../shared/back-button.service';
   `,
   styles: [`
     :host { display: block; min-height: 100dvh; } /* min-height (não height): senão a barra sticky sai com o fim do host nas páginas que fazem scroll */
-    /* ---- barra superior verde ---- */
-    .topbar { position: sticky; top: 0; z-index: 10; background: #16c64f; color: #fff; --mat-icon-button-icon-color: #fff; --mat-sys-on-surface: #fff; gap: 4px; }
-    :host-context(html.dark) .topbar { background: #178f45; }
-    .brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 19px; letter-spacing: -.2px; }
-    .brand mat-icon { font-size: 28px; width: 28px; height: 28px; }
-    .links { position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); display: flex; align-items: stretch; gap: 4px; }
-    .links a { display: flex; align-items: center; padding: 0 16px; color: rgba(255,255,255,.85); text-decoration: none; font-size: 16.5px; font-weight: 400; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background-color .15s; }
-    @media (hover: hover) { .links a:hover { color: #fff; background: rgba(255,255,255,.08); } }
-    .links a.active { color: #fff; font-weight: 600; border-bottom-color: #fff; }
-    .topbar.desktop { height: 52px; padding: 0 20px; position: sticky; } /* 52px como na outra aplicação de gestão de finanças (20/10) */
-    .topbar.desktop .brand { font-size: 20px; }
-    .topbar.desktop .links a { font-size: 14px; font-weight: 500; padding: 0 12px; text-transform: lowercase; } /* "visão geral", "movimentos"… em minúsculas como na outra aplicação (20/10) */
-    .topbar.desktop .links a.active { font-weight: 700; }
-    .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; }
+    /* ---- barra lateral (computador, 10/11) — medidas da outra aplicação de gestão de finanças ---- */
+    .side { position: fixed; left: 16px; top: 16px; bottom: 16px; width: var(--side-w); z-index: 10; display: flex; flex-direction: column; box-sizing: border-box; background: var(--app-card-bg); border: 1px solid var(--line-div); border-radius: 30px; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 0 20px; height: 52px; box-sizing: content-box; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 20px; letter-spacing: -.3px; }
+    .logo { width: 32px; height: 32px; border-radius: 50%; background: #16c64f; color: #fff; display: grid; place-items: center; }
+    .logo mat-icon { font-size: 19px; width: 19px; height: 19px; }
+    .side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 20px 12px; display: flex; flex-direction: column; gap: 24px; scrollbar-width: thin; }
+    .grp { display: flex; flex-direction: column; gap: 4px; }
+    .lnk { display: flex; align-items: center; gap: 12px; height: 40px; box-sizing: border-box; padding: 8px 12px; border-radius: 15px; color: var(--ink-2); text-decoration: none; font-size: 16px; font-weight: 500; transition: background-color .15s, color .15s; }
+    .lnk mat-icon { font-size: 22px; width: 24px; height: 24px; display: grid; place-items: center; flex-shrink: 0; }
+    .lnk span:not(.count) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (hover: hover) { .lnk:hover { background: var(--app-bg); } }
+    .lnk.active { background: var(--nav-active-bg); color: var(--ink); }
+    .lnk.active mat-icon { color: var(--pos); }
+    .count { font-size: 12px; font-weight: 500; color: var(--ink-soft); border: 1px solid var(--line-strong); border-radius: 999px; padding: 1px 8px; }
+    .user { display: flex; align-items: center; gap: 12px; margin: 0 20px 20px; padding: 8px; border-radius: 999px; border: 1px solid var(--line-div); background: var(--app-bg); font: inherit; color: var(--ink); text-align: left; cursor: pointer; transition: filter .15s; }
+    @media (hover: hover) { .user:hover { filter: brightness(.98); } }
+    .user .avatar { width: 40px; height: 40px; flex-shrink: 0; }
+    .avatar.ph { display: grid; place-items: center; border-radius: 50%; background: var(--line-strong); color: var(--ink-2); }
+    .who { display: flex; flex-direction: column; min-width: 0; }
+    .who b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .who small { font-size: 12px; font-weight: 400; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; display: block; object-fit: cover; }
     .user-info { padding: 8px 16px 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); margin-bottom: 4px; }
     .user-info .name { font-weight: 500; }
     .user-info .muted { font-size: 12px; }
     /* ---- conteúdo ---- */
     .content { display: block; }
+    .content.with-side { margin-left: calc(16px + var(--side-w) + 20px); }
     /* ---- telemóvel ---- */
     /* barra inferior só com ícones (21/10, como na outra aplicação): o ativo fica a verde, sem pílula */
     .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface)); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
@@ -119,7 +130,7 @@ import { BackButtonService } from '../shared/back-button.service';
     .avatar.big { width: 32px; height: 32px; }
     .bottom-nav .me mat-icon { font-size: 30px; width: 30px; height: 30px; color: var(--mat-sys-on-surface-variant); }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
-    @media (max-width: 899px) { .brand { font-size: 17px; } .links a { font-size: 14.5px; } .topbar.desktop .brand { font-size: 18px; } .topbar.desktop .links a { font-size: 13px; } .user-info .muted { font-size: 11px; } }
+    @media (max-width: 899px) { .user-info .muted { font-size: 11px; } }
   `],
 })
 export class Shell {
@@ -136,12 +147,12 @@ export class Shell {
   readonly loadError = signal(false);
   /** Sem botão "+" nos Relatórios (lá não se criam movimentos). */
   private readonly url = toSignal(this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), map((e) => e.urlAfterRedirects)), { initialValue: this.router.url });
-  readonly showFab = computed(() => !this.url().startsWith('/relatorios'));
+  readonly showFab = computed(() => this.isSmall() && !this.url().startsWith('/relatorios'));
 
   readonly navItems = [
-    { path: '/', icon: 'home', label: 'Visão geral', short: 'Início' },
-    { path: '/movimentos', icon: 'swap_horiz', label: 'Movimentos', short: 'Movimentos' },
-    { path: '/relatorios', icon: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
+    { path: '/', icon: 'home', side: 'space_dashboard', label: 'Visão geral', short: 'Início' },
+    { path: '/movimentos', icon: 'swap_horiz', side: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
+    { path: '/relatorios', icon: 'bar_chart', side: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
   ];
 
   private readonly swUpdate = inject(SwUpdate);

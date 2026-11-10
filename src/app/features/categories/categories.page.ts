@@ -117,10 +117,10 @@ export class CategoryDialog {
   selector: 'app-categories-page',
   imports: [MatButtonModule, MatIconModule, MatTabsModule, MatMenuModule, MatTooltipModule, RouterLink, IconBadge],
   template: `
-    <div class="page">
+    <div class="page sheet">
       <div class="page-header">
         <h1>Categorias</h1>
-        <button matButton="filled" (click)="add()"><mat-icon>add</mat-icon>Nova categoria</button>
+        <button matButton="filled" class="new-btn" (click)="add()"><mat-icon>add</mat-icon>Nova categoria</button>
       </div>
 
       @if (!data.categories().length) {

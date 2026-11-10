@@ -232,6 +232,20 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
       .htabs button.on { color: #129e3f; border-bottom-color: #129e3f; }
       :host-context(html.dark) .htabs button.on { color: #4cd47a; border-bottom-color: #4cd47a; }
       .one-card .fixed-head > .inner { border-bottom: none; }
+      /* 10/11 — nova versão da outra aplicação de gestão de finanças: separadores a 16px, linha fina por baixo, títulos de secção
+         a 18px, linhas de categoria mais altas com o valor a 16px e a percentagem clara */
+      .htabs { border-top: none; border-bottom: 1px solid var(--line-div); padding: 0 30px; height: 40px; }
+      .htabs button { font-size: 16px; color: var(--ink-soft); padding: 0; height: 40px; }
+      .htabs button.on, :host-context(html.dark) .htabs button.on { color: var(--pos); border-bottom-color: var(--pos); }
+      .fbar { padding-top: 16px !important; }
+      :host .cat-sections h2 { font-size: 18px; font-weight: 600; color: var(--ink-soft); margin: 0 0 12px; }
+      :host .cat-layout .row { padding: 12px 4px; }
+      :host .cat-layout .row .title { font-size: 16px; font-weight: 400; color: var(--ink-2); }
+      :host .cat-layout .row .amount { font-size: 16px; font-weight: 500; color: var(--ink); }
+      :host .amt .pct { font-size: 13px; font-weight: 400; color: color-mix(in srgb, var(--ink-soft) 70%, transparent); }
+      :host .cat-layout .row.child .title { font-size: 15px; }
+      :host .row.total .main { font-size: 14px; color: var(--ink-soft); }
+      :host .row.total .amount { font-size: 17px; }
     }
     .amt { display: flex; flex-direction: column; align-items: flex-end; }
     .note { font-size: 11.5px; color: var(--mat-sys-on-surface-variant); margin-left: 4px; font-weight: 400; }

@@ -4,7 +4,8 @@
 // Antes vinham do Google Fonts, que o service worker não guarda: ao abrir sem rede (ou com rede lenta) os ícones apareciam
 // como texto ("home", "add"…) até a fonte chegar. Agora fazem parte da app e ficam em cache com ela. Os @font-face estão no
 // index.html (endereços relativos ao base-href /my-finances/); aqui só a classe dos ícones.
-.material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+.material-icons, .material-icons-outlined { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+.material-icons-outlined { font-family: 'Material Icons Outlined'; } // ícones de contorno (barra lateral do computador, 10/11)
 
 
 html {
@@ -72,6 +73,8 @@ html, body { overscroll-behavior-y: none; }
 
 
 // ---------- Utilitários partilhados ----------
+:root { --side-w: 304px; --line-div: #F2F4EF; } // largura da barra lateral do computador (10/11)
+@media (max-width: 1279px) { :root { --side-w: 260px; } }
 :root { --content-max: min(1100px, 84vw); } // largura do contentor no computador (Visão geral, Movimentos, Relatórios…) — 1100px desde 14/10 (1400 era largo demais)
 // Espaçamento: margens da página (--page-x) e espaço entre cartões (--gap). Telemóvel mais apertado, computador 25px (pedido da Ana, 14/10).
 :root { --page-x: 16px; --gap: 14px; --nav-h: 64px; --nav-active: #1eb980; --line-soft: color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent); }
@@ -134,7 +137,7 @@ html.dark { --nav-active: #5fc46e; }
 .fixed-body .end-space { height: 88px; }
 @media (min-width: 900px) {
   .fixed-head { padding: 12px var(--page-x) 0; }
-  .fixed-head > .inner { border-radius: 8px; max-width: var(--content-max); width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
+  .fixed-head > .inner { border-radius: 24px; max-width: var(--content-max); width: 100%; margin: 0 auto; gap: 16px; padding: 8px 12px 8px 20px; }
   .fixed-head h1 { display: block; flex: 1; font-size: 22px; font-weight: 500; margin: 0; line-height: 40px; }
   .fixed-head app-month-nav { flex: 0 1 auto; }
   .fixed-body { padding: 8px var(--page-x) 0; }
@@ -148,24 +151,42 @@ html.dark { --nav-active: #5fc46e; }
 // Texto base 13px/500 em #2E312D (modo claro), cartões com sombra muito leve, barra verde de 52px (na shell).
 // Só ≥ 900px: o telemóvel será revisto à parte.
 @media (min-width: 900px) {
-  :root { --ink: #2E312D; --ink-soft: #858782; }
-  html.dark { --ink: var(--mat-sys-on-surface); --ink-soft: var(--mat-sys-on-surface-variant); }
+  // Tokens da nova versão da outra aplicação de gestão de finanças (10/11): fundo, cartões, texto em três tons, linhas,
+  // verde/vermelho/azul dos valores. Modo escuro com os mesmos papéis (cinzentos quentes quase pretos).
+  html:not(.dark) { --app-bg: #F2F4EF; --app-card-bg: #FEFDF9; --app-bar-bg: #FEFDF9; --ink: #1A1C19; --ink-2: #454843; --ink-soft: #858782;
+    --line-strong: #DBDED8; --line-div: #F2F4EF; --pos: #129E3F; --neg: #D72638; --bal: #3062D4; --nav-active-bg: #DFFCE9; --btn-dark: #2E312D; --btn-dark-ink: #FEFDF9; }
+  html.dark { --app-bg: #111110; --app-card-bg: #1C1B1A; --app-bar-bg: #1C1B1A; --ink: rgb(254 253 249 / .9); --ink-2: rgb(219 222 216 / .75); --ink-soft: rgb(254 253 249 / .55);
+    --line-strong: rgb(254 253 249 / .25); --line-div: rgb(254 253 249 / .08); --pos: #3FA65E; --neg: #DF535E; --bal: #82A0E3;
+    --nav-active-bg: color-mix(in srgb, #3FA65E 20%, transparent); --btn-dark: rgb(254 253 249 / .9); --btn-dark-ink: #111110;
+    --mat-sys-on-surface: rgb(254 253 249 / .9); --mat-sys-on-surface-variant: rgb(219 222 216 / .75); }
   body { font-size: 13px; font-weight: 500; color: var(--ink); }
   .muted { color: var(--ink-soft); }
   .row .title { font-size: 13px; }
   .row .sub { font-size: 12px; font-weight: 400; color: var(--ink-soft); }
   .row .amount { font-size: 13px; }
   .card h2 { font-size: 18px; font-weight: 600; }
-  html:not(.dark) .card, html:not(.dark) .one-card .fixed-head > .inner { box-shadow: 0 1px 2px rgba(0,0,0,.09); }
-  html:not(.dark) .one-card .fixed-body .card { box-shadow: none; }
-  .fixed-page { --toolbar-h: 52px; }
-  // Larguras medidas na outra aplicação de gestão de finanças (20/10): Visão geral 1109px (duas colunas de 545px com 20px
-  // entre elas, 34px abaixo da barra verde); Movimentos e Relatórios num cartão de 920px.
-  :root { --content-max: min(1109px, calc(100vw - 50px)); --gap: 20px; }
-  .one-card { --content-max: min(920px, calc(100vw - 50px)); }
-  .page:not(.fixed-page) { padding-top: 34px; }
-  .one-card .fixed-head { padding-top: 34px !important; }
+  // 10/11: cartões de cantos de 24px e sem sombra; o conteúdo ocupa toda a largura à direita da barra lateral, a 16px do topo e
+  // da direita e 20px da barra (antes: barra verde no topo e contentor centrado de 1109/920px)
+  .card { border-radius: 24px; box-shadow: none; }
+  :root { --content-max: none; --gap: 20px; }
+  .page:not(.fixed-page) { padding: 16px 16px 40px 0; }
   .fixed-head h1, .page-header h1 { font-size: 18px; font-weight: 600; }
+  .fixed-head, .one-card .fixed-head { padding: 16px 16px 0 0 !important; }
+  .fixed-body { padding-left: 0 !important; padding-right: 16px !important; }
+  .fixed-foot { padding: 0 16px 16px 0 !important; }
+  .page-scroll.no-foot .fixed-body { padding-bottom: 16px !important; }
+  // Contas e Categorias (10/11): a página inteira é um cartão, com o título e um botão verde-claro "+ Nova …" no topo e as
+  // linhas separadas por linhas finas (como na nova versão da outra aplicação de gestão de finanças)
+  .page.sheet { background: var(--app-card-bg); border-radius: 24px; padding: 32px 40px 40px; margin: 16px 16px 16px 0; }
+  .page.sheet .page-header h1 { font-size: 18px; font-weight: 600; color: var(--ink); }
+  .page.sheet .card { background: transparent; border-radius: 0; padding: 0; }
+  .page.sheet .rows .row { padding: 12px 0; min-height: 64px; box-sizing: border-box; border-bottom: 1px solid var(--line-div); gap: 16px; }
+  .page.sheet .rows .row:last-child { border-bottom: none; }
+  .page.sheet .row .title { font-size: 16px; font-weight: 500; color: var(--ink-2); }
+  .page.sheet .row .sub { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
+  .page.sheet .row .amount { font-size: 16px; font-weight: 500; color: var(--bal); }
+  .page.sheet .row .amount.expense { color: var(--neg); }
+  .new-btn.mat-mdc-unelevated-button { --mat-button-filled-container-color: var(--nav-active-bg); --mat-button-filled-label-text-color: var(--pos); --mat-button-filled-container-shape: 12px; font-size: 15px; font-weight: 600; height: 40px; }
 }
 
 // Página num só cartão (computador; Movimentos e Relatórios, 20/10 — à imagem da outra aplicação de gestão de finanças):
@@ -174,14 +195,20 @@ html.dark { --nav-active: #5fc46e; }
 @media (min-width: 900px) {
   .one-card { --line: color-mix(in srgb, var(--mat-sys-on-surface) 9%, transparent); }
   .one-card .fixed-head { padding-top: var(--gap); }
-  .one-card .fixed-head > .inner { border-radius: 8px 8px 0 0; padding: 20px 24px 12px 30px; }
+  .one-card .fixed-head > .inner { border-radius: 24px 24px 0 0; padding: 24px 24px 12px 30px; }
+  // cabeçalho em três colunas (10/11): título ou botão de criar à esquerda, mês ao centro, botões à direita
+  .one-card .fixed-head > .inner { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+  .one-card .fixed-head > .inner > h1 { grid-column: 1; }
+  .one-card .fixed-head > .inner > app-month-nav, .one-card .fixed-head > .inner > .range-head { grid-column: 2; }
+  .one-card .fixed-head > .inner > button:last-child { grid-column: 3; justify-self: end; }
+  .one-card .fixed-head > .inner > button.on { background: var(--app-bg); }
   .one-card .fixed-head > .collapse { max-width: var(--content-max); width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 0 30px; }
   // Barra de filtros mais alta e com mais ar à volta (20/10, medidas da outra aplicação): faixa de 55px, lupa num círculo de 56px,
   // 14px entre as duas e ~30px até à lista
-  .one-card .fbar { margin: 0 auto; padding: 14px 0 12px; gap: 14px; }
-  .one-card .pills { min-height: 56px; box-sizing: border-box; padding: 8px 14px; gap: 10px; }
+  .one-card .fbar { margin: 0 auto; padding: 4px 0 16px; gap: 14px; }
+  .one-card .pills { min-height: 56px; box-sizing: border-box; padding: 8px 14px; gap: 6px; }
   .one-card .pills, .one-card .search { background: var(--app-bg); }
-  .one-card .pill { font-size: 14px; font-weight: 500; padding: 6px 10px 6px 12px; color: #454843; }
+  .one-card .pill { font-size: 16px; font-weight: 500; padding: 2px 10px; color: var(--ink-2); }
   html.dark .one-card .pill { color: inherit; }
   @media (hover: hover) { .one-card .pill:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent); } }
   .one-card .search { padding: 0; min-height: 56px; }
@@ -190,7 +217,7 @@ html.dark { --nav-active: #5fc46e; }
   .one-card .fixed-body { padding-top: 0; padding-bottom: 0; }
   .one-card .fixed-body > .inner { min-height: 100%; box-sizing: border-box; background: var(--app-card-bg, var(--mat-sys-surface-container-lowest)); padding: 8px 28px 0; }
   .one-card.no-foot .fixed-body { padding-bottom: var(--gap); }
-  .one-card.no-foot .fixed-body > .inner { border-radius: 0 0 8px 8px; }
+  .one-card.no-foot .fixed-body > .inner { border-radius: 0 0 24px 24px; }
   // Relatórios (20/10): no computador faz scroll a página inteira, não só o interior do cartão
   .page-scroll.fixed-page { height: auto; overflow: visible; }
   .page-scroll .fixed-head, .page-scroll .fixed-body { overflow: visible; scrollbar-gutter: auto; flex: none; }
@@ -201,7 +228,7 @@ html.dark { --nav-active: #5fc46e; }
   .one-card .fixed-body .card { background: transparent; border-radius: 0; padding: 0; }
   .one-card .fixed-foot { padding-top: 0; }
   .rep-tabs > .mat-mdc-tab-header { display: none; } // Relatórios: no computador os separadores vivem no cabeçalho fixo (.htabs)
-  .one-card .fixed-foot > .inner { border-radius: 0 0 8px 8px; box-shadow: none; border-top: 1px solid var(--line); }
+  .one-card .fixed-foot > .inner { border-radius: 0 0 24px 24px; box-shadow: none; border-top: 1px solid var(--line); }
 }
 
 // Barra de filtros em pílulas (Movimentos e Relatórios)

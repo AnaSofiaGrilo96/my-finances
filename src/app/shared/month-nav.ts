@@ -17,6 +17,13 @@ interface Item { key: string; label: string; sub: string | null; }
   selector: 'app-month-nav',
   imports: [MatIconModule],
   template: `
+    <!-- Computador (10/11, como a nova versão da outra aplicação de gestão de finanças): só setas e "Novembro 2026" ao centro;
+         clicar no nome volta ao mês (ano) atual. A roda fica para o telemóvel. -->
+    <div class="simple">
+      <button type="button" class="arrow" (click)="go(-1)" [attr.aria-label]="mode() === 'year' ? 'Ano anterior' : 'Mês anterior'"><mat-icon>chevron_left</mat-icon></button>
+      <button type="button" class="cur" (click)="tap(month())" [title]="mode() === 'year' ? 'Ir para o ano atual' : 'Ir para o mês atual'">{{ label() }}</button>
+      <button type="button" class="arrow" (click)="go(1)" [attr.aria-label]="mode() === 'year' ? 'Ano seguinte' : 'Mês seguinte'"><mat-icon>chevron_right</mat-icon></button>
+    </div>
     <div class="wheel" [class.year]="mode() === 'year'">
       <button type="button" class="arrow" (click)="go(-1)" [attr.aria-label]="mode() === 'year' ? 'Ano anterior' : 'Mês anterior'"><mat-icon>chevron_left</mat-icon></button>
       <div class="viewport">
@@ -48,7 +55,14 @@ interface Item { key: string; label: string; sub: string | null; }
     .item small { font-size: 11px; margin-top: 2px; }
     .item.on { color: var(--mat-sys-on-surface); font-weight: 600; opacity: 1; }
     .item.on .lbl { font-size: 16px; }
-    @media (min-width: 900px) { .wheel { width: 460px; max-width: 100%; } }
+    .simple { display: none; }
+    @media (min-width: 900px) {
+      .wheel { display: none; }
+      .simple { display: flex; align-items: center; justify-content: center; gap: 4px; }
+      .simple .arrow { width: 36px; height: 36px; border-radius: 12px; color: var(--ink); }
+      .cur { background: none; border: none; font: inherit; font-size: 18px; font-weight: 600; color: var(--ink); padding: 6px 10px; border-radius: 15px; cursor: pointer; min-width: 150px; white-space: nowrap; transition: background-color .15s; }
+      @media (hover: hover) { .cur:hover, .simple .arrow:hover { background: var(--app-bg); } }
+    }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
     @media (max-width: 899px) { .item .lbl { font-size: 13px; } .item small { font-size: 10px; } .item.on .lbl { font-size: 14px; } }
   `],
@@ -60,6 +74,7 @@ export class MonthNav implements AfterViewInit, OnDestroy {
   readonly today = currentMonth();
   readonly todayYear = Number(this.today.slice(0, 4));
   readonly year = computed(() => Number(this.month().slice(0, 4)));
+  readonly label = computed(() => this.mode() === 'year' ? String(this.year()) : `${MONTHS[Number(this.month().slice(5, 7)) - 1]} ${this.year()}`);
 
   private readonly track = viewChild.required<ElementRef<HTMLElement>>('track');
   /** Mês/ano ao centro da janela de itens; só muda quando o selecionado se afasta das pontas. */

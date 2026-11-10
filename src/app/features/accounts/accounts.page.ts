@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -134,10 +134,10 @@ export class AdjustBalanceDialog {
   selector: 'app-accounts-page',
   imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, RouterLink, MoneyPipe, IconBadge],
   template: `
-    <div class="page">
+    <div class="page sheet">
       <div class="page-header">
         <h1>Contas</h1>
-        <button matButton="filled" (click)="add()"><mat-icon>add</mat-icon>Nova conta</button>
+        <button matButton="filled" class="new-btn" (click)="add()"><mat-icon>add</mat-icon>Nova conta</button>
       </div>
 
       <p class="muted intro">Para acertar o saldo de uma conta com o valor real usa <mat-icon class="inl">edit</mat-icon> — a app cria automaticamente um movimento "Ajuste de saldo" com a diferença.</p>
@@ -201,6 +201,16 @@ export class AccountsPage {
   private readonly dialog = inject(MatDialog);
 
   readonly active = computed(() => this.data.accounts().filter((a) => !a.archived));
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  constructor() {
+    // "Adicionar conta" na Visão geral do computador (10/11) abre logo a janela de nova conta
+    if (this.route.snapshot.queryParamMap.get('nova')) {
+      setTimeout(() => this.add());
+      this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    }
+  }
   readonly archived = computed(() => this.data.accounts().filter((a) => a.archived));
 
   balance(a: Account) { return this.data.balances()[a.id] ?? a.initial_balance; }
