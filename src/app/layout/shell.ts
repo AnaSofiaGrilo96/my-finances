@@ -26,6 +26,9 @@ import { BackButtonService } from '../shared/back-button.service';
     <!-- Computador (10/11, como a nova versão da outra aplicação de gestão de finanças): barra lateral fixa à esquerda, num
          cartão de cantos redondos, com a navegação e o perfil em baixo. No telemóvel (21/10) não há barra: cada página tem o seu
          título e a navegação está toda na barra inferior. -->
+    <!-- Computador: barra lateral + conteúdo num bloco de 1920px no máximo, centrado (em ecrãs muito largos sobra fundo dos dois
+         lados em vez de esticar os cartões — como na outra aplicação de gestão de finanças, 10/11) -->
+    <div class="frame" [class.desk]="!isSmall()">
     @if (!isSmall()) {
     <aside class="side">
       <a class="brand" routerLink="/"><span class="logo"><mat-icon>account_balance_wallet</mat-icon></span><span>MyFinances</span></a>
@@ -70,6 +73,7 @@ import { BackButtonService } from '../shared/back-button.service';
         <router-outlet />
       }
     </main>
+    </div>
 
     <!-- Botão flutuante redondo: só no telemóvel (exceto Relatórios). No computador (10/11) cria-se pelo "+" da Visão geral e pelo botão "Movimento" de Movimentos -->
     @if (showFab()) {
@@ -93,7 +97,8 @@ import { BackButtonService } from '../shared/back-button.service';
   styles: [`
     :host { display: block; min-height: 100dvh; } /* min-height (não height): senão a barra sticky sai com o fim do host nas páginas que fazem scroll */
     /* ---- barra lateral (computador, 10/11) — medidas da outra aplicação de gestão de finanças ---- */
-    .side { position: fixed; left: 16px; top: 16px; bottom: 16px; width: var(--side-w); z-index: 10; display: flex; flex-direction: column; box-sizing: border-box; background: var(--app-card-bg); border: 1px solid var(--line-div); border-radius: 30px; }
+    .frame.desk { display: flex; align-items: flex-start; max-width: 1920px; margin: 0 auto; }
+    .side { position: sticky; top: 16px; height: calc(100dvh - 32px); margin: 16px 0 0 16px; flex: 0 0 var(--side-w); width: var(--side-w); z-index: 10; display: flex; flex-direction: column; box-sizing: border-box; background: var(--app-card-bg); border: 1px solid var(--line-div); border-radius: 30px; }
     .brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 0 20px; height: 52px; box-sizing: content-box; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 20px; letter-spacing: -.3px; }
     .logo { width: 32px; height: 32px; border-radius: 50%; background: #16c64f; color: #fff; display: grid; place-items: center; }
     .logo mat-icon { font-size: 19px; width: 19px; height: 19px; }
@@ -119,7 +124,7 @@ import { BackButtonService } from '../shared/back-button.service';
     .user-info .muted { font-size: 12px; }
     /* ---- conteúdo ---- */
     .content { display: block; }
-    .content.with-side { margin-left: calc(16px + var(--side-w) + 20px); }
+    .content.with-side { flex: 1; min-width: 0; margin-left: 20px; }
     /* ---- telemóvel ---- */
     /* barra inferior só com ícones (21/10, como na outra aplicação): o ativo fica a verde, sem pílula */
     .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface)); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
