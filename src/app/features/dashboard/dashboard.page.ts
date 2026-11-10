@@ -58,26 +58,49 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           </button>
         </div>
 
+        <!-- Cartão de resumo (10/11, medido na outra aplicação): olho, receita/despesa do mês com ícone de carteira, e à direita os
+             atalhos com nome ("Despesa", "Receita", "Transferência") — só ícone quando o cartão é estreito — e o "+" verde -->
         <div class="card summary">
-          <button type="button" class="sq eye" (click)="toggleHidden()" [matTooltip]="hidden() ? 'Mostrar valores' : 'Esconder valores'" [attr.aria-label]="hidden() ? 'Mostrar valores' : 'Esconder valores'">
-            <mat-icon fontSet="material-icons-outlined">{{ hidden() ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <a class="kpi" routerLink="/relatorios">
-            <span>Receita mensal <mat-icon class="kic inc">arrow_circle_up</mat-icon></span>
-            <b>{{ hidden() ? '€ •••••' : (totals().income | money) }}</b>
-          </a>
-          <i class="vdiv tall"></i>
-          <a class="kpi" routerLink="/relatorios">
-            <span>Despesa mensal <mat-icon class="kic exp">arrow_circle_down</mat-icon></span>
-            <b>{{ hidden() ? '€ •••••' : (totals().expense | money) }}</b>
-          </a>
-          <span class="spacer"></span>
+          <div class="sum-left">
+            <button type="button" class="sq eye" (click)="toggleHidden()" [matTooltip]="hidden() ? 'Mostrar valores' : 'Esconder valores'" [attr.aria-label]="hidden() ? 'Mostrar valores' : 'Esconder valores'">
+              <mat-icon fontSet="material-icons-outlined">{{ hidden() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <a class="kpi" routerLink="/relatorios">
+              <span>Receita mensal
+                <svg class="kic" viewBox="0 0 24 24" fill="none" stroke="var(--pos)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 11V8.5A4.5 4.5 0 0 1 7.5 4h9A4.5 4.5 0 0 1 21 8.5v7a4.5 4.5 0 0 1-4.5 4.5H13" /><path d="M21 9.5h-3.8a2.3 2.3 0 0 0 0 4.6H21" /><path d="M7.5 13.5v6.5M5 17.5l2.5 2.5 2.5-2.5" />
+                </svg>
+              </span>
+              <b>{{ hidden() ? '€ -----' : (totals().income | money) }}</b>
+            </a>
+            <i class="vdiv tall"></i>
+            <a class="kpi" routerLink="/relatorios">
+              <span>Despesa mensal
+                <svg class="kic" viewBox="0 0 24 24" fill="none" stroke="var(--neg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 11V8.5A4.5 4.5 0 0 1 7.5 4h9A4.5 4.5 0 0 1 21 8.5v7a4.5 4.5 0 0 1-4.5 4.5H13" /><path d="M21 9.5h-3.8a2.3 2.3 0 0 0 0 4.6H21" /><path d="M7.5 20v-6.5M5 16l2.5-2.5L10 16" />
+                </svg>
+              </span>
+              <b>{{ hidden() ? '€ -----' : (totals().expense | money) }}</b>
+            </a>
+          </div>
           <div class="qa">
-            <button type="button" class="sq" (click)="add('expense')" matTooltip="Despesa" aria-label="Nova despesa"><mat-icon class="neg">remove_circle_outline</mat-icon></button>
-            <button type="button" class="sq" (click)="add('income')" matTooltip="Receita" aria-label="Nova receita"><mat-icon class="pos">add_circle_outline</mat-icon></button>
-            <button type="button" class="sq" (click)="add('transfer')" matTooltip="Transferência" aria-label="Nova transferência"><mat-icon>swap_horiz</mat-icon></button>
+            <button type="button" class="qbtn" (click)="add('expense')" matTooltip="Despesa" aria-label="Nova despesa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--neg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-9-9" /><path d="M14.4 9.4a3.2 3.2 0 1 0 0 5.2" /><path d="M8.6 11.3h4M8.6 13.1h4" /><path d="M16 8l5-5M17.4 3H21v3.6" />
+              </svg><span class="lbl">Despesa</span>
+            </button>
+            <button type="button" class="qbtn" (click)="add('income')" matTooltip="Receita" aria-label="Nova receita">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--pos)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-9-9" /><path d="M14.4 9.4a3.2 3.2 0 1 0 0 5.2" /><path d="M8.6 11.3h4M8.6 13.1h4" /><path d="M21 3l-5 5M16 4.4V8h3.6" />
+              </svg><span class="lbl">Receita</span>
+            </button>
+            <button type="button" class="qbtn" (click)="add('transfer')" matTooltip="Transferência" aria-label="Nova transferência">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M7.5 20L4.5 16h15" /><path d="M16.5 4l3 4h-15" />
+              </svg><span class="lbl">Transferência</span>
+            </button>
             <i class="vdiv"></i>
-            <button type="button" class="sq add" (click)="add()" matTooltip="Novo movimento" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
+            <button type="button" class="qbtn add" (click)="add()" matTooltip="Novo movimento" aria-label="Novo movimento"><mat-icon>add</mat-icon></button>
           </div>
         </div>
 
@@ -89,15 +112,18 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
               <header class="w-head"><h2>Maiores gastos</h2><ng-container *ngTemplateOutlet="chev; context: { $implicit: 'top' }" /></header>
               <div class="collapse" [class.open]="!closed().has('top')"><div class="w-body">
                 @if (topCategories().length) {
-                  <div class="donut"><app-donut-chart [slices]="slices()" [size]="260" [stroke]="38" centerLabel="" /></div>
-                  <div class="tlist">
-                    @for (s of topCategories(); track s.id) {
-                      <a class="trow" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id, mes: month() }">
-                        <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="32" />
-                        <span class="tname">{{ s.label }}</span>
-                        <span class="tval"><b>{{ hidden() ? '€ •••' : (s.value | money) }}</b><small>{{ pct0(s.value) }}</small></span>
-                      </a>
-                    }
+                  <!-- lista à esquerda e anel à direita; quando o bloco é estreito o anel passa para cima (como na outra aplicação) -->
+                  <div class="top">
+                    <div class="tlist">
+                      @for (s of topCategories(); track s.id) {
+                        <a class="trow" [routerLink]="['/movimentos']" [queryParams]="{ categoria: s.id, mes: month() }" (mouseenter)="hover.set(s.id)" (mouseleave)="hover.set(null)">
+                          <app-icon-badge [icon]="s.icon" [color]="s.color" [size]="40" />
+                          <span class="tname">{{ s.label }}</span>
+                          <span class="tval"><b>{{ hidden() ? '€ -----' : (s.value | money) }}</b><small>{{ pct0(s.value) }}</small></span>
+                        </a>
+                      }
+                    </div>
+                    <div class="donut"><app-donut-chart [slices]="slices()" [size]="264" [stroke]="37" [gap]="0" [halo]="true" [highlight]="hover()" centerLabel="" /></div>
                   </div>
                   <div class="w-foot end"><a class="btn-out" routerLink="/relatorios">Ver relatório completo<mat-icon>chevron_right</mat-icon></a></div>
                 } @else {
@@ -181,7 +207,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           @if (isSmall()) {
             <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
           } @else {
-            <b [class.expense]="data.totalBalance() < 0"><small>€</small>{{ hidden() ? '•••••' : num(data.totalBalance()) }}</b>
+            <b [class.expense]="data.totalBalance() < 0"><small>€</small>{{ hidden() ? '-----' : num(data.totalBalance()) }}</b>
           }
         </div>
         @if (isSmall()) { <h2>Minhas contas</h2> }
@@ -190,7 +216,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
             <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }">
               <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="40" />
               <div class="main"><div class="title">{{ a.name }}</div><div class="sub">{{ typeLabel(a.type) }}</div></div>
-              <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ hidden() && !isSmall() ? '€ •••' : (balance(a.id) | money) }}</div>
+              <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ hidden() && !isSmall() ? '€ -----' : (balance(a.id) | money) }}</div>
             </a>
           } @empty {
             <p class="empty">Sem contas. <a routerLink="/contas">Criar a primeira</a></p>
@@ -235,7 +261,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
           <div class="title">{{ t.description || (t.kind === 'income' ? 'Receita' : 'Despesa') }}</div>
           <div class="sub">Vence <b>{{ fmtDay(t.date) }}</b></div>
         </div>
-        <div class="amount" [matTooltip]="accName(t)">{{ hidden() ? '€ •••' : (t.kind === 'income' ? '+ ' : '- ') + (t.amount | money) }}</div>
+        <div class="amount" [matTooltip]="accName(t)">{{ hidden() ? '€ -----' : (t.kind === 'income' ? '+ ' : '- ') + (t.amount | money) }}</div>
         <button matIconButton class="paid" (click)="pay(t, $event)" [matTooltip]="t.kind !== 'expense' ? 'Não recebido — clicar para marcar recebido' : 'Não pago — clicar para marcar pago'"><mat-icon fontSet="material-icons-outlined">thumb_down</mat-icon></button>
       </div>
     </ng-template>
@@ -266,8 +292,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .empty a { color: var(--mat-sys-primary); }
     .band { text-align: center; font-size: 14px; font-weight: 500; padding: 8px; border-radius: 10px; margin: 6px 0 2px; background: var(--mat-sys-surface-container); color: var(--mat-sys-on-surface-variant); }
     .band.today { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
-    .top { display: flex; gap: 16px; align-items: center; }
-    .top .list { flex: 1; min-width: 0; }
     @media (max-width: 899px) {
       .link-row { justify-content: stretch; } .manage { width: 100%; }
       /* telemóvel (21/10, como na outra aplicação): saudação maior, saldo sem a barra verde, contas com tipo por baixo e saldo a azul */
@@ -302,20 +326,32 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .toggle .thumb { position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--app-card-bg); box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s; }
     .toggle.on .track { background: var(--pos); }
     .toggle.on .thumb { transform: translateX(16px); background: #fff; }
-    /* cartão de resumo */
-    .wide .card.summary { display: flex; align-items: center; gap: 16px; padding: 32px 40px; margin-bottom: 20px; }
-    .sq { width: 48px; height: 48px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--app-card-bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; text-decoration: none; transition: background-color .15s, transform .12s; }
+    /* cartão de resumo (medidas da outra aplicação, 10/11) */
+    .wide .card.summary { container-type: inline-size; display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; padding: 32px 40px; margin-bottom: 20px; }
+    .sum-left { display: flex; align-items: center; gap: 20px; min-width: 0; }
+    .sq { width: 48px; height: 48px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--app-card-bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; text-decoration: none; transition: background-color .2s ease-in, transform .12s; }
     @media (hover: hover) { .sq:hover { background: var(--app-bg); } }
     .sq:active { transform: scale(.95); }
     .sq mat-icon { font-size: 22px; width: 22px; height: 22px; }
-    .sq .neg { color: var(--neg); } .sq .pos { color: var(--pos); }
-    .sq.add { background: var(--pos); border-color: transparent; color: #fff; }
-    @media (hover: hover) { .sq.add:hover { background: color-mix(in srgb, var(--pos) 88%, #000); } }
-    .kpi { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; text-decoration: none; color: inherit; }
-    .kpi span { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 400; color: var(--ink-2); }
-    .kpi b { font-size: 24px; font-weight: 600; color: var(--ink); letter-spacing: -.2px; }
-    .kic { font-size: 18px; width: 18px; height: 18px; } .kic.inc { color: var(--pos); } .kic.exp { color: var(--neg); }
-    .qa { display: flex; align-items: center; gap: 16px; }
+    .sq.eye { border-radius: 16px; color: var(--ink-2); }
+    .sq.eye mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    .kpi { display: flex; flex-direction: column; gap: 8px; padding: 16px 4px; text-decoration: none; color: inherit; }
+    .kpi span { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 400; line-height: 24px; color: var(--ink-2); white-space: nowrap; }
+    .kpi b { font-size: 24px; font-weight: 600; line-height: 32px; color: var(--ink); white-space: nowrap; }
+    .kic { width: 24px; height: 24px; flex-shrink: 0; }
+    .vdiv.tall { height: 40px; margin: 0; }
+    .qa { display: flex; align-items: center; justify-content: flex-end; gap: 16px; flex-shrink: 0; }
+    .qa .vdiv { height: 32px; }
+    .qbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 48px; min-width: 48px; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--app-card-bg); font: inherit; cursor: pointer; transition: background-color .2s ease-in, transform .12s; }
+    .qbtn svg { width: 24px; height: 24px; flex-shrink: 0; }
+    .qbtn .lbl { display: none; padding: 0 2px; font-size: 18px; font-weight: 600; line-height: 27px; color: var(--ink-2); }
+    @media (hover: hover) { .qbtn:hover { background: var(--app-bg); } }
+    .qbtn:active { transform: scale(.96); }
+    .qbtn.add { border-color: transparent; background: var(--pos); color: #fff; }
+    .qbtn.add mat-icon { font-size: 26px; width: 26px; height: 26px; }
+    @media (hover: hover) { .qbtn.add:hover { background: color-mix(in srgb, var(--pos) 85%, #000); } }
+    /* com espaço, os atalhos mostram o nome (a outra aplicação só os reduz a ícone quando não cabem numa linha) */
+    @container (min-width: 1040px) { .qbtn:not(.add) { padding: 10px 16px; } .qbtn .lbl { display: inline; } }
     /* blocos (widgets) */
     .wide .card.w { padding: 0; }
     .w-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 40px 40px 0; }
@@ -334,15 +370,20 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .btn-soft mat-icon { font-size: 20px; width: 20px; height: 20px; }
     @media (hover: hover) { .btn-soft:hover { filter: brightness(.97); } }
     .wide .empty { padding: 16px 0 0; color: var(--ink-soft); }
-    /* maiores gastos: anel ao centro e lista por baixo */
-    .wide .donut { display: flex; justify-content: center; padding: 8px 0 28px; }
-    .tlist { display: flex; flex-direction: column; gap: 8px; }
-    .trow { display: flex; align-items: center; gap: 16px; padding: 6px 8px; margin: 0 -8px; border-radius: 12px; text-decoration: none; color: inherit; }
-    @media (hover: hover) { .trow:hover { background: var(--app-bg); } }
-    .tname { flex: 1; min-width: 0; font-size: 16px; font-weight: 400; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* maiores gastos (10/11): lista à esquerda e anel de 264px à direita, metade para cada; num bloco estreito o anel vai para cima */
+    .wide .card.w { container-type: inline-size; }
+    .top { display: flex; flex-direction: column-reverse; gap: 32px; padding-top: 20px; }
+    .wide .donut { display: flex; justify-content: center; align-items: center; }
+    @container (min-width: 640px) { .top { flex-direction: row; } .top > * { flex: 1 1 0; min-width: 0; } }
+    .tlist { display: flex; flex-direction: column; gap: 12px; }
+    .trow { display: flex; align-items: flex-start; gap: 16px; min-height: 52px; text-decoration: none; color: inherit; border-radius: 12px; }
+    .trow app-icon-badge { flex-shrink: 0; }
+    .tname { flex: 1; min-width: 0; font-size: 16px; font-weight: 400; line-height: 24px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (hover: hover) { .trow:hover .tname { color: var(--ink); } }
     .tval { display: flex; flex-direction: column; align-items: flex-end; }
-    .tval b { font-size: 14px; font-weight: 500; color: var(--ink-2); }
-    .tval small { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
+    .tval b { font-size: 14px; font-weight: 500; line-height: 21px; color: var(--ink-2); white-space: nowrap; }
+    .tval small { font-size: 14px; font-weight: 400; line-height: 21px; color: var(--ink-soft); }
+    .wide .w-body > .w-foot.end { margin-top: 32px; }
     /* saldo geral + contas */
     .wide .accounts .total { border-left: 3px solid var(--pos); padding: 2px 0 2px 16px; margin-bottom: 32px; gap: 2px; }
     .wide .accounts .total .muted { font-size: 14px; font-weight: 400; color: var(--ink-soft); }
@@ -480,6 +521,8 @@ export class DashboardPage {
   readonly theme = inject(ThemeService);
   /** Esconder valores (olho do cartão de resumo, computador); lembra-se neste browser. */
   readonly hidden = signal(readFlag('mf-hide-values'));
+  /** Categoria sob o rato na lista dos maiores gastos (realça a fatia no anel). */
+  readonly hover = signal<string | null>(null);
   /** Blocos recolhidos e listas expandidas ("Ver mais") na Visão geral do computador. */
   readonly closed = signal(new Set<string>());
   readonly expanded = signal(new Set<string>());

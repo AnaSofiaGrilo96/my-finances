@@ -13,15 +13,22 @@ export interface DonutSlice { id: string; label: string; value: number; color: s
           <circle [attr.cx]="c()" [attr.cy]="c()" [attr.r]="r()" fill="none" stroke="var(--mat-sys-surface-container-highest)" [attr.stroke-width]="stroke()" />
         }
         @for (s of arcs(); track s.id) {
+          <!-- estilo "halo" (10/11, como na outra aplicação de gestão de finanças): a fatia ativa ganha um anel exterior
+               translúcido e as outras quase desaparecem -->
+          @if (halo() && cur() === s.id) {
+            <circle class="halo" [attr.cx]="c()" [attr.cy]="c()" [attr.r]="r() + stroke() / 2 + 5" fill="none" [attr.stroke]="s.color" stroke-width="10"
+              [attr.stroke-dasharray]="s.len * (r() + stroke() / 2 + 5) / r() + ' ' + circ() * 2" [attr.stroke-dashoffset]="-s.offset * (r() + stroke() / 2 + 5) / r()" />
+          }
           <circle
             class="arc"
             [attr.cx]="c()" [attr.cy]="c()" [attr.r]="r()"
             fill="none"
             [attr.stroke]="s.color"
-            [attr.stroke-width]="cur() === s.id ? stroke() + 8 : stroke()"
+            [attr.stroke-width]="cur() === s.id && !halo() ? stroke() + 8 : stroke()"
             [attr.stroke-dasharray]="s.len + ' ' + (circ() - s.len)"
             [attr.stroke-dashoffset]="-s.offset"
-            [style.opacity]="cur() && cur() !== s.id ? 0.35 : 1"
+            [style.opacity]="cur() && cur() !== s.id ? (halo() ? 0.2 : 0.35) : 1"
+            [style.filter]="halo() && cur() === s.id ? 'brightness(1.1)' : null"
             (mouseenter)="active.set(s.id)" (mouseleave)="active.set(null)"
             (click)="sliceClick.emit(s.id)"
           />
@@ -43,6 +50,7 @@ export interface DonutSlice { id: string; label: string; value: number; color: s
     .wrap { position: relative; margin: 0 auto; }
     svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     .arc { cursor: pointer; transition: stroke-width .15s, opacity .15s; }
+    .halo { opacity: .25; pointer-events: none; }
     .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; padding: 0 22%; }
     .lbl { font-size: 12px; color: var(--mat-sys-on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
     .val { font-size: 18px; font-weight: 500; }
@@ -60,16 +68,20 @@ export class DonutChart {
   readonly active = signal<string | null>(null);
   /** Fatia realçada de fora (ex.: rato sobre a linha da categoria na lista ao lado). */
   readonly highlight = input<string | null>(null);
+  /** Sem espaço entre fatias (px; por defeito 2). */
+  readonly gap = input(2);
+  /** Realce com anel exterior (Visão geral do computador) em vez de engrossar a fatia. */
+  readonly halo = input(false);
   readonly cur = computed(() => this.active() ?? this.highlight());
 
   readonly c = computed(() => this.size() / 2);
-  readonly r = computed(() => this.size() / 2 - this.stroke() / 2 - 4);
+  readonly r = computed(() => this.size() / 2 - this.stroke() / 2 - (this.halo() ? 10 : 4));
   readonly circ = computed(() => 2 * Math.PI * this.r());
   readonly total = computed(() => this.slices().reduce((s, x) => s + x.value, 0));
   readonly arcs = computed(() => {
     const total = this.total();
     if (!total) return [];
-    const gap = this.slices().length > 1 ? 2 : 0;
+    const gap = this.slices().length > 1 ? this.gap() : 0;
     let offset = 0;
     return this.slices()
       .filter((s) => s.value > 0)
