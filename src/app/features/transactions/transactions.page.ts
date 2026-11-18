@@ -24,7 +24,10 @@ import { BackButtonService } from '../../shared/back-button.service';
 function readFlag(k: string) { try { return localStorage.getItem(k) === '1'; } catch { return false; } }
 function writeFlag(k: string, v: boolean) { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* ignore */ } }
 const SHORT_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit' });
-interface DayGroup { date: string; label: string; long: string; short: string; items: Transaction[]; balance: number | null; }
+/** Resultado do dia (o "+" junto ao saldo do dia, como na outra aplicação de gestão de finanças, 18/11): realizado = pago/recebido;
+ *  previsto = pago e por pagar. Receitas e despesas sem transferências nem ajustes de saldo; os saldos contam tudo. */
+interface DayResult { prev: number; incPaid: number; incAll: number; expPaid: number; expAll: number; forecast: number; }
+interface DayGroup { date: string; label: string; long: string; short: string; items: Transaction[]; balance: number | null; res: DayResult | null; }
 const LONG_FMT = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }); // "24 de outubro" (telemóvel)
 
 /** "pago" / "não pago" nas despesas; "recebido" / "não recebido" nas receitas e transferências. */
@@ -188,7 +191,23 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
             }
           </div>
           <!-- Computador: "Saldo no dia" por baixo dos movimentos do dia, à direita -->
-          @if (g.balance !== null) { <div class="day-foot"><span class="muted">Saldo no dia</span><b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></div> }
+          <!-- Saldo efetivado do dia; o "+" abre o resultado do dia: saldo anterior, receitas e despesas realizadas e previstas,
+               saldo e previsto do dia (18/11, como na outra aplicação de gestão de finanças) -->
+          @if (g.balance !== null && g.res; as r) {
+            <div class="day-foot" [class.open]="openDays().has(g.date)">
+              @if (!openDays().has(g.date)) {
+                <span class="muted">Saldo no dia</span><b [class.expense]="g.balance < 0">{{ g.balance | money }}</b>
+              } @else {
+                <div class="dres">
+                  <div class="grp"><span>Saldo no dia anterior</span><b class="soft">{{ r.prev | money }}</b></div>
+                  <div class="grp"><span>Receita realizada</span><b class="pos">{{ r.incPaid | money }}</b><span>Receita prevista</span><b class="soft">{{ r.incAll | money }}</b></div>
+                  <div class="grp"><span>Despesa realizada</span><b class="neg">{{ r.expPaid | money }}</b><span>Despesa prevista</span><b class="soft">{{ r.expAll | money }}</b></div>
+                  <div class="grp"><span>Saldo no dia</span><b [class.pos]="g.balance >= 0" [class.neg]="g.balance < 0">{{ g.balance | money }}</b><span>Previsto do dia</span><b class="soft">{{ r.forecast | money }}</b></div>
+                </div>
+              }
+              <button type="button" class="dplus" (click)="toggleDay(g.date)" [attr.aria-expanded]="openDays().has(g.date)" [attr.aria-label]="openDays().has(g.date) ? 'Esconder resultado do dia' : 'Ver resultado do dia'"><mat-icon>{{ openDays().has(g.date) ? 'remove' : 'add' }}</mat-icon></button>
+            </div>
+          }
         </section>
       }
 
@@ -397,6 +416,18 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .day-foot b { font-weight: 500; color: #3062d4; } .day-foot b.expense { color: #e5484d; }
       :host-context(html.dark) .day-foot b { color: #8fa3f0; } :host-context(html.dark) .day-foot b.expense { color: #e06666; }
     }
+    /* resultado do dia (18/11) */
+    .day-foot { align-items: center; }
+    .day-foot.open { align-items: flex-start; }
+    .dplus { width: 22px; height: 22px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--line-strong, var(--mat-sys-outline-variant)); border-radius: 50%; background: none; color: var(--pos, #1eb980); display: grid; place-items: center; padding: 0; cursor: pointer; margin-left: 6px; transition: background-color .15s; }
+    .dplus mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    @media (hover: hover) { .dplus:hover { background: color-mix(in srgb, var(--pos, #1eb980) 10%, transparent); } }
+    .dres { display: flex; flex-direction: column; gap: 14px; min-width: 260px; animation: fade-in .2s ease-out; }
+    .dres .grp { display: grid; grid-template-columns: 1fr auto; column-gap: 24px; row-gap: 2px; align-items: baseline; }
+    .dres span { font-size: 13px; color: var(--ink-2, var(--mat-sys-on-surface-variant)); }
+    .dres b { font-size: 15px; font-weight: 600; text-align: right; white-space: nowrap; }
+    .dres b.soft { color: var(--ink-soft, var(--mat-sys-on-surface-variant)) !important; }
+    .dres b.pos { color: var(--pos, #1eb980) !important; } .dres b.neg { color: var(--neg, #e5484d) !important; }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
     @media (max-width: 899px) { .sum-desk > div { font-size: 12px; } .summary b { font-size: 14px; } .day-head { font-size: 13px; } .rep { font-size: 13px; } .chip { font-size: 10px; } .range-head { font-size: 13px; } .state { font-size: 13px; } .srow b { font-size: 14px; } .srow span { font-size: 13px; } .row .title { font-size: 14px; } .row .sub { font-size: 13px; } .row .amount { font-size: 14px; } }
   `],
@@ -459,6 +490,10 @@ export class TransactionsPage implements OnDestroy {
   readonly catSel = computed(() => this.categoryId() ? this.data.categoryMap().get(this.categoryId()!) : undefined);
   kindIcon(k: TransactionKind) { return k === 'expense' ? 'remove_circle' : k === 'income' ? 'add_circle' : 'swap_horiz'; }
   kindLabel(k: TransactionKind) { return k === 'expense' ? 'Despesas' : k === 'income' ? 'Receitas' : 'Transferências'; }
+  /** Dias com o resultado aberto (botão "+" junto ao saldo do dia). */
+  readonly openDays = signal(new Set<string>());
+  toggleDay(date: string) { this.openDays.update((s) => { const n = new Set(s); if (n.has(date)) n.delete(date); else n.add(date); return n; }); }
+
   /** Lupa do cabeçalho (telemóvel): abre a barra de filtros já com o campo de pesquisa. */
   openSearch() { this.filtersOpen.set(true); this.searchOpen.set(true); setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus(), 50); }
   toggleSearch() { this.searchOpen.update((v) => !v); if (this.searchOpen()) setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus()); }
@@ -523,14 +558,28 @@ export class TransactionsPage implements OnDestroy {
 
   /** Agrupado por dia. O saldo no dia só é mostrado quando não há filtros que o tornem incoerente. */
   readonly groups = computed<DayGroup[]>(() => {
-    const showBalance = this.opening() !== null && !this.kind() && !this.categoryId() && !this.search() && !this.paidFilter();
+    const showBalance = this.opening() !== null && this.openingPaid() !== null && !this.kind() && !this.categoryId() && !this.search() && !this.paidFilter();
     const acc = this.accountId();
     const map = new Map<string, Transaction[]>();
     for (const t of this.filtered()) (map.get(t.date) ?? map.set(t.date, []).get(t.date)!).push(t);
-    let running = this.opening() ?? 0;
+    // Saldo no dia = saldo efetivado (só pagos/recebidos, 18/11); o previsto do dia conta também o que está por pagar
+    let paid = this.openingPaid() ?? 0, forecast = this.opening() ?? 0;
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, items]) => {
-      if (showBalance) for (const t of items) running += signFor(t, acc) * t.amount;
-      return { date, label: DAY_FMT.format(fromIso(date)), short: `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(2, 4)}`, long: LONG_FMT.format(fromIso(date)), items, balance: showBalance ? running : null };
+      let res: DayResult | null = null;
+      if (showBalance) {
+        const prev = paid;
+        let incPaid = 0, incAll = 0, expPaid = 0, expAll = 0;
+        for (const t of items) {
+          const v = signFor(t, acc) * t.amount;
+          forecast += v;
+          if (t.paid) paid += v;
+          if (isAdjustment(t) || t.kind === 'transfer') continue;
+          if (t.kind === 'income') { incAll += t.amount; if (t.paid) incPaid += t.amount; }
+          else { expAll += t.amount; if (t.paid) expPaid += t.amount; }
+        }
+        res = { prev, incPaid, incAll, expPaid: -expPaid, expAll: -expAll, forecast };
+      }
+      return { date, label: DAY_FMT.format(fromIso(date)), short: `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(2, 4)}`, long: LONG_FMT.format(fromIso(date)), items, balance: showBalance ? paid : null, res };
     });
   });
 
