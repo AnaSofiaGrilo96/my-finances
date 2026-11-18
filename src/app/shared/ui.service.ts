@@ -3,6 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialog } from './confirm.dialog';
 import { ChoiceDialog, ChoiceOption } from './choice.dialog';
+import { NoticeSnack } from './notice.snack';
 
 @Injectable({ providedIn: 'root' })
 export class UiService {
@@ -11,6 +12,11 @@ export class UiService {
 
   toast(message: string) {
     this.snack.open(message, 'OK', { duration: 3000 });
+  }
+
+  /** Aviso com ícone, sem botão (10/11): "Movimento adicionado", "Movimento pago", "Movimento apagado"… */
+  notice(message: string, icon = 'check_circle', tone: 'ok' | 'del' = 'ok') {
+    this.snack.openFromComponent(NoticeSnack, { data: { message, icon, tone }, duration: 2500, panelClass: 'notice-snack' });
   }
 
   error(e: unknown) {

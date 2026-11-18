@@ -293,6 +293,11 @@ html.dark .cdk-overlay-dark-backdrop { background: rgba(0, 0, 0, .18); }
 
 .mat-mdc-dialog-content { max-height: 75vh; }
 .mat-mdc-snack-bar-container { margin-bottom: 80px !important; }
+// Avisos com ícone (10/11, como na app Android da outra aplicação): cartão escuro de cantos de 8px, largura da página no telemóvel
+.notice-snack .mdc-snackbar__surface { background: #2b2a28 !important; border-radius: 10px !important; box-shadow: 0 6px 20px rgba(0,0,0,.3) !important; min-width: 0 !important; }
+.notice-snack .mat-mdc-snack-bar-label { color: #f2f1ec !important; padding: 14px 16px !important; }
+html.dark .notice-snack .mdc-snackbar__surface { background: #343330 !important; }
+@media (max-width: 899px) { .mat-mdc-snack-bar-container.notice-snack { margin: 0 16px calc(var(--nav-h) + 14px + env(safe-area-inset-bottom)) !important; } .notice-snack .mdc-snackbar__surface { width: calc(100vw - 32px); max-width: none !important; } }
 
 // Diálogo de movimento: sem padding; ecrã inteiro no telemóvel
 .tx-dialog .mat-mdc-dialog-surface, .tx-dialog-full .mat-mdc-dialog-surface { padding: 0; overflow: hidden; }

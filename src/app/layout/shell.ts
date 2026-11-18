@@ -84,12 +84,12 @@ import { BackButtonService } from '../shared/back-button.service';
       <nav class="bottom-nav">
         @for (item of navItems; track item.path) {
           <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }" [attr.aria-label]="item.short">
-            <mat-icon>{{ item.icon }}</mat-icon>
+            <mat-icon fontSet="material-icons-outlined">{{ item.icon }}</mat-icon>
           </a>
         }
         <!-- Foto: abre o menu do perfil (Contas, Categorias, O meu nome, modo escuro, Sair) -->
         <button type="button" class="me" [matMenuTriggerFor]="userMenu" aria-label="Perfil">
-          @if (auth.avatarUrl(); as url) { <img class="avatar big" [src]="url" alt="" referrerpolicy="no-referrer" /> } @else { <mat-icon>account_circle</mat-icon> }
+          @if (auth.avatarUrl(); as url) { <img class="avatar big" [src]="url" alt="" referrerpolicy="no-referrer" /> } @else { <mat-icon fontSet="material-icons-outlined">account_circle</mat-icon> }
         </button>
       </nav>
     }
@@ -129,7 +129,7 @@ import { BackButtonService } from '../shared/back-button.service';
     /* barra inferior só com ícones (21/10, como na outra aplicação): o ativo fica a verde, sem pílula */
     .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); box-sizing: border-box; background: var(--app-bar-bg, var(--mat-sys-surface)); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
     .bottom-nav a, .bottom-nav .me { flex: 1; display: grid; place-items: center; color: var(--mat-sys-on-surface); text-decoration: none; border: none; background: none; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .bottom-nav a mat-icon { font-size: 28px; width: 28px; height: 28px; transition: transform .12s; }
+    .bottom-nav a mat-icon { font-size: 28px; width: 28px; height: 28px; transition: transform .12s; } /* ícones de contorno (10/11, como na app Android da outra aplicação) */
     .bottom-nav a:active mat-icon { transform: scale(.88); }
     .bottom-nav a.active { color: var(--nav-active); }
     .avatar.big { width: 32px; height: 32px; }

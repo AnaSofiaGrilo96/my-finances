@@ -45,10 +45,10 @@ export async function openTransactionDetail(dialog: MatDialog, sheet: MatBottomS
       <div class="amount" [class]="t().kind">{{ signed() | money }}</div>
     </div>
     <div class="acts">
-      <button type="button" class="act" (click)="go('delete')" matTooltip="Apagar" aria-label="Apagar"><mat-icon>delete</mat-icon></button>
-      <button type="button" class="act" (click)="go('duplicate')" matTooltip="Duplicar" aria-label="Duplicar"><mat-icon>content_copy</mat-icon></button>
-      <button type="button" class="act" [class.on]="t().paid" (click)="go('toggle')" [matTooltip]="paidLabel()" [attr.aria-label]="paidLabel()"><mat-icon>{{ t().paid ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
-      <button type="button" class="act" (click)="go('edit')" matTooltip="Editar" aria-label="Editar"><mat-icon>edit</mat-icon></button>
+      <button type="button" class="act" (click)="go('delete')" matTooltip="Apagar" aria-label="Apagar"><mat-icon fontSet="material-icons-outlined">delete</mat-icon></button>
+      <button type="button" class="act" (click)="go('duplicate')" matTooltip="Duplicar" aria-label="Duplicar"><mat-icon fontSet="material-icons-outlined">content_copy</mat-icon></button>
+      <button type="button" class="act" [class.on]="t().paid" (click)="go('toggle')" [matTooltip]="paidLabel()" [attr.aria-label]="paidLabel()"><mat-icon fontSet="material-icons-outlined">{{ t().paid ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
+      <button type="button" class="act" (click)="go('edit')" matTooltip="Editar" aria-label="Editar"><mat-icon fontSet="material-icons-outlined">edit</mat-icon></button>
     </div>
     <hr />
     <div class="grid">
@@ -78,9 +78,10 @@ export async function openTransactionDetail(dialog: MatDialog, sheet: MatBottomS
     .hero h2 { margin: 6px 0 0; font-size: 22px; font-weight: 600; }
     .amount { font-size: 22px; font-weight: 600; }
     .amount.expense { color: #e5484d; } .amount.income { color: #1eb980; } .amount.transfer { color: var(--mat-sys-on-surface-variant); }
-    .acts { display: flex; justify-content: space-between; gap: 12px; margin: 26px auto 8px; max-width: 420px; }
-    .act { width: 68px; height: 68px; border-radius: 50%; border: none; background: var(--mat-sys-surface-container-highest); color: var(--mat-sys-on-surface); display: grid; place-items: center; cursor: pointer; }
-    .act mat-icon { font-size: 28px; width: 28px; height: 28px; }
+    /* 10/11 (como na app Android da outra aplicação): círculos mais pequenos com ícones de contorno */
+    .acts { display: flex; justify-content: space-evenly; gap: 12px; margin: 26px auto 8px; max-width: 360px; }
+    .act { width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--mat-sys-surface-container-highest); color: var(--mat-sys-on-surface); display: grid; place-items: center; cursor: pointer; }
+    .act mat-icon { font-size: 24px; width: 24px; height: 24px; }
     .act.on { color: #1eb980; }
     hr { border: none; border-top: 1px solid var(--mat-sys-outline-variant); margin: 22px 0 20px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; }

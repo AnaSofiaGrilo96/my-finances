@@ -309,6 +309,17 @@ export function openTransactionDialog(dialog: MatDialog, data: TransactionDialog
       .more { font-size: 16px; padding: 12px; }
       .spacer-bottom { height: 96px; }
     }
+    /* telemóvel (10/11, medido na app Android da outra aplicação): teclas de 78px com 19px entre elas, ✓ verde de 80px,
+       painel do teclado mais alto */
+    @media (max-width: 899px) {
+      .keypad { padding: 10px 20px calc(26px + env(safe-area-inset-bottom)); }
+      .grab { margin-bottom: 22px; }
+      .keys { gap: 19px; max-width: 272px; }
+      .key { width: 78px; height: 78px; }
+      .key.flat mat-icon { font-size: 26px; width: 26px; height: 26px; }
+      .confirm { width: 80px; height: 80px; margin-top: 26px; background: #44a964; }
+      .confirm mat-icon { font-size: 38px; width: 38px; height: 38px; }
+    }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
     @media (max-width: 899px) { .tab { font-size: 14px; } .amount small { font-size: 12px; } .field label { font-size: 16px; } .inline { font-size: 15px; } .inline input { font-size: 15px; } .chip { font-size: 13px; } .hint { font-size: 11.5px; } .rec-box { font-size: 13px; } .more { font-size: 18px; } .key { font-size: 28px; } .sug .t1 { font-size: 14px; } .sug .t2 { font-size: 12px; } }
   `],
@@ -559,6 +570,7 @@ export class TransactionDialog {
       } else {
         await this.data.saveTransaction(p);
       }
+      this.ui.notice(this.tx?.id ? 'Movimento atualizado' : 'Movimento adicionado');
       this.ref.close(true);
     } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
@@ -578,13 +590,14 @@ export class TransactionDialog {
       try {
         if (scope === 'one') await this.data.deleteTransaction(this.tx!.id, this.tx!);
         else await this.data.deleteAndFollowing(this.tx!);
+        this.ui.notice(scope === 'one' ? 'Movimento apagado' : 'Movimentos apagados', 'delete', 'del');
         this.ref.close(true);
       } catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
       return;
     }
     if (!(await this.ui.confirm('Apagar movimento?', `Tens a certeza que queres apagar o movimento "${this.description.trim() || 'sem descrição'}"? Esta ação não pode ser anulada.`, 'Apagar movimento'))) return;
     this.busy.set(true);
-    try { await this.data.deleteTransaction(this.tx!.id, this.tx!); this.ref.close(true); }
+    try { await this.data.deleteTransaction(this.tx!.id, this.tx!); this.ui.notice('Movimento apagado', 'delete', 'del'); this.ref.close(true); }
     catch (e) { this.ui.error(e); } finally { this.busy.set(false); }
   }
 }

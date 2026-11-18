@@ -27,6 +27,9 @@ const SHORT_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-d
 interface DayGroup { date: string; label: string; long: string; short: string; items: Transaction[]; balance: number | null; }
 const LONG_FMT = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }); // "24 de outubro" (telemóvel)
 
+/** "pago" / "não pago" nas despesas; "recebido" / "não recebido" nas receitas e transferências. */
+function paidWord(kind: string, paid: boolean) { return (paid ? '' : 'não ') + (kind === 'expense' ? 'pago' : 'recebido'); }
+
 const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' });
 
 @Component({
@@ -36,7 +39,9 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     <div class="page fixed-page one-card">
       <!-- Cabeçalho fixo: roda de meses + filtros (o título só no computador) -->
       <div class="fixed-head"><div class="inner">
-        <h1>Movimentos</h1>
+        <h1><span class="h-ic"><mat-icon>swap_horiz</mat-icon></span>Movimentos</h1>
+        <!-- telemóvel (10/11, como na app Android da outra aplicação): título à esquerda, lupa e filtros à direita -->
+        <button type="button" class="m-search" (click)="openSearch()" aria-label="Pesquisar"><mat-icon>search</mat-icon></button>
         <!-- Computador (10/11): botão escuro "+ Movimento" à esquerda, no lugar do título (como a nova versão da outra aplicação) -->
         <button type="button" class="create" (click)="add()"><mat-icon>add</mat-icon>Movimento</button>
         @if (range(); as r) {
@@ -136,7 +141,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
         <section class="day" [attr.data-date]="g.date">
           <div class="day-head">
             <span class="desktop-only">{{ g.short }}</span>
-            <span class="mobile-only">{{ g.date === today ? 'Hoje, ' + g.long : g.date === tomorrow ? 'Amanhã, ' + g.long : g.long }}</span>
+            <span class="mobile-only">{{ g.date === today ? 'Hoje' : g.date === tomorrow ? 'Amanhã' : g.long }}</span>
             <i class="hline desktop-only"></i>
             
           </div>
@@ -183,7 +188,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
             }
           </div>
           <!-- Computador: "Saldo no dia" por baixo dos movimentos do dia, à direita -->
-          @if (g.balance !== null) { <div class="day-foot desktop-only"><span class="muted">Saldo no dia</span><b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></div> }
+          @if (g.balance !== null) { <div class="day-foot"><span class="muted">Saldo no dia</span><b [class.expense]="g.balance < 0">{{ g.balance | money }}</b></div> }
         </section>
       }
 
@@ -266,6 +271,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .range-close mat-icon { font-size: 18px; width: 18px; height: 18px; }
     .desktop-only { display: none; }
     .create { display: none; }
+    .h-ic, .m-search { display: none; }
+    .day-foot { display: none; }
     @media (min-width: 900px) {
       .mobile-only { display: none; }
       .desktop-only { display: flex; }
@@ -329,7 +336,7 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .thumb { color: var(--line-strong); }
       .thumb.on { color: var(--pos); }
       @media (hover: hover) { .row.clickable:hover { background: color-mix(in srgb, var(--pos) 9%, transparent); } }
-      .day-foot { font-size: 14px; padding: 12px 4px 18px; }
+      .day-foot { display: flex; font-size: 14px; padding: 12px 4px 18px; }
       .day-foot .muted { color: var(--ink-soft); }
       .day-foot b { font-size: 15px; color: var(--pos); } .day-foot b.expense { color: var(--neg); }
       .summary b.income { color: var(--pos); } .summary b.expense { color: var(--neg); }
@@ -379,6 +386,17 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
     .rmark mat-icon { font-size: 13px; width: 13px; height: 13px; }
     /* no computador a recorrência tem coluna própria: a marca sobre o ícone é só do telemóvel (a regra .rmark ganhava ao .mobile-only) */
     @media (min-width: 900px) { .rmark { display: none; } }
+    /* telemóvel (10/11, à imagem da app Android da outra aplicação): título à esquerda com ícone, lupa e filtros à direita,
+       "Saldo no dia" por baixo de cada dia */
+    @media (max-width: 899px) {
+      .fixed-head h1 { text-align: left; padding: 0 16px; display: flex; align-items: center; gap: 12px; }
+      .h-ic { display: inline-grid; place-items: center; width: 24px; height: 24px; box-sizing: border-box; border: 2px solid currentColor; border-radius: 7px; }
+      .h-ic mat-icon { font-size: 16px; width: 16px; height: 16px; }
+      .inner > .m-search { display: grid; place-items: center; position: absolute; top: 8px; right: 52px; width: 40px; height: 40px; border: none; background: none; color: inherit; border-radius: 50%; cursor: pointer; padding: 0; }
+      .day-foot { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; padding: 2px 4px 10px; font-size: 14px; }
+      .day-foot b { font-weight: 500; color: #3062d4; } .day-foot b.expense { color: #e5484d; }
+      :host-context(html.dark) .day-foot b { color: #8fa3f0; } :host-context(html.dark) .day-foot b.expense { color: #e06666; }
+    }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
     @media (max-width: 899px) { .sum-desk > div { font-size: 12px; } .summary b { font-size: 14px; } .day-head { font-size: 13px; } .rep { font-size: 13px; } .chip { font-size: 10px; } .range-head { font-size: 13px; } .state { font-size: 13px; } .srow b { font-size: 14px; } .srow span { font-size: 13px; } .row .title { font-size: 14px; } .row .sub { font-size: 13px; } .row .amount { font-size: 14px; } }
   `],
@@ -441,6 +459,8 @@ export class TransactionsPage implements OnDestroy {
   readonly catSel = computed(() => this.categoryId() ? this.data.categoryMap().get(this.categoryId()!) : undefined);
   kindIcon(k: TransactionKind) { return k === 'expense' ? 'remove_circle' : k === 'income' ? 'add_circle' : 'swap_horiz'; }
   kindLabel(k: TransactionKind) { return k === 'expense' ? 'Despesas' : k === 'income' ? 'Receitas' : 'Transferências'; }
+  /** Lupa do cabeçalho (telemóvel): abre a barra de filtros já com o campo de pesquisa. */
+  openSearch() { this.filtersOpen.set(true); this.searchOpen.set(true); setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus(), 50); }
   toggleSearch() { this.searchOpen.update((v) => !v); if (this.searchOpen()) setTimeout(() => (document.querySelector<HTMLInputElement>('.fbar .search input'))?.focus()); }
   readonly activeFilters = computed(() => [this.periodSel() !== 'month', this.accountId(), this.kind(), this.categoryId(), this.paidFilter(), this.search()].filter(Boolean).length);
 
@@ -635,7 +655,7 @@ export class TransactionsPage implements OnDestroy {
   async togglePaid(t: Transaction) {
     const paid = !t.paid;
     this.all.update((l) => l.map((x) => (x.id === t.id ? { ...x, paid } : x)));
-    try { await this.data.setPaid(t.id, paid, t); } catch (e) { this.ui.error(e); }
+    try { await this.data.setPaid(t.id, paid, t); this.ui.notice(`Movimento ${paidWord(t.kind, paid)}`); } catch (e) { this.ui.error(e); }
   }
 
   async remove(t: Transaction) {
@@ -643,12 +663,12 @@ export class TransactionsPage implements OnDestroy {
       const scope = await this.ui.recurrenceScope('Apagar');
       if (!scope) return;
       if (scope === 'one') this.all.update((l) => l.filter((x) => x.id !== t.id)); // otimista
-      try { if (scope === 'one') await this.data.deleteTransaction(t.id, t); else await this.data.deleteAndFollowing(t); } catch (e) { this.ui.error(e); }
+      try { if (scope === 'one') await this.data.deleteTransaction(t.id, t); else await this.data.deleteAndFollowing(t); this.ui.notice(scope === 'one' ? 'Movimento apagado' : 'Movimentos apagados', 'delete', 'del'); } catch (e) { this.ui.error(e); }
       return;
     }
     if (!(await this.ui.confirm('Apagar movimento?', `Tens a certeza que queres apagar o movimento "${t.description || this.nameOf(t)}"? Esta ação não pode ser anulada.`, 'Apagar movimento'))) return;
     this.all.update((l) => l.filter((x) => x.id !== t.id)); // otimista
-    try { await this.data.deleteTransaction(t.id, t); } catch (e) { this.ui.error(e); }
+    try { await this.data.deleteTransaction(t.id, t); this.ui.notice('Movimento apagado', 'delete', 'del'); } catch (e) { this.ui.error(e); }
   }
 
   // ---------- Apresentação ----------

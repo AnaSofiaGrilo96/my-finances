@@ -39,8 +39,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         @if (!due().length) {
           <div class="card due ok">
             <div class="due-head static">
-              <span class="due-icon ok"><mat-icon>task_alt</mat-icon></span>
-              <span class="due-text"><b>Nada a pagar ou receber</b><span class="muted">hoje</span></span>
+              <span class="due-icon ok"><mat-icon fontSet="material-icons-outlined">task_alt</mat-icon></span>
+              <span class="due-text"><b>Contas a pagar</b><span class="line">Nada a pagar ou receber hoje</span></span>
             </div>
           </div>
         }
@@ -170,13 +170,20 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     <ng-template #dueCard>
       @if (due().length) {
         <div class="card due" [class.open]="dueOpen()">
+          <!-- 10/11 (como na app Android da outra aplicação): "Contas a pagar — Tens 1 conta a pagar, no total de € 36,72 ›";
+               tocar abre a lista -->
           <button type="button" class="due-head" (click)="dueOpen.set(!dueOpen())">
-            <span class="due-icon"><mat-icon>notifications_active</mat-icon></span>
+            <span class="due-icon"><mat-icon fontSet="material-icons-outlined">payments</mat-icon></span>
             <span class="due-text">
               <b>{{ dueTitle() }}</b>
-              <span class="muted">{{ dueSubtitle() }}</span>
+              <span class="line">
+                @if (dueSum().pay; as p) { Tens {{ p.n }} conta{{ p.n > 1 ? 's' : '' }} a pagar, no total de <strong>{{ p.total | money }}</strong> }
+                @if (dueSum().pay && dueSum().recv) { e }
+                @if (dueSum().recv; as r) { {{ dueSum().pay ? '' : 'Tens ' }}{{ r.n }} a receber, no total de <strong>{{ r.total | money }}</strong> }
+                @if (dueSum().overdue) { <span class="late">({{ dueSum().overdue }} em atraso)</span> }
+              </span>
             </span>
-            <mat-icon class="chev" [class.closed]="!dueOpen()">expand_more</mat-icon>
+            <mat-icon class="chev due-chev" [class.open]="dueOpen()">chevron_right</mat-icon>
           </button>
           <div class="collapse" [class.open]="dueOpen()">
             <div class="rows">
@@ -205,7 +212,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         <div class="total">
           <span class="muted">Saldo geral</span>
           @if (isSmall()) {
-            <b [class.expense]="data.totalBalance() < 0">{{ data.totalBalance() | money }}</b>
+            <b [class.expense]="data.totalBalance() < 0">{{ hidden() ? '€ -----' : (data.totalBalance() | money) }}</b>
+            <button type="button" class="eye-m" (click)="toggleHidden()" [attr.aria-label]="hidden() ? 'Mostrar valores' : 'Esconder valores'"><mat-icon fontSet="material-icons-outlined">{{ hidden() ? 'visibility' : 'visibility_off' }}</mat-icon></button>
           } @else {
             <b [class.expense]="data.totalBalance() < 0"><small>€</small>{{ hidden() ? '-----' : num(data.totalBalance()) }}</b>
           }
@@ -214,17 +222,16 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
         <div class="rows lined">
           @for (a of data.activeAccounts(); track a.id) {
             <a class="row clickable" [routerLink]="['/movimentos']" [queryParams]="{ conta: a.id }">
-              <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="40" />
+              <app-icon-badge [icon]="a.icon" [color]="a.color" [size]="isSmall() ? 48 : 40" />
               <div class="main"><div class="title">{{ a.name }}</div><div class="sub">{{ typeLabel(a.type) }}</div></div>
-              <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ hidden() && !isSmall() ? '€ -----' : (balance(a.id) | money) }}</div>
+              <div class="amount acc" [class.expense]="balance(a.id) < 0">{{ hidden() ? '€ -----' : (balance(a.id) | money) }}</div>
             </a>
           } @empty {
             <p class="empty">Sem contas. <a routerLink="/contas">Criar a primeira</a></p>
           }
         </div>
-        @if (isSmall()) {
-          <div class="link-row"><a matButton="outlined" routerLink="/contas" class="manage"><mat-icon>tune</mat-icon>Gerir contas</a></div>
-        } @else {
+        <!-- telemóvel (10/11): sem "Gerir contas" — as contas geram-se pelo menu do perfil, como na outra aplicação -->
+        @if (!isSmall()) {
           <div class="w-foot between">
             <a class="sq" routerLink="/contas" matTooltip="Gerir contas" aria-label="Gerir contas"><mat-icon fontSet="material-icons-outlined">settings</mat-icon></a>
             <a class="btn-soft" routerLink="/contas" [queryParams]="{ nova: 1 }"><mat-icon>add_circle_outline</mat-icon>Adicionar conta</a>
@@ -285,7 +292,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .due .rows { padding: 4px 8px 6px; }
     .col { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
     a.row { text-decoration: none; color: inherit; }
-    .link-row { display: flex; justify-content: flex-end; margin-top: 8px; }
     .total { display: flex; flex-direction: column; border-left: 4px solid var(--mat-sys-primary); padding-left: 12px; margin-bottom: 16px; }
     .total b { font-size: 26px; }
     .amount.acc { color: var(--mat-sys-primary); } .amount.acc.expense { color: #e5484d; } /* saldo negativo a vermelho (a regra .amount.acc ganhava à .expense global) */
@@ -293,7 +299,6 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .band { text-align: center; font-size: 14px; font-weight: 500; padding: 8px; border-radius: 10px; margin: 6px 0 2px; background: var(--mat-sys-surface-container); color: var(--mat-sys-on-surface-variant); }
     .band.today { background: color-mix(in srgb, #e5484d 14%, transparent); color: #e5484d; }
     @media (max-width: 899px) {
-      .link-row { justify-content: stretch; } .manage { width: 100%; }
       /* telemóvel (21/10, como na outra aplicação): saudação maior, saldo sem a barra verde, contas com tipo por baixo e saldo a azul */
       .greet { padding: 8px 4px 18px; }
       .greet .muted { font-size: 17px; color: var(--mat-sys-on-surface); }
@@ -423,7 +428,26 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-dig
     .wide .due { margin-bottom: 20px; padding: 16px 24px; border-left: none; }
     .wide .due-icon { background: color-mix(in srgb, var(--warn, #f6a351) 22%, transparent); color: #b4610e; }
     /* telemóvel (22/10): letra 1–2px mais pequena (gerado a partir dos tamanhos acima) */
-    @media (max-width: 899px) { .greet h1 { font-size: 20px; } .due-text b { font-size: 13px; } .due-text .muted { font-size: 12px; } .total b { font-size: 20px; } .band { font-size: 13px; } .greet .muted { font-size: 15px; } .total .muted { font-size: 13px; } .accounts h2 { font-size: 15px; } .accounts .row .title { font-size: 14px; } .accounts .row .sub { font-size: 13px; } .amount.acc { font-size: 14px; } .wide .card h2 { font-size: 16px; } .hello { font-size: 13px; } .name { font-size: 14.5px; } .kpis span { font-size: 13px; } .kpis b { font-size: 15px; } .act { font-size: 14px; } .act.ghost { font-size: 13px; } .wide .top .row .title { font-size: 12.5px; } .wide .top .row .amount { font-size: 12.5px; } .wide .accounts .total .muted { font-size: 13px; } .wide .accounts .total b { font-size: 17px; } .wide .accounts .total small { font-size: 13px; } .wide .accounts .row .title { font-size: 14px; } .wide .accounts .row .sub { font-size: 13px; } .wide .amount.acc { font-size: 16px; } .wide .band { font-size: 13px; } .wide .pend .title { font-size: 12.5px; } .wide .pend .sub { font-size: 11px; } .wide .pend .amount { font-size: 12.5px; } }
+    @media (max-width: 899px) { .greet h1 { font-size: 20px; } .due-text b { font-size: 13px; } .due-text .muted { font-size: 12px; } .total b { font-size: 20px; } .band { font-size: 13px; } .greet .muted { font-size: 15px; } .total .muted { font-size: 13px; } .accounts h2 { font-size: 15px; } .accounts .row .title { font-size: 14px; } .accounts .row .sub { font-size: 13px; } .amount.acc { font-size: 14px; } }
+    /* telemóvel (10/11, à imagem da app Android da outra aplicação de gestão de finanças) */
+    .due-text .line { font-size: 13px; color: var(--mat-sys-on-surface-variant); line-height: 1.35; }
+    .due-text .line strong { color: var(--mat-sys-on-surface); font-weight: 600; white-space: nowrap; }
+    .due-text .late { color: #e5484d; }
+    .due-chev { color: #1eb980; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+    .due-chev.open { transform: rotate(90deg); }
+    .total { position: relative; }
+    .eye-m { position: absolute; right: 0; top: 50%; transform: translateY(-80%); width: 40px; height: 40px; border: none; background: none; color: var(--mat-sys-on-surface-variant); display: grid; place-items: center; border-radius: 50%; cursor: pointer; }
+    @media (max-width: 899px) {
+      .due { padding: 16px 12px; border-radius: 12px; }
+      .due-head { padding: 4px; gap: 14px; }
+      .due-icon, .due-icon.ok { width: 44px; height: 44px; background: var(--app-bg); color: var(--mat-sys-on-surface); }
+      .due-icon mat-icon { font-size: 22px; width: 22px; height: 22px; }
+      .due-text b { font-size: 15px; font-weight: 600; }
+      .accounts .row { padding: 12px 0; gap: 16px; }
+      .accounts .row .title { font-size: 15px; }
+      .accounts .row .sub { font-size: 13px; }
+      .amount.acc { font-size: 15px; }
+    }
   `],
 })
 export class DashboardPage {
@@ -468,23 +492,14 @@ export class DashboardPage {
   );
   readonly topCategories = computed(() => this.slices().slice(0, 5));
 
-  readonly dueTitle = computed(() => {
+  readonly dueSum = computed(() => {
     const list = this.due();
-    const pay = list.filter((t) => t.kind !== 'income').length, recv = list.filter((t) => t.kind === 'income').length;
-    const parts = [];
-    if (pay) parts.push(`${pay} conta${pay > 1 ? 's' : ''} a pagar`);
-    if (recv) parts.push(`${recv} conta${recv > 1 ? 's' : ''} a receber`);
-    return `Tens ${parts.join(' e ')}`;
+    const sum = (l: Transaction[]) => (l.length ? { n: l.length, total: l.reduce((s, t) => s + t.amount, 0) } : null);
+    return { pay: sum(list.filter((t) => t.kind !== 'income')), recv: sum(list.filter((t) => t.kind === 'income')), overdue: list.filter((t) => t.date < this.today).length };
   });
-  readonly dueSubtitle = computed(() => {
-    const list = this.due();
-    const pay = list.filter((t) => t.kind !== 'income').reduce((s, t) => s + t.amount, 0);
-    const recv = list.filter((t) => t.kind === 'income').reduce((s, t) => s + t.amount, 0);
-    const overdue = list.filter((t) => t.date < this.today).length;
-    const parts = [];
-    if (pay) parts.push(`a pagar ${formatMoney(pay)}`);
-    if (recv) parts.push(`a receber ${formatMoney(recv)}`);
-    return `Hoje: ${parts.join(' · ')}${overdue ? ` · ${overdue} em atraso` : ''}`;
+  readonly dueTitle = computed(() => {
+    const { pay, recv } = this.dueSum();
+    return pay && recv ? 'Contas a pagar e a receber' : pay ? 'Contas a pagar' : 'Contas a receber';
   });
 
   constructor() {
@@ -565,6 +580,6 @@ export class DashboardPage {
     // otimista (21/10): sai logo das listas
     this.due.update((l) => l.filter((x) => x.id !== t.id));
     this.pending.update((l) => l.filter((x) => x.id !== t.id));
-    try { await this.data.setPaid(t.id, true, t); } catch (e) { this.ui.error(e); }
+    try { await this.data.setPaid(t.id, true, t); this.ui.notice(t.kind === 'expense' ? 'Movimento pago' : 'Movimento recebido'); } catch (e) { this.ui.error(e); }
   }
 }
