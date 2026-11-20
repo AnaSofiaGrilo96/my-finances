@@ -267,16 +267,30 @@ export class DataService {
     return this.generateNow(until, force);
   }
 
-  private async generateNow(until: string, force = false): Promise<void> {
+  /** As gerações correm uma de cada vez (20/11): antes, navegar depressa entre meses lançava várias em paralelo, todas a partir do
+   *  mesmo contador `generated`, e cada uma inseria as mesmas ocorrências — foi assim que surgiram movimentos repetidos 4–5 vezes. */
+  private genQueue: Promise<void> = Promise.resolve();
+  private generateNow(until: string, force = false): Promise<void> {
+    const run = this.genQueue.then(() => this.generateOnce(until, force));
+    this.genQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async generateOnce(until: string, force = false): Promise<void> {
     if (!force && until <= this.generatedUntil) return;
-    this.generatedUntil = until;
+    // Contadores lidos da base de dados (outro dispositivo, ou uma cópia antiga em memória, pode tê-los deixado para trás)
+    const fresh = await this.sb.from('recurrences').select('id, generated, active');
+    if (fresh.error) throw fresh.error;
+    const counters = new Map((fresh.data ?? []).map((x: { id: string; generated: number; active: boolean }) => [x.id, x]));
+    this.recurrences.update((l) => l.filter((x) => counters.has(x.id)).map((x) => ({ ...x, generated: counters.get(x.id)!.generated, active: counters.get(x.id)!.active })));
     let inserted = 0;
     for (const r of this.recurrences()) {
       if (!r.active) continue;
       const rows: Omit<Transaction, 'id'>[] = [];
       const limit = this.horizonFor(r, until);
       const parts = r.installments && r.total_amount != null ? splitInstallments(r.total_amount, r.installments) : null;
-      let n = r.generated;
+      const from = r.generated;
+      let n = from;
       for (;;) {
         if (r.installments && n >= r.installments) break;
         const date = occurrenceDate(r.start_date, r.frequency, n);
@@ -286,13 +300,23 @@ export class DataService {
         n++;
       }
       if (!rows.length) continue;
-      const { error } = await this.sb.from('transactions').insert(rows);
-      if (error) throw error;
-      const { error: e2 } = await this.sb.from('recurrences').update({ generated: n }).eq('id', r.id);
-      if (e2) throw e2;
+      // Reserva as ocorrências: só avança o contador se ninguém o mudou entretanto (outro separador/dispositivo a gerar ao mesmo tempo)
+      const claim = await this.sb.from('recurrences').update({ generated: n }).eq('id', r.id).eq('generated', from).select('id');
+      if (claim.error) throw claim.error;
+      if (!claim.data?.length) continue;
+      // Rede de segurança: não volta a criar uma ocorrência que já exista nessa data (ou com esse n.º de parcela)
+      const ex = await this.sb.from('transactions').select('date, installment_no').eq('recurrence_id', r.id).gte('date', rows[0].date).lte('date', rows[rows.length - 1].date);
+      if (ex.error) throw ex.error;
+      const have = new Set((ex.data ?? []).map((x: { date: string; installment_no: number | null }) => (r.installments ? `n${x.installment_no}` : x.date)));
+      const missing = rows.filter((x) => !have.has(r.installments ? `n${x.installment_no}` : x.date));
+      if (missing.length) {
+        const { error } = await this.sb.from('transactions').insert(missing);
+        if (error) { await this.sb.from('recurrences').update({ generated: from }).eq('id', r.id).eq('generated', n); throw error; }
+      }
       this.recurrences.update((l) => l.map((x) => (x.id === r.id ? { ...x, generated: n } : x)));
-      inserted += rows.length;
+      inserted += missing.length;
     }
+    this.generatedUntil = until > this.generatedUntil || force ? until : this.generatedUntil;
     if (inserted) this.version.update((v) => v + 1);
   }
 
