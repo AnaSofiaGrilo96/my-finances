@@ -395,7 +395,8 @@ const DAY_FMT = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-dig
       .row .title { font-size: 16px; }
       .row .sub { font-size: 14px; }
       .row .amount { font-size: 16px; font-weight: 400; }
-      .row .amount.expense, .row .amount.transfer { color: var(--mat-sys-on-surface); }
+      .row .amount.expense { color: var(--mat-sys-on-surface); }
+      .row .amount.transfer { color: #1eb980; } /* transferências a verde, como as receitas (20/11, como na app Android da outra aplicação) */
       .state { font-size: 14px; }
       .state.is-paid { color: var(--mat-sys-on-surface-variant); }
       .row.unpaid .title, .row.unpaid .amount { opacity: 1; }
