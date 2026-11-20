@@ -34,7 +34,7 @@ import { BackButtonService } from '../shared/back-button.service';
       <a class="brand" routerLink="/"><span class="logo"><mat-icon>account_balance_wallet</mat-icon></span><span>MyFinances</span></a>
       <nav class="side-body">
         <div class="grp">
-          @for (item of navItems; track item.path) {
+          @for (item of sideItems; track item.path) {
             <a class="lnk" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/' }">
               <mat-icon fontSet="material-icons-outlined">{{ item.side }}</mat-icon><span>{{ item.label }}</span>
             </a>
@@ -159,6 +159,9 @@ export class Shell {
     { path: '/movimentos', icon: 'swap_horiz', side: 'receipt_long', label: 'Movimentos', short: 'Movimentos' },
     { path: '/relatorios', icon: 'bar_chart', side: 'bar_chart', label: 'Relatórios', short: 'Relatórios' },
   ];
+
+  /** Barra lateral do computador: as mesmas páginas mais a Agenda (20/11, só no computador). */
+  readonly sideItems = [this.navItems[0], this.navItems[1], { path: '/agenda', icon: 'event', side: 'calendar_month', label: 'Agenda', short: 'Agenda' }, this.navItems[2]];
 
   private readonly swUpdate = inject(SwUpdate);
   private readonly snack = inject(MatSnackBar);

@@ -15,6 +15,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', loadComponent: () => import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage) },
       { path: 'movimentos', loadComponent: () => import('./features/transactions/transactions.page').then((m) => m.TransactionsPage) },
       { path: 'lancamentos', redirectTo: 'movimentos' },
+      { path: 'agenda', loadComponent: () => import('./features/agenda/agenda.page').then((m) => m.AgendaPage) },
       { path: 'relatorios', loadComponent: () => import('./features/reports/reports.page').then((m) => m.ReportsPage) },
       { path: 'contas', loadComponent: () => import('./features/accounts/accounts.page').then((m) => m.AccountsPage) },
       { path: 'categorias', loadComponent: () => import('./features/categories/categories.page').then((m) => m.CategoriesPage) },

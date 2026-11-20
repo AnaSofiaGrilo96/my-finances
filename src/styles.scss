@@ -385,3 +385,11 @@ main.content > router-outlet + * { display: block; }
   .pill, .search input { font-size: 13.5px; }
   .fmenu .mat-mdc-menu-item.child .mat-mdc-menu-item-text { font-size: 13px; }
 }
+
+// Impressão (Agenda → "Imprimir", 20/11): sem barra lateral nem botões flutuantes, fundo branco
+@media print {
+  html, body { background: #fff !important; }
+  app-shell aside.side, .fab, .bottom-nav, .mat-mdc-snack-bar-container { display: none !important; }
+  main.content.with-side { margin: 0 !important; }
+  .frame.desk { display: block !important; max-width: none !important; }
+}
