@@ -13,9 +13,9 @@ let openRow: SwipeRow | null = null;
   imports: [MatIconModule],
   template: `
     <div class="actions" [class.visible]="offset() < 0">
-      <button type="button" class="act paid" (click)="emit(togglePaid, $event)" [attr.aria-label]="paid() ? 'Marcar como não pago' : 'Marcar como pago'"><mat-icon>{{ paid() ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
-      <button type="button" class="act edit" (click)="emit(edit, $event)" aria-label="Editar"><mat-icon>edit</mat-icon></button>
-      <button type="button" class="act del" (click)="emit(remove, $event)" aria-label="Apagar"><mat-icon>delete</mat-icon></button>
+      <button type="button" class="act paid" (pointerdown)="actDown($event)" (pointerup)="actUp(togglePaid, $event)" (click)="actClick(togglePaid, $event)" [attr.aria-label]="paid() ? 'Marcar como não pago' : 'Marcar como pago'"><mat-icon>{{ paid() ? 'thumb_up' : 'thumb_down' }}</mat-icon></button>
+      <button type="button" class="act edit" (pointerdown)="actDown($event)" (pointerup)="actUp(edit, $event)" (click)="actClick(edit, $event)" aria-label="Editar"><mat-icon>edit</mat-icon></button>
+      <button type="button" class="act del" (pointerdown)="actDown($event)" (pointerup)="actUp(remove, $event)" (click)="actClick(remove, $event)" aria-label="Apagar"><mat-icon>delete</mat-icon></button>
     </div>
     <div class="content" [style.transform]="'translateX(' + offset() + 'px)'" [class.dragging]="dragging()"
          (pointerdown)="start($event)" (pointermove)="move($event)" (pointerup)="end($event)" (pointercancel)="end($event)" (click)="tap($event)">
@@ -63,10 +63,14 @@ export class SwipeRow {
     this.moved = true;
     this.offset.set(Math.max(-this.WIDTH, Math.min(0, this.startOffset + dx)));
   }
-  end(_ev: PointerEvent) {
+  end(ev: PointerEvent) {
     if (!this.dragging()) return;
     this.dragging.set(false);
     if (!this.horizontal) return;
+    const tgt = ev.target as HTMLElement;
+    if (tgt.hasPointerCapture?.(ev.pointerId)) tgt.releasePointerCapture(ev.pointerId);
+    // o browser pode não gerar "click" depois de arrastar; não deixar a marca à espera do próximo toque
+    setTimeout(() => (this.moved = false), 350);
     if (this.offset() < -this.WIDTH / 2.5) { this.offset.set(-this.WIDTH); openRow = this; }
     else this.close();
   }
@@ -78,6 +82,25 @@ export class SwipeRow {
   close() { this.offset.set(0); if (openRow === this) openRow = null; }
   /** Qualquer ação fecha a linha — incluindo o polegar (22/10, pedido da Ana). */
   emit(out: { emit(v: void): void }, ev: Event) { ev.stopPropagation(); out.emit(); this.close(); }
+
+  /**
+   * Toque nas ações (26/11): no telemóvel a ação corre logo no "pointerup" — o "click" que o Chrome Android gera
+   * a seguir a um deslize nem sempre chegava ao primeiro toque, obrigando a tocar 2x. O "click" que vier depois é
+   * ignorado; sem toque (rato/teclado) continua a valer o "click".
+   */
+  private actPointer: number | null = null;
+  private skipClickUntil = 0;
+  actDown(ev: PointerEvent) { ev.stopPropagation(); this.actPointer = ev.pointerType === 'mouse' ? null : ev.pointerId; }
+  actUp(out: { emit(v: void): void }, ev: PointerEvent) {
+    if (this.actPointer === null || this.actPointer !== ev.pointerId) return;
+    this.actPointer = null;
+    this.skipClickUntil = Date.now() + 600;
+    this.emit(out, ev);
+  }
+  actClick(out: { emit(v: void): void }, ev: MouseEvent) {
+    if (Date.now() < this.skipClickUntil) { ev.stopPropagation(); ev.preventDefault(); return; }
+    this.emit(out, ev);
+  }
 
   @HostListener('document:pointerdown', ['$event'])
   onDocDown(ev: PointerEvent) {
