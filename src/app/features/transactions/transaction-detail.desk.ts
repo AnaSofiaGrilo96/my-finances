@@ -96,7 +96,7 @@ type Picker = 'category' | 'account' | 'to' | 'date';
       <!-- painel que sobe dentro da janela: categoria, conta, data -->
       @if (picker(); as p) {
         <div class="scrim" (click)="picker.set(null)"></div>
-        <section class="ov" [class.tall]="p === 'category' || p === 'date'">
+        <section class="ov" [class.tall]="p === 'category' || p === 'date'" [class.dt]="p === 'date'">
           <header class="ov-head"><b>{{ pickerTitle() }}</b><button type="button" class="x" (click)="picker.set(null)" aria-label="Fechar"><mat-icon>close</mat-icon></button></header>
           @if (p === 'category') {
             <input #search class="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Procurar categoria…" />
@@ -208,8 +208,9 @@ type Picker = 'category' | 'account' | 'to' | 'date';
     .none { color: var(--ink-soft); text-align: center; padding: 20px 0; }
     .today-row { display: flex; justify-content: flex-end; margin: -6px 4px 4px; }
     /* 27/11: o calendário cortava as últimas semanas (ex.: 29 e 30/11) — painel alto, calendário mais compacto e com scroll de reserva */
-    .ov.tall:has(.cal) { overflow-y: auto; }
-    .cal { width: 100%; max-width: 330px; margin: 0 auto; flex-shrink: 0; --mat-datepicker-calendar-date-selected-state-background-color: var(--pos); --mat-datepicker-calendar-date-today-outline-color: var(--line-strong); }
+    /* o calendário encolhe para caber na altura do painel (≈ 110px de cabeçalho + 7 linhas do tamanho de uma célula) */
+    .ov.dt { container-type: size; overflow-y: auto; }
+    .cal { width: min(330px, 100%, calc(100cqh - 200px)); min-width: 220px; margin: 0 auto; flex-shrink: 0; --mat-datepicker-calendar-date-selected-state-background-color: var(--pos); --mat-datepicker-calendar-date-today-outline-color: var(--line-strong); }
   `],
 })
 export class TransactionDetailDesk {
